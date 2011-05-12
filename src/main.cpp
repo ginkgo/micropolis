@@ -1,171 +1,152 @@
 
 #include "common.h"
-#include <stdio.h>
-#include <limits>
 
 #include "Patch.h"
+#include "Config.h"
 
+//#include "opengl_draw.h"
 
-#define P(pi,pj) patch.P[pi][pj]
-void draw_patch_wire(const BezierPatch& patch)
-{
-    vec3 p;
+#include "Shader.h"
+#include "Texture.h"
+#include "Image.h"
 
-    glColor3f(1,1,1);
-
-    glBegin(GL_LINE_LOOP);
-    
-    int n = 5;
-
-    for (int i = 0; i < n; ++i) {
-        float t = float(i)/n;
-
-        eval_spline(P(0,0), P(1,0), P(2,0), P(3,0), t, p);
-        glVertex3f(p.x, p.y, p.z);
-    }
-    
-    for (int i = 0; i < n; ++i) {
-        float t = float(i)/n;
-
-        eval_spline(P(3,0), P(3,1), P(3,2), P(3,3), t, p);
-        glVertex3f(p.x, p.y, p.z);
-    }
-    
-    for (int i = 0; i < n; ++i) {
-        float t = float(i)/n;
-
-        eval_spline(P(3,3), P(2,3), P(1,3), P(0,3), t, p);
-        glVertex3f(p.x, p.y, p.z);
-    }
-    
-    for (int i = 0; i < n; ++i) {
-        float t = float(i)/n;
-
-        eval_spline(P(0,3), P(0,2), P(0,1), P(0,0), t, p);
-        glVertex3f(p.x, p.y, p.z);
-    }
-
-    glEnd();
-}
-
-void draw_patch (const BezierPatch& patch)
-{
-    const int n = 20;
-
-    vec3 row[n+1];
-    vec3 nrow[n+1];
-
-    for (int i = 0; i <= n; ++i) {
-        float t = float(i)/n;
-        eval_patch_n(patch, t, 0, row[i], nrow[i]);
-    }
-    
-    for (int j = 1; j <= n; ++j) {
-        float s = float(j)/n;
-        glBegin(GL_QUAD_STRIP);
-        for (int i = 0; i <= n; ++i) {
-            float t = float(i)/n;
-            glColor3fv(glm::value_ptr(nrow[i]));
-            glVertex3fv(glm::value_ptr(row[i]));
-            eval_patch_n(patch, t, s, row[i], nrow[i]);
-            glColor3fv(glm::value_ptr(nrow[i]));
-            glVertex3fv(glm::value_ptr(row[i]));
-        }
-        glEnd();
-    }
-}
+#include "OpenCL.h"
 
 int openWindow( int width, int height, 
                 int redbits, int greenbits, int bluebits, int alphabits,
                 int depthbits, int stencilbits, int mode );
 
+void make_checkers(Image& image)
+{
+    vec4 *pixels = (vec4*)image.data();
+
+    int n = 2;
+    float in = 1/float(n);
+    for (int y = 0; y < image.height(); ++y) {
+        for (int x = 0; x < image.width(); ++x) {
+            int pos = x + y * image.width();
+            
+            vec4 c(0.f,0.f,0.f,1.f);
+
+            for (int i = 0; i < n; ++i) {
+                if (((x>>i+3)+(y>>i+3))%2 == 1) {
+                    c = c + vec4(in,in,in,0.f);
+                }
+            }
+
+            pixels[pos] = c;
+        }
+    }
+}
+
+void opencl_main(vector<BezierPatch>& patches)
+{
+
+    try {
+    OpenCL::Device device(config.platform_id(), config.device_id());
+    OpenCL::Kernel kernel(device, "test.cl", "test");
+
+
+    Image *image = new Image(2, config.window_size().x, config.window_size().y, 0,
+                             GL_RGBA, GL_FLOAT, sizeof(vec4));
+
+    make_checkers(*image);
+
+    Texture framebuffer(*image, GL_NEAREST, GL_NEAREST);
+    delete image;
+
+    OpenCL::ImageBuffer tex_buffer(device, framebuffer, CL_MEM_WRITE_ONLY);
+    OpenCL::CommandQueue queue(device);
+    
+    Shader shader("tex_draw");
+
+    bool running = true;
+
+    while (running) {
+        // OpenCL::Event event;
+        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        queue.enq_GL_acquire(tex_buffer);
+        
+        kernel.set_arg_r(0, tex_buffer);
+        kernel.set_arg(1, (float)glfwGetTime());
+        queue.enq_kernel(kernel, config.window_size(), ivec2(16, 16));
+        
+        queue.enq_GL_release(tex_buffer);
+        queue.finish();
+
+        // queue.enq_GL_release(tex_buffer, event);
+        // OpenCL::sync_GL(event);
+
+        framebuffer.bind();
+        
+        shader.bind();
+
+        shader.set_uniform("framebuffer", framebuffer);
+
+        glBegin(GL_QUADS);
+        glVertex2f(-1,-1);
+        glVertex2f( 1,-1);
+        glVertex2f( 1, 1);
+        glVertex2f(-1, 1);
+        glEnd();
+
+        shader.unbind();
+        
+        framebuffer.unbind();
+
+        glfwSwapBuffers();
+
+        float fps, mspf;
+        calc_fps(fps, mspf);
+
+        // Check if the window has been closed
+        running = running && !glfwGetKey( GLFW_KEY_ESC );
+        running = running && !glfwGetKey( 'Q' );
+        running = running && glfwGetWindowParam( GLFW_OPENED );   
+    }   
+    } catch (OpenCL::Exception& e) {
+        cerr << "OpenCL error (" << e.file() << ":" << e.line_no()
+             << "): " <<  e.msg() << endl;
+    }                     
+}
+
 int main(int argc, char** argv)
 {
-    int width  = 800, 
-        height = 600;
+    if (!Config::load_file("options.txt", config)) {
+        cout << "Failed to load options.txt" << endl;
+    }
+
+    argc = config.parse_args(argc, argv);
+
+    if (!Config::save_file("options.txt", config)) {
+        cout << "Failed to save options.txt" << endl;
+    }
 
     if (argc != 2) {
         cout << "Usage: " << argv[0] << " file" << endl;
         return 0;            
     }
 
+    ivec2 size = config.window_size();
+
     vector<BezierPatch> patches;
     read_patches(argv[1], patches);
-
-    cout << sizeof(BezierPatch) << endl;
-    cout << sizeof(vec3[16]) << endl;
-    cout << sizeof(vec3[4][4]) << endl;
-    cout << sizeof(vec3) << endl;
 
     if (!glfwInit()) {
         cout << "Failed to initialize GLFW" << endl;
         return 1;
     }
 
-    if (!openWindow(800, 600, 0,0,0,0,0,0, GLFW_WINDOW)) {
+    if (!openWindow(size.x, size.y, 0,0,0,0,0,0, GLFW_WINDOW)) {
         glfwTerminate();
         return 1;
     }
 
-    bool running = true;
-
-    glEnable(GL_DEPTH_TEST);
-
-    float s = 8;
-
-    float last = glfwGetTime();
-    float time_diff = 0;
-    while (running) {
-
-        float now = glfwGetTime();
-        time_diff = now - last;
-        last = now;
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        mat4 vp = glm::inverse(glm::ortho<float>(0,width,0,height,-1,1));
-
-        mat4 proj = glm::perspective<float>(60, float(width)/height, 0.001, 100);
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf(glm::value_ptr(proj));
-        glMatrixMode(GL_MODELVIEW);
-
-        mat4 view;
-        view *= glm::translate<float>(0,0,-s);
-        view *= glm::rotate<float>(now * 29, 1,0,0);
-        view *= glm::rotate<float>(now * 17, 0,1,0);
-        view *= glm::rotate<float>(now * 13, 0,0,1);
-
-        glLoadMatrixf(glm::value_ptr(view));
-
-        mat4 mat = vp*proj*view;
-
-        for (size_t i = 0; i < patches.size(); ++i) {
-            project_patch(patches[i], mat);
-
-            if (glfwGetKey(GLFW_KEY_SPACE)) 
-                split_n_draw(7, patches[i], mat, draw_patch_wire);
-            else
-                split_n_draw(7, patches[i], mat, draw_patch);
-        }
-
-        glPopMatrix();
-
-        glfwSwapBuffers();
-
-        if (glfwGetKey( GLFW_KEY_UP )) {
-            s += time_diff;
-        }
-
-        if (glfwGetKey( GLFW_KEY_DOWN )) {
-            s -= time_diff;
-        }
-
-        // Check if the window has been closed
-        running = running && !glfwGetKey( GLFW_KEY_ESC );
-        running = running && !glfwGetKey( 'Q' );
-        running = running && glfwGetWindowParam( GLFW_OPENED );    
-    }
+    //ogl_main(patches);
+    
+    opencl_main(patches);
 
     glfwTerminate();
     return 0;
@@ -181,6 +162,7 @@ int openWindow( int width, int height,
     int version = FLEXT_MAJOR_VERSION * 10 + FLEXT_MINOR_VERSION;
 
     // We can use this to setup the desired OpenGL version in GLFW
+    glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, FLEXT_MAJOR_VERSION);
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, FLEXT_MINOR_VERSION);
 

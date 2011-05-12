@@ -1,0 +1,18 @@
+// Size of the window in pixels.
+window_size = 640 480
+
+// Search directory for GLSL shader files.
+shader_dir = shaders
+
+// Search directory for OpenCL kernels.
+kernel_dir = kernels
+
+// Maximum anisotropy for texture filtering.
+max_anisotropy = 1
+
+// OpenCL platform ID.
+platform_id = 0
+
+// OpenCL device ID.
+device_id = 0
+

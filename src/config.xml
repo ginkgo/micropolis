@@ -1,0 +1,34 @@
+<config name="Config">
+  <include>
+    #include "common.h"
+  </include>
+
+  <values>
+    <value name="window_size" type="ivec2" default="800 600">
+      Size of the window in pixels.
+    </value>
+
+    <value name="shader_dir" type="string" default="shaders">
+      Search directory for GLSL shader files.
+    </value>
+
+    <value name="kernel_dir" type="string" default="kernels">
+      Search directory for OpenCL kernels.
+    </value>
+
+    <value name="max_anisotropy" type="float" default="1.0">
+      Maximum anisotropy for texture filtering.
+    </value>
+
+    <value name="platform_id" type="int" default="0">
+      OpenCL platform ID.
+    </value>
+
+    <value name="device_id" type="int" default="0">
+      OpenCL device ID.
+    </value>
+  </values>
+
+  <global name="config"/>
+
+</config>

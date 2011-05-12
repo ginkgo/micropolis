@@ -1,3 +1,6 @@
 [submodule "tools/flextGL"]
 	path = tools/flextGL
 	url = git@github.com:ginkgo/flextGL.git
+[submodule "tools/configGen"]
+	path = tools/configGen
+	url = git@github.com:ginkgo/configGen.git

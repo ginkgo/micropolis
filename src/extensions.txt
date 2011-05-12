@@ -1,2 +1,4 @@
 
 version 3.3 compatibility
+
+extension EXT_texture_filter_anisotropic optional

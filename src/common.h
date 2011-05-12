@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+typedef unsigned char byte;
+
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
@@ -37,5 +39,8 @@ using std::endl;
 #include <GL/glfw.h>
 
 #include "utility.h"
+
+#include "boost/noncopyable.hpp"
+#include "boost/unordered_map.hpp"
 
 #endif
