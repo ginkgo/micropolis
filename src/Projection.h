@@ -26,10 +26,10 @@ class PerspectiveProjection : public Projection
         _aspect(float(viewport.x)/viewport.y),
         _viewport(viewport) 
     {
-        fy = tan(_fovy * M_PI / 360);
-        fx = fy * _aspect;
+        fy = 1/tan(_fovy * M_PI / 360);
+        fx = fy / _aspect;
 
-        vp = vec2(_viewport.x/2.0, _viewport.y/2);
+        vp = vec2(_viewport.x/2.0, _viewport.y/2.0);
 
         fx *= vp.x;
         fy *= vp.y;

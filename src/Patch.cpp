@@ -128,7 +128,8 @@ void eval_patch_n(const BezierPatch& patch,
     else 
         btng = q30-q20;
 
-    normal = glm::normalize(glm::cross(tng, btng));
+    normal = glm::normalize(glm::cross(btng, tng)) * 0.5f + vec3(0.5f);
+    
 }
 
 
@@ -238,7 +239,7 @@ void split_n_draw(const BezierPatch& patch, const Projection& projection,
     
     if (cull) return;
 
-    int s = 20;
+    int s = 10;
 
     if (size.x < s && size.y < s) draw_func(patch);
     else {

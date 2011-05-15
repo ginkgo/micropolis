@@ -43,6 +43,7 @@ void PerspectiveProjection::bound(const BBox& bbox, vec2& size, bool& cull) cons
         max.y = bbox.max.y/f * fy + vp.y;
     }
 
+
     if (min.x > _viewport.x-1 || max.x < 0 ||
         min.y > _viewport.y-1 || max.y < 0 ){
         cull = true;

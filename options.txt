@@ -1,5 +1,5 @@
 // Size of the window in pixels.
-window_size = 640 480
+window_size = 320 240
 
 // Search directory for GLSL shader files.
 shader_dir = shaders

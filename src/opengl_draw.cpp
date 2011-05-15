@@ -11,7 +11,7 @@ void draw_patch_wire(const BezierPatch& patch)
 
     glBegin(GL_LINE_LOOP);
     
-    int n = 5;
+    int n = 4;
 
     for (int i = 0; i < n; ++i) {
         float t = float(i)/n;
