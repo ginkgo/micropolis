@@ -89,13 +89,16 @@ void ogl_main(vector<BezierPatch>& patches)
         last = now;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        PerspectiveProjection projection(60, 0.01, size);
 
-        mat4 vp = glm::inverse(glm::ortho<float>(0,size.x,0,size.y,-1,1));
-
-        mat4 proj = glm::perspective<float>(60, float(size.x)/size.y, 0.001, 100);
+        mat4 proj;
+        projection.calc_projection(proj);
+                                         
         glMatrixMode(GL_PROJECTION);
         glLoadMatrixf(glm::value_ptr(proj));
         glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
 
         mat4 view;
         view *= glm::translate<float>(0,0,-s);
@@ -103,17 +106,16 @@ void ogl_main(vector<BezierPatch>& patches)
         view *= glm::rotate<float>(now * 17, 0,1,0);
         view *= glm::rotate<float>(now * 13, 0,0,1);
 
-        glLoadMatrixf(glm::value_ptr(view));
-
-        mat4 mat = vp*proj*view;
+        mat4x3 view4x3(view);
+        BezierPatch transformed;
 
         for (size_t i = 0; i < patches.size(); ++i) {
-            project_patch(patches[i], mat);
+            transform_patch(patches[i], view4x3, transformed);
 
             if (glfwGetKey(GLFW_KEY_SPACE)) 
-                split_n_draw(7, patches[i], mat, draw_patch_wire);
+                split_n_draw(transformed, projection, draw_patch_wire);
             else
-                split_n_draw(7, patches[i], mat, draw_patch);
+                split_n_draw(transformed, projection, draw_patch);
         }
 
         glPopMatrix();

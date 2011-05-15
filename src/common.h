@@ -15,8 +15,9 @@ using glm::ivec3;
 using glm::ivec4;
 
 using glm::mat2;
-using glm::mat4;
 using glm::mat3;
+using glm::mat4;
+using glm::mat4x3;
 
 namespace glm {
     using namespace glm::gtc::matrix_transform;

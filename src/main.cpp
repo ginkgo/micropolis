@@ -4,7 +4,7 @@
 #include "Patch.h"
 #include "Config.h"
 
-//#include "opengl_draw.h"
+#include "opengl_draw.h"
 
 #include "Shader.h"
 #include "Texture.h"
@@ -39,8 +39,17 @@ void make_checkers(Image& image)
     }
 }
 
+static bool close_window = false;
+static int GLFWCALL window_close_callback( void )
+{
+    close_window = true;
+    return GL_FALSE;
+}
+
 void opencl_main(vector<BezierPatch>& patches)
 {
+
+    glfwSetWindowCloseCallback(window_close_callback);
 
     try {
     OpenCL::Device device(config.platform_id(), config.device_id());
@@ -104,7 +113,7 @@ void opencl_main(vector<BezierPatch>& patches)
         // Check if the window has been closed
         running = running && !glfwGetKey( GLFW_KEY_ESC );
         running = running && !glfwGetKey( 'Q' );
-        running = running && glfwGetWindowParam( GLFW_OPENED );   
+        running = running && !close_window;
     }   
     } catch (OpenCL::Exception& e) {
         cerr << "OpenCL error (" << e.file() << ":" << e.line_no()
@@ -144,10 +153,11 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    //ogl_main(patches);
+    ogl_main(patches);
     
-    opencl_main(patches);
+    //opencl_main(patches);
 
+    glfwCloseWindow();
     glfwTerminate();
     return 0;
 }

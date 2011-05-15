@@ -39,14 +39,44 @@ template <typename T> T maximum (T a, T b)
     return a > b ? a : b;
 }
 
-class Box
+class BBox
+{
+    public:
+
+    vec3 min;
+    vec3 max;
+
+    BBox():
+        min(std::numeric_limits<float>::infinity(),
+            std::numeric_limits<float>::infinity(),
+            std::numeric_limits<float>::infinity()),
+        max(-std::numeric_limits<float>::infinity(),
+            -std::numeric_limits<float>::infinity(),
+            -std::numeric_limits<float>::infinity()) {}
+
+    void add_point(const vec3& p) {
+        min.x = minimum(p.x, min.x);
+        min.y = minimum(p.y, min.y);
+        min.z = minimum(p.z, min.z);
+
+        max.x = maximum(p.x, max.x);
+        max.y = maximum(p.y, max.y);
+        max.z = maximum(p.z, max.z);
+    }     
+
+    vec3 size() {
+        return vec3(max.x-min.x, max.y-min.y, max.z-min.z);
+    }
+};
+
+class Bound
 {
     vec2 min;
     vec2 max;
 
     public:
 
-    Box():
+    Bound():
         min(std::numeric_limits<float>::infinity(),
             std::numeric_limits<float>::infinity()),
         max(-std::numeric_limits<float>::infinity(),
