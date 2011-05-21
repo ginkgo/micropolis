@@ -20,6 +20,8 @@ namespace OpenCL
 
         cl_device_id get_device()  { return _device; }
         cl_context   get_context() { return _context; }
+
+        void print_info();
     };
 
     class ImageBuffer

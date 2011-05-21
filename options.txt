@@ -1,5 +1,5 @@
 // Size of the window in pixels.
-window_size = 320 240
+window_size = 1024 768
 
 // Search directory for GLSL shader files.
 shader_dir = shaders
@@ -15,4 +15,7 @@ platform_id = 0
 
 // OpenCL device ID.
 device_id = 0
+
+// Print more information.
+verbose = 1
 

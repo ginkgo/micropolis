@@ -32,9 +32,14 @@ void qsplit_patch(const BezierPatch& patch,
 void calc_bbox(const BezierPatch& patch, BBox& box);
 
 
+struct PatchDrawer
+{
+    virtual void draw_patch(const BezierPatch& patch) = 0;
+};
+
 void split_n_draw(const BezierPatch& patch, 
                   const Projection& projection,
-                  void (*draw_func)(const BezierPatch&));
+                  PatchDrawer& patch_drawer);
 
 
 #endif

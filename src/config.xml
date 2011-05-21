@@ -27,6 +27,10 @@
     <value name="device_id" type="int" default="0">
       OpenCL device ID.
     </value>
+
+    <value name="verbose" type="bool" default="false">
+      Print more information.
+    </value>
   </values>
 
   <global name="config"/>

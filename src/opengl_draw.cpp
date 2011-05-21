@@ -2,9 +2,23 @@
 #include "opengl_draw.h"
 #include "Config.h"
 
-#define P(pi,pj) patch.P[pi][pj]
-void draw_patch_wire(const BezierPatch& patch)
+struct OGLPatchDrawer : public PatchDrawer
 {
+    void draw_patch(const BezierPatch& patch);
+};
+
+struct OGLWirePatchDrawer : public PatchDrawer
+{
+    int patch_count;
+
+    void draw_patch(const BezierPatch& patch);
+};
+
+#define P(pi,pj) patch.P[pi][pj]
+void OGLWirePatchDrawer::draw_patch(const BezierPatch& patch)
+{
+    patch_count++;
+
     vec3 p;
 
     glColor3f(1,1,1);
@@ -44,7 +58,7 @@ void draw_patch_wire(const BezierPatch& patch)
     glEnd();
 }
 
-void draw_patch (const BezierPatch& patch)
+void OGLPatchDrawer::draw_patch (const BezierPatch& patch)
 {
     const int n = 20;
 
@@ -80,11 +94,17 @@ void ogl_main(vector<BezierPatch>& patches)
 
     float s = 8;
 
-    float last = glfwGetTime();
-    float time_diff = 0;
+    double last = glfwGetTime();
+    double time_diff = 0;
+
+    //OGLPatchDrawer patch_drawer;
+    OGLWirePatchDrawer wire_patch_drawer;
+
+    double last_patch_count = last;
+
     while (running) {
 
-        float now = glfwGetTime();
+        double now = glfwGetTime();
         time_diff = now - last;
         last = now;
 
@@ -101,10 +121,10 @@ void ogl_main(vector<BezierPatch>& patches)
         glLoadIdentity();
 
         mat4 view;
-        view *= glm::translate<float>(0,0,-s);
-        view *= glm::rotate<float>(now * 29, 1,0,0);
-        view *= glm::rotate<float>(now * 17, 0,1,0);
-        view *= glm::rotate<float>(now * 13, 0,0,1);
+        view *= glm::translate<float>(0,-2,-s);
+        view *= glm::rotate<float>(-70, 1,0,0);
+        view *= glm::rotate<float>(now * 10, 0,0,1);
+        //view *= glm::rotate<float>(90, 0,0,1);
 
         mat4x3 view4x3(view);
         BezierPatch transformed;
@@ -112,15 +132,23 @@ void ogl_main(vector<BezierPatch>& patches)
         for (size_t i = 0; i < patches.size(); ++i) {
             transform_patch(patches[i], view4x3, transformed);
 
-            if (glfwGetKey(GLFW_KEY_SPACE)) 
-                split_n_draw(transformed, projection, draw_patch_wire);
-            else
-                split_n_draw(transformed, projection, draw_patch);
+            // if (glfwGetKey(GLFW_KEY_SPACE)) 
+                split_n_draw(transformed, projection, wire_patch_drawer);
+            // else
+            //     split_n_draw(transformed, projection, patch_drawer);
         }
 
-        glPopMatrix();
-
         glfwSwapBuffers();
+
+        if (last-last_patch_count > 1) {
+            cout << wire_patch_drawer.patch_count << " patches." << endl;
+            last_patch_count = last;
+        }
+
+        wire_patch_drawer.patch_count = 0;
+
+        float fps, mspf;
+        calc_fps(fps, mspf);
 
         if (glfwGetKey( GLFW_KEY_UP )) {
             s += time_diff;

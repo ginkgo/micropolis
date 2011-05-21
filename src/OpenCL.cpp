@@ -281,6 +281,106 @@ namespace OpenCL
     {
         return _msg;
     }
+
+
+    template <typename T> void print_device_param(cl_device_id device,
+                                                  cl_device_info param_enum,
+                                                  string param_name, 
+                                                  const string& indent)
+    {
+        T tmp;
+        cl_int status;
+
+        status = clGetDeviceInfo(device, param_enum, sizeof(T), &tmp, NULL);
+
+        if (status == CL_SUCCESS) {
+            cout << indent << "  " << param_name << ": " << tmp << endl;
+        } else {
+            cout << indent << "  " << param_name << ": " << "<unsupported>" << endl;
+        }
+    }
+                 
+    void print_device_workgroup_size(cl_device_id device, 
+                                     const string& indent)
+    {
+        cl_uint max_dim;
+        size_t sizes[50];
+
+        clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, 
+                        sizeof(cl_uint), &max_dim, NULL);
+        clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, 
+                        sizeof(size_t)*max_dim, sizes, NULL);
+
+        cout << indent << "  CL_DEVICE_MAX_WORK_ITEM_SIZES:";
+
+        for (uint i = 0; i < max_dim; ++i) {
+            cout << " " << sizes[i];
+        }
+
+        cout << endl;
+    }
+
+    #define PRINT_CL_DEVICE_INFO(type, name)                \
+    print_device_param<type>(_device, name, #name, indent)
+
+    void Device::print_info()
+    {
+        const string indent = "    ";
+        cout << endl << indent << "OpenCL Device:" << endl;
+        PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_NAME);
+        PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_VERSION);
+        PRINT_CL_DEVICE_INFO(char[1000], CL_DRIVER_VERSION);
+        if (config.verbose()) {
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_ADDRESS_BITS);
+            PRINT_CL_DEVICE_INFO(cl_bool, CL_DEVICE_AVAILABLE);
+            PRINT_CL_DEVICE_INFO(cl_bool, CL_DEVICE_COMPILER_AVAILABLE);
+            PRINT_CL_DEVICE_INFO(cl_bool, CL_DEVICE_ENDIAN_LITTLE);
+            PRINT_CL_DEVICE_INFO(cl_bool, CL_DEVICE_ERROR_CORRECTION_SUPPORT);
+            PRINT_CL_DEVICE_INFO(cl_ulong, CL_DEVICE_GLOBAL_MEM_CACHE_SIZE);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE);
+            PRINT_CL_DEVICE_INFO(cl_ulong, CL_DEVICE_GLOBAL_MEM_SIZE);
+            PRINT_CL_DEVICE_INFO(cl_bool, CL_DEVICE_HOST_UNIFIED_MEMORY);
+            PRINT_CL_DEVICE_INFO(cl_bool, CL_DEVICE_IMAGE_SUPPORT);
+            PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_IMAGE2D_MAX_WIDTH);
+            PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_IMAGE2D_MAX_HEIGHT); 
+            PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_IMAGE3D_MAX_WIDTH);
+            PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_IMAGE3D_MAX_HEIGHT); 
+            PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_IMAGE3D_MAX_DEPTH);
+            PRINT_CL_DEVICE_INFO(cl_ulong, CL_DEVICE_LOCAL_MEM_SIZE);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MAX_CLOCK_FREQUENCY);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MAX_COMPUTE_UNITS);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MAX_CONSTANT_ARGS);
+            PRINT_CL_DEVICE_INFO(cl_ulong, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE);
+            PRINT_CL_DEVICE_INFO(cl_ulong, CL_DEVICE_MAX_MEM_ALLOC_SIZE);
+            PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_MAX_PARAMETER_SIZE);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MAX_READ_IMAGE_ARGS);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MAX_SAMPLERS);
+            PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_MAX_WORK_GROUP_SIZE);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);
+            print_device_workgroup_size(_device, indent);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MAX_WRITE_IMAGE_ARGS);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MEM_BASE_ADDR_ALIGN);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_NATIVE_VECTOR_WIDTH_INT);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF);
+            PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_OPENCL_C_VERSION);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE);
+            PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF);
+            PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_PROFILE);
+            PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_PROFILING_TIMER_RESOLUTION);
+            PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_EXTENSIONS);
+        }
+    }
 }
 
 

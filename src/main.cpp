@@ -52,69 +52,72 @@ void opencl_main(vector<BezierPatch>& patches)
     glfwSetWindowCloseCallback(window_close_callback);
 
     try {
-    OpenCL::Device device(config.platform_id(), config.device_id());
-    OpenCL::Kernel kernel(device, "test.cl", "test");
+        OpenCL::Device device(config.platform_id(), config.device_id());
 
-
-    Image *image = new Image(2, config.window_size().x, config.window_size().y, 0,
-                             GL_RGBA, GL_FLOAT, sizeof(vec4));
-
-    make_checkers(*image);
-
-    Texture framebuffer(*image, GL_NEAREST, GL_NEAREST);
-    delete image;
-
-    OpenCL::ImageBuffer tex_buffer(device, framebuffer, CL_MEM_WRITE_ONLY);
-    OpenCL::CommandQueue queue(device);
+        device.print_info();
     
-    Shader shader("tex_draw");
+        OpenCL::Kernel kernel(device, "test.cl", "test");
 
-    bool running = true;
+        ivec2 w_size = config.window_size();
+        Image *image = new Image(2, w_size.x, w_size.y, 0,
+                                 GL_RGBA, GL_FLOAT, sizeof(vec4));
 
-    while (running) {
-        // OpenCL::Event event;
+        make_checkers(*image);
+
+        Texture framebuffer(*image, GL_NEAREST, GL_NEAREST);
+        delete image;
+
+        OpenCL::ImageBuffer tex_buffer(device, framebuffer, CL_MEM_WRITE_ONLY);
+        OpenCL::CommandQueue queue(device);
+    
+        Shader shader("tex_draw");
+
+        bool running = true;
+
+        while (running) {
+            // OpenCL::Event event;
         
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        queue.enq_GL_acquire(tex_buffer);
+            queue.enq_GL_acquire(tex_buffer);
         
-        kernel.set_arg_r(0, tex_buffer);
-        kernel.set_arg(1, (float)glfwGetTime());
-        queue.enq_kernel(kernel, config.window_size(), ivec2(16, 16));
+            kernel.set_arg_r(0, tex_buffer);
+            kernel.set_arg(1, (float)glfwGetTime());
+            queue.enq_kernel(kernel, config.window_size(), ivec2(16, 16));
         
-        queue.enq_GL_release(tex_buffer);
-        queue.finish();
+            queue.enq_GL_release(tex_buffer);
+            queue.finish();
 
-        // queue.enq_GL_release(tex_buffer, event);
-        // OpenCL::sync_GL(event);
+            // queue.enq_GL_release(tex_buffer, event);
+            // OpenCL::sync_GL(event);
 
-        framebuffer.bind();
+            framebuffer.bind();
         
-        shader.bind();
+            shader.bind();
 
-        shader.set_uniform("framebuffer", framebuffer);
+            shader.set_uniform("framebuffer", framebuffer);
 
-        glBegin(GL_QUADS);
-        glVertex2f(-1,-1);
-        glVertex2f( 1,-1);
-        glVertex2f( 1, 1);
-        glVertex2f(-1, 1);
-        glEnd();
+            glBegin(GL_QUADS);
+            glVertex2f(-1,-1);
+            glVertex2f( 1,-1);
+            glVertex2f( 1, 1);
+            glVertex2f(-1, 1);
+            glEnd();
 
-        shader.unbind();
+            shader.unbind();
         
-        framebuffer.unbind();
+            framebuffer.unbind();
 
-        glfwSwapBuffers();
+            glfwSwapBuffers();
 
-        float fps, mspf;
-        calc_fps(fps, mspf);
+            float fps, mspf;
+            calc_fps(fps, mspf);
 
-        // Check if the window has been closed
-        running = running && !glfwGetKey( GLFW_KEY_ESC );
-        running = running && !glfwGetKey( 'Q' );
-        running = running && !close_window;
-    }   
+            // Check if the window has been closed
+            running = running && !glfwGetKey( GLFW_KEY_ESC );
+            running = running && !glfwGetKey( 'Q' );
+            running = running && !close_window;
+        }   
     } catch (OpenCL::Exception& e) {
         cerr << "OpenCL error (" << e.file() << ":" << e.line_no()
              << "): " <<  e.msg() << endl;
@@ -154,7 +157,6 @@ int main(int argc, char** argv)
     }
 
     ogl_main(patches);
-    
     //opencl_main(patches);
 
     glfwCloseWindow();
