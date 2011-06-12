@@ -3,6 +3,8 @@
 
 typedef unsigned char byte;
 
+#define GLM_SWIZZLE_XYZW
+
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 

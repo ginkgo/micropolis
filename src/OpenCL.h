@@ -8,7 +8,7 @@
 namespace OpenCL
 {
 
-    class Device
+    class Device : public boost::noncopyable
     {
         cl_context   _context;
         cl_device_id _device;
@@ -24,7 +24,7 @@ namespace OpenCL
         void print_info();
     };
 
-    class ImageBuffer
+    class ImageBuffer : public boost::noncopyable
     {
         cl_mem _buffer;
 
@@ -36,7 +36,20 @@ namespace OpenCL
         cl_mem get() { return _buffer; }
     };
 
-    class Kernel
+    class Buffer : public boost::noncopyable
+    {
+        cl_mem _buffer;
+
+        public:
+
+        Buffer(Device& device, size_t size, cl_mem_flags flags);
+        Buffer(Device& device, GLuint GL_buffer);
+        ~Buffer();
+
+        cl_mem get() { return _buffer; }
+    };
+
+    class Kernel : public boost::noncopyable
     {
         cl_kernel _kernel;
         cl_program _program;
@@ -52,7 +65,7 @@ namespace OpenCL
         cl_kernel get() { return _kernel;}
     };
 
-    class CommandQueue
+    class CommandQueue : public boost::noncopyable
     {
         cl_command_queue _queue;
 
@@ -62,8 +75,16 @@ namespace OpenCL
         ~CommandQueue();
         
         void enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size);
+        void enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size);
         void enq_GL_acquire(ImageBuffer& buffer);
         void enq_GL_release(ImageBuffer& buffer);
+        void enq_GL_acquire(cl_mem buffer);
+        void enq_GL_release(cl_mem buffer);
+
+        void enq_write_buffer(Buffer& buffer, void* src, 
+                              size_t length, size_t offset=0);
+        void enq_read_buffer (Buffer& buffer, void* dst, 
+                              size_t length, size_t offset=0);
 
         void finish();
     };

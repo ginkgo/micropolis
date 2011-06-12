@@ -7,15 +7,83 @@
 
 class Image;
 
-/**
- * Represents a texture in GPU memory.
- */
-class Texture : boost::noncopyable
+class Tex : boost::noncopyable
 {
+    protected: 
+
     GLenum _bound_unit; /**< The current texture unit, 0 if unbound */
     GLenum _target; /**< The texture target */
     GLuint _texture_name; /**< The GL texture handle */
 
+    
+    Tex();
+    
+    public: 
+
+    virtual ~Tex();
+
+    /**
+     * Bind texture.
+     */
+    void bind();
+
+    /**
+     * Unbind texture
+     */
+    void unbind();
+
+
+    public:
+          
+    /**
+     * Helper class for automatic texture-unit management.
+     */
+    class UnitManager
+    {
+        GLenum* _unit_list; /**< Stack with unused texture units. */
+        GLint _available_units; /**< Number of available units on stack. */
+        GLint _max_units; /**< Total size of stack. */
+
+        public:
+
+        GLenum get_unit(); /**< Acquire unused texture unit */
+        void return_unit(GLenum unit); /**< Return texture unit */
+
+        UnitManager() :
+            _unit_list(NULL) {}
+        ~UnitManager();
+
+        private:
+
+        /**
+         * Call this function during Texture construction.
+         */
+        void initialize();
+    };
+    
+    /**
+     * Returns the texture unit number, the texture is bound to.
+     */
+    GLint get_unit_number () const { return _bound_unit - GL_TEXTURE0; }
+
+    GLuint texture_name() { return _texture_name; }
+
+    bool is_bound() const { return _bound_unit != 0; }
+
+
+    private:
+
+    /**
+     * Texture unit manager
+     */
+    static UnitManager _unit_manager;
+};
+
+/**
+ * Represents a texture in GPU memory.
+ */
+class Texture : public Tex
+{
     GLenum _min_filter; /**< The used minification filter */
     GLenum _mag_filter; /**< The used magnification filter */
     GLenum _wrap_method; /**< The used wrap method. Used for all directions */
@@ -61,32 +129,13 @@ class Texture : boost::noncopyable
             GLenum wrap_method = GL_REPEAT,
             int samples = 0); 
     
-    ~Texture();
+    //~Texture();
 
     /**
      * Copy contents of texture to Image object.
      * @param image Destination image.
      */
     void read_back(Image& image);
-
-    /**
-     * Bind texture.
-     */
-    void bind();
-
-    /**
-     * Unbind texture
-     */
-    void unbind();
-
-    /**
-     * Returns the texture unit number, the texture is bound to.
-     */
-    GLint get_unit_number () const { return _bound_unit - GL_TEXTURE0; }
-
-    GLuint texture_name() { return _texture_name; }
-
-    bool is_bound() const { return _bound_unit != 0; }
 
     void generate_mipmaps();
 
@@ -103,42 +152,19 @@ class Texture : boost::noncopyable
      */
     void setup(const void* data, GLenum type, int samples);
 
+};
+
+class TextureBuffer : public Tex
+{
+    GLuint _buffer;
+    GLuint _size;
+
     public:
-          
-    /**
-     * Helper class for automatic texture-unit management.
-     */
-    class UnitManager
-    {
-        GLenum* _unit_list; /**< Stack with unused texture units. */
-        GLint _available_units; /**< Number of available units on stack. */
-        GLint _max_units; /**< Total size of stack. */
 
-        public:
+    TextureBuffer(GLuint size, GLenum internal_format);
+    ~TextureBuffer();
 
-        GLenum get_unit(); /**< Acquire unused texture unit */
-        void return_unit(GLenum unit); /**< Return texture unit */
-
-        UnitManager() :
-            _unit_list(NULL) {}
-        ~UnitManager();
-
-        private:
-
-        /**
-         * Call this function during Texture construction.
-         */
-        void initialize();
-    };
-
-    static UnitManager& unit_manager() { return _unit_manager; }
-    
-    private:
-
-    /**
-     * Texture unit manager
-     */
-    static UnitManager _unit_manager;
+    GLuint get_buffer() const { return _buffer; };
 };
 
 #endif

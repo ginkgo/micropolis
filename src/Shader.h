@@ -74,7 +74,7 @@ class Shader
         gltype_info<T>::set_uniform(it->second, value);
     }
 
-    void set_uniform(const string& uniform_name, const Texture& texture)
+    void set_uniform(const string& uniform_name, const Tex& texture)
     {
         UniformMap::iterator it = _uniform_map.find(uniform_name);
         
@@ -82,6 +82,11 @@ class Shader
             return;
 
         gltype_info<GLint>::set_uniform(it->second, texture.get_unit_number());
+    }
+
+    void set_uniform(const string& uniform_name, const TextureBuffer& texture)
+    {
+        set_uniform(uniform_name, (Tex&) texture);
     }
 
     bool has_uniform(const string& uniform_name) const {

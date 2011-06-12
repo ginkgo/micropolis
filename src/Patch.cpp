@@ -188,8 +188,8 @@ void isplit_patch(const BezierPatch& patch,
 
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 3; ++j) {
-            a += glm::distance(patch.P[j][i], patch.P[j+1][i]);
-            b += glm::distance(patch.P[i][j], patch.P[i][j+1]);
+            a += glm::distance(patch.P[j][i].xy, patch.P[j+1][i].xy);
+            b += glm::distance(patch.P[i][j].xy, patch.P[i][j+1].xy);
         }
     }
 
@@ -239,7 +239,7 @@ void split_n_draw(const BezierPatch& patch, const Projection& projection,
     
     if (cull) return;
 
-    int s = 50;
+    int s = 100;
 
     if (size.x < s && size.y < s) patch_drawer.draw_patch(patch);
     else {

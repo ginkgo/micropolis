@@ -86,6 +86,30 @@ namespace OpenCL
         clReleaseContext(_context);
     }
 
+    Buffer::Buffer(Device& device, size_t size, cl_mem_flags flags)
+    {
+        cl_int status;
+        _buffer = clCreateBuffer(device.get_context(), flags, size, NULL,
+                                 &status);
+
+        OPENCL_ASSERT(status);
+    }
+
+    Buffer::Buffer(Device& device, GLuint GL_buffer) 
+    {
+        cl_int status;
+
+        _buffer = clCreateFromGLBuffer(device.get_context(), CL_MEM_READ_WRITE, 
+                                       GL_buffer, &status);
+
+        OPENCL_ASSERT(status);
+    }
+
+    Buffer::~Buffer()
+    {
+        clReleaseMemObject(_buffer);
+    }
+
     CommandQueue::CommandQueue(Device& device)
     {
         cl_int status;
@@ -97,6 +121,7 @@ namespace OpenCL
 
     CommandQueue::~CommandQueue()
     {
+        clFinish(_queue);
         clReleaseCommandQueue(_queue);
     }
 
@@ -113,6 +138,45 @@ namespace OpenCL
         status = clEnqueueNDRangeKernel(_queue, kernel.get(),
                                          2, offset, global, local,
                                          0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+    void CommandQueue::enq_kernel(Kernel& kernel,
+                                  ivec3 global_size, ivec3 local_size)
+    {
+        size_t offset[] = {0,0,0};
+        size_t global[] = {global_size.x,global_size.y,global_size.z};
+        size_t local[]  = {local_size.x, local_size.y, local_size.z};
+        
+
+        cl_int status;
+        status = clEnqueueNDRangeKernel(_queue, kernel.get(),
+                                         3, offset, global, local,
+                                         0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+    void CommandQueue::enq_write_buffer(Buffer& buffer, void* src,
+                                        size_t len, size_t offset)
+    {
+        cl_int status;
+
+        status = clEnqueueWriteBuffer(_queue, buffer.get(), CL_FALSE, 
+                                      offset, len, src,
+                                      0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+    void CommandQueue::enq_read_buffer(Buffer& buffer, void* src,
+                                        size_t len, size_t offset)
+    {
+        cl_int status;
+
+        status = clEnqueueReadBuffer(_queue, buffer.get(), CL_FALSE, 
+                                     offset, len, src, 0, NULL, NULL);
 
         OPENCL_ASSERT(status);
     }
@@ -136,6 +200,22 @@ namespace OpenCL
     void CommandQueue::enq_GL_release(ImageBuffer& buffer)
     {
         cl_mem mem = buffer.get();
+        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 
+                                                  0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+    void CommandQueue::enq_GL_acquire(cl_mem mem)
+    {
+        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, 
+                                                  0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+    void CommandQueue::enq_GL_release(cl_mem mem)
+    {
         cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 
                                                   0, NULL, NULL);
 
@@ -238,6 +318,24 @@ namespace OpenCL
             _msg = "Kernel name not found in program"; break;
         case CL_INVALID_KERNEL_DEFINITION:
             _msg = "Invalid kernel definition"; break;
+        case CL_INVALID_KERNEL:
+            _msg = "Invalid kernel"; break;
+        case CL_INVALID_KERNEL_ARGS:
+            _msg = "(Some) kernel args not specified"; break;
+        case CL_INVALID_WORK_DIMENSION:
+            _msg = "Invalid work dimension"; break;
+        case CL_INVALID_GLOBAL_WORK_SIZE:
+            _msg = "Invalid global work size"; break;
+        case CL_INVALID_GLOBAL_OFFSET:
+            _msg = "Invalid global offset"; break;
+        case CL_INVALID_WORK_GROUP_SIZE:
+            _msg = "Invalid work group size"; break;
+        case CL_INVALID_WORK_ITEM_SIZE:
+            _msg = "Invalid work item size"; break;
+        case CL_INVALID_IMAGE_SIZE:
+            _msg = "Invalid image size"; break;
+        case CL_MEM_OBJECT_ALLOCATION_FAILURE:
+            _msg = "Mem-object allocation failure"; break;
         case CL_INVALID_VALUE:
             _msg = "Invalid value"; break;
         case CL_OUT_OF_RESOURCES:
@@ -266,6 +364,16 @@ namespace OpenCL
             _msg = "Compiler not available"; break;
         case CL_BUILD_PROGRAM_FAILURE:
             _msg = "Program build failure"; break;
+        case CL_INVALID_COMMAND_QUEUE:
+            _msg = "Invalid command queue"; break;
+        case CL_INVALID_ARG_INDEX:
+            _msg = "Invalid kernel argument index"; break;
+        case CL_INVALID_ARG_VALUE:
+            _msg = "Invalid kernel argument value"; break;
+        case CL_INVALID_SAMPLER:
+            _msg = "Invalid sampler object"; break;
+        case CL_INVALID_ARG_SIZE:
+            _msg = "Invalid kernel argument size"; break;
         default:
             _msg = "Unknown error";
         }

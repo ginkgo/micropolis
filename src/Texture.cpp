@@ -2,12 +2,27 @@
 #include "Image.h"
 #include "Config.h"
 
-Texture::UnitManager Texture::_unit_manager;
+Tex::UnitManager Tex::_unit_manager;
+
+Tex::Tex()
+{
+    glGenTextures(1, &_texture_name);
+    _bound_unit = 0;
+    _target = 0;    
+}
+
+Tex::~Tex()
+{
+    assert(_bound_unit == 0);
+
+    glDeleteTextures(1, &_texture_name);
+}
+
 
 Texture::Texture(const Image& image,
                  GLenum mag_filter, GLenum min_filter,
                  GLenum wrap_method) :
-    _bound_unit(0),
+    Tex(),
     _min_filter(min_filter),
     _mag_filter(mag_filter),
     _wrap_method(wrap_method),
@@ -24,7 +39,7 @@ Texture::Texture(int dimensions, int w, int h, int d,
                  GLenum mag_filter, GLenum min_filter,
                  GLenum wrap_method,
                  int samples) :
-    _bound_unit(0),
+    Tex(),
     _min_filter(min_filter),
     _mag_filter(mag_filter),
     _wrap_method(wrap_method),
@@ -35,14 +50,6 @@ Texture::Texture(int dimensions, int w, int h, int d,
 {
     setup(NULL, GL_FLOAT, samples);
 }
-
-Texture::~Texture()
-{
-    assert(_bound_unit == 0);
-
-    glDeleteTextures(1, &_texture_name);
-}
-
 void Texture::setup(const void* data, GLenum type, int samples)
 { 
     assert(_dimensions >= 1 && _dimensions <= 3);
@@ -66,8 +73,6 @@ void Texture::setup(const void* data, GLenum type, int samples)
             _target = GL_TEXTURE_2D_MULTISAMPLE;
         }
     }
-
-    glGenTextures(1, &_texture_name);
         
     bind();
 
@@ -153,7 +158,7 @@ void Texture::read_back(Image& image) {
     unbind();
 }
 
-void Texture::bind()
+void Tex::bind()
 {
     if (_bound_unit != 0)
         return;
@@ -163,7 +168,7 @@ void Texture::bind()
     glBindTexture(_target, _texture_name);
 }
 
-void Texture::unbind()
+void Tex::unbind()
 {
     if (_bound_unit == 0)
         return;
@@ -179,7 +184,7 @@ void Texture::unbind()
 }
 
 
-GLenum Texture::UnitManager::get_unit()
+GLenum Tex::UnitManager::get_unit()
 {
     if (_unit_list == NULL)
         initialize();
@@ -195,7 +200,7 @@ GLenum Texture::UnitManager::get_unit()
     return _unit_list[_available_units];
 }
 
-void Texture::UnitManager::return_unit(GLenum unit)
+void Tex::UnitManager::return_unit(GLenum unit)
 {
     if (_unit_list == NULL)
         initialize();
@@ -211,7 +216,7 @@ void Texture::UnitManager::return_unit(GLenum unit)
     ++_available_units;
 }
 
-void Texture::UnitManager::initialize()
+void Tex::UnitManager::initialize()
 {
     if (_unit_list != NULL)
         return;
@@ -226,7 +231,7 @@ void Texture::UnitManager::initialize()
     }
 }
 
-Texture::UnitManager::~UnitManager() {
+Tex::UnitManager::~UnitManager() {
     if (_unit_list != NULL)
         delete[] _unit_list;
 }
@@ -238,4 +243,27 @@ void Texture::generate_mipmaps()
     if (_min_filter != GL_NEAREST && _min_filter != GL_LINEAR) {
         glGenerateMipmap(_target);
     }    
+}
+
+TextureBuffer::TextureBuffer(GLuint size, GLenum internal_format):
+    Tex(), _size(size)
+{
+    _target = GL_TEXTURE_BUFFER;
+
+    glGenBuffers(1, &_buffer);
+
+    glBindBuffer(GL_TEXTURE_BUFFER, _buffer);
+    glBufferData(GL_TEXTURE_BUFFER, size, NULL, GL_STREAM_COPY);
+    glBindBuffer(GL_TEXTURE_BUFFER, 0);
+
+    bind();
+
+    glTexBuffer(GL_TEXTURE_BUFFER, internal_format, _buffer);
+
+    unbind();
+}
+
+TextureBuffer::~TextureBuffer()
+{
+    glDeleteBuffers(1, &_buffer);
 }
