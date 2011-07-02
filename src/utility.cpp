@@ -44,3 +44,40 @@ string read_file(const string &filename)
     return string(std::istreambuf_iterator<char>(ifile),
         std::istreambuf_iterator<char>());
 }
+
+
+void get_errors(void)
+{
+    static int call_count = 0;
+
+    // We don't need get_errors if we use ARB_debug_output
+    if (true) {
+        GLenum error = glGetError();
+
+        if (error != GL_NO_ERROR) {
+            if (call_count == 16) return;
+
+            switch (error) {
+            case GL_INVALID_ENUM:
+                cerr << "GL: enum argument out of range." << endl;
+                break;
+            case GL_INVALID_VALUE:
+                cerr << "GL: Numeric argument out of range." << endl;
+                break;
+            case GL_INVALID_OPERATION:
+                cerr << "GL: Operation illegal in current state." << endl;
+                break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION:
+                cerr << "GL: Framebuffer object is not complete." << endl;
+                break;
+            case GL_OUT_OF_MEMORY:
+                cerr << "GL: Not enough memory left to execute command." << endl;
+                break;
+            default:
+                cerr << "GL: Unknown error." << endl;
+            }
+
+            ++call_count;
+        }
+    }
+}

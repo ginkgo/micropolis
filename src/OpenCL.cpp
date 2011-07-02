@@ -3,6 +3,8 @@
 
 #include "GL/glx.h"
 
+#include "utility.h"
+
 namespace
 {
     
@@ -309,6 +311,8 @@ namespace OpenCL
     Exception::Exception(cl_int err_code, const string& file, int line_no):
         _file(file), _line_no(line_no) 
     {
+        get_errors();
+
         switch(err_code) {
         case CL_INVALID_PROGRAM: 
             _msg = "Invalid program"; break;
@@ -374,8 +378,10 @@ namespace OpenCL
             _msg = "Invalid sampler object"; break;
         case CL_INVALID_ARG_SIZE:
             _msg = "Invalid kernel argument size"; break;
+        case -1001:
+            _msg = "Vendor ICD not correctly installed(?)"; break;
         default:
-            _msg = "Unknown error";
+            _msg = "Unknown error: " + to_string(err_code);
         }
     }
 
