@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-void calc_fps(float& fps, float& mspf)
+void calc_fps(float* fps, float* mspf)
 {
     static double last = -1.0;
     static int frames = 0;
@@ -27,8 +27,13 @@ void calc_fps(float& fps, float& mspf)
         frames = 0;
     }
 
-    fps = current_fps;
-    mspf = current_ms_per_frame;
+    if (fps != NULL) {
+        *fps = current_fps;
+    }
+
+    if (mspf != NULL) {
+        *mspf = current_ms_per_frame;
+    }
 }
 
 bool file_exists(const string &filename)

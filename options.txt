@@ -1,6 +1,9 @@
 // Size of the window in pixels.
 window_size = 1024 768
 
+// Framebuffer tile size.
+framebuffer_tile_size = 8
+
 // Search directory for GLSL shader files.
 shader_dir = shaders
 
@@ -18,4 +21,20 @@ device_id = 0
 
 // Print more information.
 verbose = 1
+
+// Force slow path for OpenCL/OpenGL buffer sharing.
+disable_buffer_sharing = 1
+
+// Size used for bounding and dicing.
+reyes_patch_size = 128
+
+// Number of patches that get cached and are submitted as a
+// single rendering pass together.
+reyes_patches_per_pass = 64
+
+// Clear color for framebuffer.
+clear_color = 0.1 0.2 1 0
+
+// Patch data input file.
+input = data/teapot
 

@@ -6,7 +6,7 @@
 #include <iostream>
 
 
-void calc_fps(float& fps, float& mspf);
+void calc_fps(float* fps = NULL, float* mspf = NULL);
 
 /**
  * Test if a file exists on the filesystem.

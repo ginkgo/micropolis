@@ -53,7 +53,7 @@ namespace
         platform = platforms[platform_index];
     }
 
-    cl_context create_context(cl_platform_id platform, cl_device_id device)
+    cl_context create_context_with_GL(cl_platform_id platform, cl_device_id device)
     {
         cl_int status;
 
@@ -70,9 +70,37 @@ namespace
 
         return context;
     }
+
+    cl_context create_context_without_GL(cl_platform_id platform, cl_device_id device)
+    {
+        cl_int status;
+
+        cl_context_properties props[] = 
+            {CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0};
+        cl_context context = clCreateContext(props, 
+                                             1, &device,
+                                             NULL, NULL, &status);
+
+        OPENCL_ASSERT(status);
+
+        return context;
+    }
+
+    bool is_GPU_device(cl_device_id device)
+    {
+        cl_device_type type;
+        cl_int status;
+
+        status = clGetDeviceInfo(device, CL_DEVICE_TYPE,
+                                 sizeof(type), &type, NULL);
+
+        OPENCL_ASSERT(status);
+
+        return type == CL_DEVICE_TYPE_GPU;
+    }
 }
 
-namespace OpenCL
+namespace CL
 {
     Device::Device(int platform_index, int device_index) 
     {
@@ -80,7 +108,19 @@ namespace OpenCL
 
         get_opencl_device(platform_index, device_index, platform, _device);
 
-        _context = create_context(platform, _device);
+        if (!config.disable_buffer_sharing() && is_GPU_device(_device)) {
+            try {
+                _context = create_context_with_GL(platform, _device);
+                _share_gl = true;
+            } catch (Exception& e) {
+                _context = create_context_without_GL(platform, _device);
+                _share_gl = false;
+            }
+        } else {
+            _context = create_context_without_GL(platform, _device);
+            _share_gl = false;
+            
+        }
     }
 
     Device::~Device()
@@ -110,6 +150,16 @@ namespace OpenCL
     Buffer::~Buffer()
     {
         clReleaseMemObject(_buffer);
+    }
+
+    size_t Buffer::get_size() const
+    {
+        size_t size;
+        cl_int status = clGetMemObjectInfo(_buffer, CL_MEM_SIZE, sizeof(size), &size, NULL);
+
+        OPENCL_ASSERT(status);
+
+        return size;
     }
 
     CommandQueue::CommandQueue(Device& device)
@@ -208,23 +258,56 @@ namespace OpenCL
         OPENCL_ASSERT(status);
     }
 
+    void CommandQueue::enq_GL_acquire(Buffer& mem)
+    {
+        cl_mem m = mem.get();
+        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &m, 0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+    void CommandQueue::enq_GL_release(Buffer& mem)
+    {
+        cl_mem m = mem.get();
+        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &m, 0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
     void CommandQueue::enq_GL_acquire(cl_mem mem)
     {
-        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, 
-                                                  0, NULL, NULL);
+        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, 0, NULL, NULL);
 
         OPENCL_ASSERT(status);
     }
 
     void CommandQueue::enq_GL_release(cl_mem mem)
     {
-        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 
-                                                  0, NULL, NULL);
+        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 0, NULL, NULL);
 
         OPENCL_ASSERT(status);
     }
 
-    ImageBuffer::ImageBuffer(Device& device, Texture& texture, cl_mem_flags flags)
+    void* CommandQueue::map_buffer(Buffer& buffer)
+    {
+        cl_int status;
+
+        void* mapped = clEnqueueMapBuffer(_queue, buffer.get(), CL_TRUE, CL_MAP_READ,
+                                          0, buffer.get_size(), 0, 0, 0,
+                                          &status);
+        OPENCL_ASSERT(status);
+
+        return mapped;
+    }
+
+    void CommandQueue::unmap_buffer(Buffer& buffer, void* mapped)
+    {
+        cl_int status = clEnqueueUnmapMemObject(_queue, buffer.get(), mapped, 
+                                                0, NULL, NULL);
+        OPENCL_ASSERT(status);
+    }
+
+    ImageBuffer::ImageBuffer(Device& device, GL::Texture& texture, cl_mem_flags flags)
     {
         cl_int status;
 

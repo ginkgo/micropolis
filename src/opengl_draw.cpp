@@ -147,8 +147,8 @@ void ogl_main(vector<BezierPatch>& patches)
 
         wire_patch_drawer.patch_count = 0;
 
-        float fps, mspf;
-        calc_fps(fps, mspf);
+        // float fps, mspf;
+        // calc_fps(fps, mspf);
 
         if (glfwGetKey( GLFW_KEY_UP )) {
             s += time_diff;

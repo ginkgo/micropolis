@@ -7,6 +7,8 @@
 #include "type_info.h"
 #include "Texture.h"
 
+namespace GL
+{
 /**
  * Represents a compiled GLSL shader.
  */
@@ -147,4 +149,5 @@ class Shader
     void clean_up();
 };
 
+}
 #endif
