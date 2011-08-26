@@ -2,6 +2,8 @@
 #include "opengl_draw.h"
 #include "Config.h"
 
+#include "Projection.h"
+
 struct OGLPatchDrawer : public PatchDrawer
 {
     void draw_patch(const BezierPatch& patch);
@@ -110,7 +112,7 @@ void ogl_main(vector<BezierPatch>& patches)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        PerspectiveProjection projection(60, 0.01, size);
+        Reyes::PerspectiveProjection projection(60, 0.01, size);
 
         mat4 proj;
         projection.calc_projection(proj);

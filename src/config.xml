@@ -53,7 +53,7 @@
       Clear color for framebuffer.
     </value>
 
-    <value name="input" type="string" default="data/teapot">
+    <value name="input_file" type="string" default="data/teapot">
       Patch data input file.
     </value>
 

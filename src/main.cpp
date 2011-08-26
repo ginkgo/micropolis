@@ -6,8 +6,8 @@
 
 #include "opengl_draw.h"
 
-#include "Reyes.h"
 #include "OpenCL.h"
+#include "Reyes.h"
 
 void mainloop()
 {
@@ -15,8 +15,8 @@ void mainloop()
 
     cout << "Device is" << (device.share_gl() ? " " : " not ") << "shared." << endl;
 
-    // Reyes::Scene scene;
-    // scene.add_patches(mat4(), config.input());
+    Reyes::Scene scene(new Reyes::PerspectiveProjection(60.0f, 0.01f, config.window_size()));
+    scene.add_patches(config.input_file());
 
     Reyes::OGLSharedFramebuffer framebuffer(device, config.window_size(), 
                                             config.framebuffer_tile_size());
@@ -54,9 +54,9 @@ void handle_arguments(int argc, char** argv)
         cout << "Failed to load options.txt" << endl;
     }
 
-    // if (!Config::save_file("options.txt", config)) {
-    //     cout << "Failed to save options.txt" << endl;
-    // }
+    if (!Config::save_file("options.txt", config)) {
+        cout << "Failed to save options.txt" << endl;
+    }
 
     argc = config.parse_args(argc, argv);
     

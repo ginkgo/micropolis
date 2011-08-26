@@ -1,5 +1,9 @@
 #include "Patch.h"
 
+#include "Projection.h"
+
+using Reyes::Projection;
+
 void transform_patch(const BezierPatch& patch, 
                      const mat4x3& mat, 
                      BezierPatch& out)
@@ -11,7 +15,7 @@ void transform_patch(const BezierPatch& patch,
     }
 }
 
-void read_patches(char* filename, vector<BezierPatch>& patches)
+void read_patches(const char* filename, vector<BezierPatch>& patches)
 {
     vector<int> indices;
     vector<vec3> points;
