@@ -5,8 +5,13 @@
 #include <sstream>
 #include <iostream>
 
+#define THOUSAND 1000L
+#define MILLION  1000000L
+#define BILLION  1000000000L
 
-void calc_fps(float* fps = NULL, float* mspf = NULL);
+long nanotime();
+
+// void calc_fps(float* fps = NULL, float* mspf = NULL);
 
 /**
  * Test if a file exists on the filesystem.

@@ -255,7 +255,7 @@ namespace GL {
         glGenBuffers(1, &_buffer);
 
         glBindBuffer(GL_TEXTURE_BUFFER, _buffer);
-        glBufferData(GL_TEXTURE_BUFFER, size, NULL, GL_STREAM_DRAW);
+        glBufferData(GL_TEXTURE_BUFFER, size, NULL, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_TEXTURE_BUFFER, 0);
 
         bind();
@@ -273,7 +273,7 @@ namespace GL {
     void TextureBuffer::load(void* data)
     {
         glBindBuffer(GL_TEXTURE_BUFFER, _buffer);
-        glBufferData(GL_TEXTURE_BUFFER, _size, data, GL_STREAM_DRAW);
+        glBufferSubData(GL_TEXTURE_BUFFER, 0, _size, data);
         glBindBuffer(GL_TEXTURE_BUFFER, 0);
     }
 

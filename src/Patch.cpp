@@ -229,7 +229,7 @@ void calc_bbox(const BezierPatch& patch, BBox& box) {
 
 
 
-void split_n_draw(const BezierPatch& patch, const Projection& projection,
+void bound_n_split(const BezierPatch& patch, const Projection& projection,
                   PatchDrawer& patch_drawer)
 {
     BBox box;
@@ -249,7 +249,7 @@ void split_n_draw(const BezierPatch& patch, const Projection& projection,
     else {
         BezierPatch p0, p1;
         isplit_patch(patch, p0, p1);
-        split_n_draw(p0, projection, patch_drawer);
-        split_n_draw(p1, projection, patch_drawer);
+        bound_n_split(p0, projection, patch_drawer);
+        bound_n_split(p1, projection, patch_drawer);
     }
 }

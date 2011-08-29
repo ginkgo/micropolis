@@ -1,6 +1,10 @@
+#include "common.h"
+
 #include "Scene.h"
 
 #include "Projection.h"
+#include "Renderer.h"
+#include "Patch.h"
 
 namespace Reyes {
     Scene::Scene (Projection* projection) :
@@ -45,5 +49,18 @@ namespace Reyes {
     {
         return _patches.at(id);
     }
-        
+ 
+    void Scene::draw(Renderer& renderer) const
+    {
+        BezierPatch patch;
+        mat4x3 matrix(_view);
+        for (size_t i = 0; i < _patches.size(); ++i) {
+            
+            transform_patch(_patches[i], matrix, patch);
+
+            bound_n_split(patch, *_projection, renderer);
+
+        }
+    }
+       
 }

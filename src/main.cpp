@@ -9,8 +9,19 @@
 #include "OpenCL.h"
 #include "Reyes.h"
 
+#include "Statistics.h"
+
+static bool close_window = false;
+static int GLFWCALL window_close_callback( void )
+{
+    close_window = true;
+    return GL_FALSE;
+}
+
 void mainloop()
 {
+    Reyes::Statistics statistics;
+
     CL::Device device(config.platform_id(), config.device_id());
 
     cout << "Device is" << (device.share_gl() ? " " : " not ") << "shared." << endl;
@@ -22,29 +33,35 @@ void mainloop()
                                             config.framebuffer_tile_size());
 
     CL::CommandQueue queue(device);
-    //Reyes::Renderer renderer(device, queue, *framebuffer);
+    Reyes::Renderer renderer(device, queue, framebuffer, statistics);
 
     bool running = true;
     while (running) {
         
-        framebuffer.acquire(queue);
+        {
+            mat4 view;
+            view *= glm::translate<float>(0,-2,-8);
+            view *= glm::rotate<float>(-70, 1,0,0);
 
-        framebuffer.clear(queue);
+            scene.set_view(view);
+        }
 
-        framebuffer.release(queue);
+        renderer.prepare();
 
-        queue.finish();
+        scene.draw(renderer);
+
+        renderer.finish();
 
         framebuffer.show();
 
         glfwSwapBuffers();
         
-        calc_fps();
+        statistics.update();
 
         // Check if the window has been closed
         running = running && !glfwGetKey( GLFW_KEY_ESC );
         running = running && !glfwGetKey( 'Q' );
-        //running = running && !close_window;
+        running = running && !close_window;
     }
 }
 
@@ -74,6 +91,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    glfwSetWindowCloseCallback(window_close_callback);
+
     try {
 
         mainloop();
@@ -83,6 +102,8 @@ int main(int argc, char** argv)
         cerr << "OpenCL error (" << e.file() << ":" << e.line_no() << "): " <<  e.msg() << endl;
 
     }
+
+    glfwCloseWindow();
 
     glfwTerminate();
     return 0;
@@ -101,11 +122,11 @@ int init_opengl(ivec2 size)
     int version = FLEXT_MAJOR_VERSION * 10 + FLEXT_MINOR_VERSION;
 
     // We can use this to setup the desired OpenGL version in GLFW
-    glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, FLEXT_MAJOR_VERSION);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, FLEXT_MINOR_VERSION);
+    //glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
+    //glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, FLEXT_MAJOR_VERSION);
+    //glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, FLEXT_MINOR_VERSION);
 
-    glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 8);
+    //glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 8);
 
     if (version >= 32) {
         // OpenGL 3.2+ allow specification of profile
@@ -117,11 +138,13 @@ int init_opengl(ivec2 size)
             profile = GLFW_OPENGL_COMPAT_PROFILE;
         }
 
-        glfwOpenWindowHint(GLFW_OPENGL_PROFILE, profile);
+        //glfwOpenWindowHint(GLFW_OPENGL_PROFILE, profile);
     }
 
     // Create window and OpenGL context
     GLint success = glfwOpenWindow(size.x, size.y, 0,0,0,0, 24, 8, GLFW_WINDOW);
+
+    glfwSwapInterval(0);
 
     if (!success) {
         cerr << "Failed to create OpenGL window." << endl;

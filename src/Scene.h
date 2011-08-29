@@ -8,6 +8,7 @@
 namespace Reyes
 {
     class Projection;
+    class Renderer;
 
     class Scene
     {
@@ -27,6 +28,8 @@ namespace Reyes
         const mat4& get_view() const;
         size_t get_patch_count() const;
         const BezierPatch& get_patch(size_t id) const;
+
+        void draw(Renderer& renderer) const;
     };
 }
 

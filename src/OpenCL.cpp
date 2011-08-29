@@ -137,12 +137,27 @@ namespace CL
         OPENCL_ASSERT(status);
     }
 
+    Buffer::Buffer(Device& device, size_t size, cl_mem_flags flags, void** host_ptr)
+    {
+        cl_int status;
+        _buffer = clCreateBuffer(device.get_context(), 
+                                 flags | CL_MEM_ALLOC_HOST_PTR, 
+                                 size, NULL, &status);
+
+        OPENCL_ASSERT(status);
+
+        status = clGetMemObjectInfo(_buffer, CL_MEM_HOST_PTR, 
+                                    sizeof(void*), host_ptr, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
     Buffer::Buffer(Device& device, GLuint GL_buffer) 
     {
         cl_int status;
 
-        _buffer = clCreateFromGLBuffer(device.get_context(), CL_MEM_READ_WRITE, 
-                                       GL_buffer, &status);
+        _buffer = clCreateFromGLBuffer(device.get_context(), 
+                                       CL_MEM_WRITE_ONLY, GL_buffer, &status);
 
         OPENCL_ASSERT(status);
     }

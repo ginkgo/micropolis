@@ -47,6 +47,7 @@ namespace CL
         public:
 
         Buffer(Device& device, size_t size, cl_mem_flags flags);
+        Buffer(Device& device, size_t size, cl_mem_flags flags, void** host_ptr);
         Buffer(Device& device, GLuint GL_buffer);
         ~Buffer();
 

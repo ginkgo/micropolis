@@ -17,12 +17,5 @@ __kernel void clear (__global float4* framebuffer, float4 color)
  
     int pos = calc_framebuffer_pos(pxlpos, bsize, gridsize);
     
-    float4 c;
-    
-    if (((pxlpos.x/64) + (pxlpos.y/64)) % 2 == 0)
-        c = color;
-    else
-        c = 1 - color;
-
-        framebuffer[pos] = c;
+    framebuffer[pos] = color;
 }

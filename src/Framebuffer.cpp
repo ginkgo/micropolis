@@ -2,40 +2,53 @@
 
 
 #include "OpenCL.h"
+#include "Config.h"
+
 
 namespace Reyes
 {
 
-    OGLSharedFramebuffer::OGLSharedFramebuffer(CL::Device& device,
-                                               const ivec2& size, int tile_size) :
+    Framebuffer::Framebuffer(CL::Device& device,
+                             const ivec2& size, int tile_size) :
         _size(size),
         _tile_size(tile_size),
         _grid_size(ceil((float)size.x/tile_size), ceil((float)size.y/tile_size)),
         _act_size(_grid_size * tile_size), 
         _shader("tex_draw"),
+        _clear_kernel(device, "framebuffer.cl", "clear"),
+        _cl_buffer(0)
+    {
+        
+    }
+
+    Framebuffer::~Framebuffer()
+    {
+        if (_cl_buffer) {
+            delete _cl_buffer;
+        }
+    }
+    
+
+    void Framebuffer::clear(CL::CommandQueue& queue)
+    {
+        _clear_kernel.set_arg(0, _cl_buffer->get());
+        _clear_kernel.set_arg(1, config.clear_color());
+        queue.enq_kernel(_clear_kernel, _size, ivec2(_tile_size, _tile_size));
+    }
+
+
+    OGLSharedFramebuffer::OGLSharedFramebuffer(CL::Device& device,
+                                               const ivec2& size, int tile_size) :
+        Framebuffer(device, size, tile_size),
         _tex_buffer(_act_size.x * _act_size.y * sizeof(vec4), GL_RGBA32F),
         _shared(device.share_gl()),
-        _clear_kernel(device, "framebuffer.cl", "clear"),
         _local(0)
     {
         if (_shared) {
             _cl_buffer = new CL::Buffer(device, _tex_buffer.get_buffer());
         } else {
-            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_size(), CL_MEM_READ_WRITE);
-            _local = malloc(_tex_buffer.get_size());
+            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_size(), CL_MEM_WRITE_ONLY, &_local);
         }
-
-        _clear_kernel.set_arg(0, _cl_buffer->get());
-        _clear_kernel.set_arg(1, vec4(0,0,1,1));
-    }
-
-    OGLSharedFramebuffer::~OGLSharedFramebuffer()
-    {
-        if (_local) {
-            free(_local);
-        }
-
-        delete _cl_buffer;
     }
 
     void OGLSharedFramebuffer::acquire(CL::CommandQueue& queue)
@@ -78,10 +91,5 @@ namespace Reyes
         _shader.unbind();
         
         _tex_buffer.unbind();
-    }
-    
-    void OGLSharedFramebuffer::clear(CL::CommandQueue& queue)
-    {
-        queue.enq_kernel(_clear_kernel, _size, ivec2(_tile_size, _tile_size));
     }
 }
