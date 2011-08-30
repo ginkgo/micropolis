@@ -33,7 +33,7 @@ namespace Reyes
     {
         _clear_kernel.set_arg(0, _cl_buffer->get());
         _clear_kernel.set_arg(1, config.clear_color());
-        queue.enq_kernel(_clear_kernel, _size, ivec2(_tile_size, _tile_size));
+        queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256);
     }
 
 

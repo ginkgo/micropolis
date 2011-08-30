@@ -1,4 +1,6 @@
 
+// #pragma OPENCL EXTENSION cl_amd_printf : enable
+
 int calc_framebuffer_pos(int2 pxlpos, int bsize, int2 gridsize)
 {
     int2 gridpos = pxlpos / bsize;
@@ -48,7 +50,7 @@ float4 mul_m44v4(float16 mat, float4 vec)
             
 }
 
-const sampler_t fbsampler = CLK_NORMALIZED_COORDS_FALSE | 
+constant sampler_t fbsampler = CLK_NORMALIZED_COORDS_FALSE |
                             CLK_ADDRESS_CLAMP |
                             CLK_FILTER_NEAREST;
 
@@ -56,36 +58,44 @@ __kernel void dice (__global float4* patch_buffer,
                     __global float4* framebuffer, int bsize, int2 gridsize,
                     float16 proj, int4 viewport)
 {
-    __local float4 patch[16];
-
-    int2 vertex_id = {get_global_id(0), get_global_id(1)};
-
-    float2 st = {vertex_id.x/(float)(get_global_size(0)-1),
-                 vertex_id.y/(float)(get_global_size(1)-1)};
-    int patch_id = get_global_id(2);
-
-    event_t event;
-    event = async_work_group_copy(patch, patch_buffer + 16 * patch_id, 16, 0);
-    wait_group_events(1, &event);
-           
-    float4 pos = eval_patch(patch, st);
-
-    pos = mul_m44v4(proj, pos);
-
-    int2 coord = {(int)(pos.x/pos.w * viewport.z/2 + viewport.z/2), 
-                  (int)(pos.y/pos.w * viewport.w/2 + viewport.w/2)};
-    
-    if (coord.x < 0 || coord.y < 0 || 
-        coord.x >= viewport.z || coord.y >= viewport.w)
+    if (get_global_id(0) > 128 || get_global_id(1) > 128) {
         return;
-
-    float depth = pos.w;
-
-    int ipos = calc_framebuffer_pos(coord, bsize, gridsize);
-
-    if (framebuffer[ipos].w > depth) {
-        framebuffer[ipos] =  (float4){st.x,st.y,0,depth};
     }
+
+    int ipos = calc_framebuffer_pos((int2){10+get_global_id(0), 10+get_global_id(1)}, bsize, gridsize);
+    
+    framebuffer[ipos] = (float4){1,1,1,1};
+
+    /* __local float4 patch[16]; */
+
+    /* int2 vertex_id = {get_global_id(0), get_global_id(1)}; */
+
+    /* float2 st = {vertex_id.x/(float)(get_global_size(0)-1), */
+    /*              vertex_id.y/(float)(get_global_size(1)-1)}; */
+    /* int patch_id = get_global_id(2); */
+
+    /* event_t event; */
+    /* event = async_work_group_copy(patch, patch_buffer + 16 * patch_id, 16, 0); */
+    /* wait_group_events(1, &event); */
+           
+    /* float4 pos = eval_patch(patch, st); */
+
+    /* pos = mul_m44v4(proj, pos); */
+
+    /* int2 coord = {(int)(pos.x/pos.w * viewport.z/2 + viewport.z/2),  */
+    /*               (int)(pos.y/pos.w * viewport.w/2 + viewport.w/2)}; */
+    
+    /* if (coord.x < 0 || coord.y < 0 ||  */
+    /*     coord.x >= viewport.z || coord.y >= viewport.w) */
+    /*     return; */
+
+    /* float depth = pos.w; */
+
+    /* int ipos = calc_framebuffer_pos(coord, bsize, gridsize); */
+
+    /* if (framebuffer[ipos].w > depth) { */
+    /*     framebuffer[ipos] =  (float4){st.x,st.y,0,depth}; */
+    /* } */
 }
 
 /* struct triangle_buffer */

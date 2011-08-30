@@ -49,6 +49,10 @@
       single rendering pass together.
     </value>
 
+    <value name="dice_group_width" type="size_t" default="32">
+      Width of the work-group for the dicing kernel.
+    </value>
+
     <value name="clear_color" type="vec4" default="0.1 0.2 1.0 0.0">
       Clear color for framebuffer.
     </value>

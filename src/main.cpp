@@ -24,7 +24,12 @@ void mainloop()
 
     CL::Device device(config.platform_id(), config.device_id());
 
-    cout << "Device is" << (device.share_gl() ? " " : " not ") << "shared." << endl;
+    if (config.verbose()) {
+        device.print_info();
+        cout << endl;
+        cout << "Device is" << (device.share_gl() ? " " : " not ") << "shared." << endl << endl;
+    }
+
 
     Reyes::Scene scene(new Reyes::PerspectiveProjection(60.0f, 0.01f, config.window_size()));
     scene.add_patches(config.input_file());
@@ -90,6 +95,9 @@ int main(int argc, char** argv)
     if (!init_opengl(size)) {
         return 1;
     }
+
+    cout << "MICROPOLIS - A micropolygon rasterizer" 
+         << " (c) Thomas Weber 2011" << endl;
 
     glfwSetWindowCloseCallback(window_close_callback);
 

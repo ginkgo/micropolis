@@ -32,6 +32,9 @@ reyes_patch_size = 128
 // single rendering pass together.
 reyes_patches_per_pass = 64
 
+// Width of the work-group for the dicing kernel.
+dice_group_width = 16
+
 // Clear color for framebuffer.
 clear_color = 0.15 0.25 0.8 0
 

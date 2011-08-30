@@ -38,6 +38,10 @@ namespace Reyes
         void clear(CL::CommandQueue& queue);
 
 
+        const CL::Buffer& get_buffer() { return *_cl_buffer; }
+        int   get_tile_size() { return _tile_size; }
+        ivec2 get_grid_size() { return _grid_size; }
+
         virtual void acquire(CL::CommandQueue& queue) = 0;
         virtual void release(CL::CommandQueue& queue) = 0;
 

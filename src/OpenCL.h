@@ -80,6 +80,7 @@ namespace CL
         CommandQueue(Device& device);
         ~CommandQueue();
         
+        void enq_kernel(Kernel& kernel, int global_size, int local_size);
         void enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size);
         void enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size);
         void enq_GL_acquire(ImageBuffer& buffer);

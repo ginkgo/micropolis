@@ -193,8 +193,23 @@ namespace CL
     }
 
 
-    void CommandQueue::enq_kernel(Kernel& kernel,
-                                  ivec2 global_size, ivec2 local_size)
+    void CommandQueue::enq_kernel(Kernel& kernel, int global_size, int local_size)
+    {
+        size_t offset[] = {0};
+        size_t global[] = {global_size};
+        size_t local[]  = {local_size};
+        
+
+        cl_int status;
+        status = clEnqueueNDRangeKernel(_queue, kernel.get(),
+                                         1, offset, global, local,
+                                         0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+
+    void CommandQueue::enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size)
     {
         size_t offset[] = {0,0};
         size_t global[] = {global_size.x,global_size.y};
@@ -209,8 +224,7 @@ namespace CL
         OPENCL_ASSERT(status);
     }
 
-    void CommandQueue::enq_kernel(Kernel& kernel,
-                                  ivec3 global_size, ivec3 local_size)
+    void CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size)
     {
         size_t offset[] = {0,0,0};
         size_t global[] = {global_size.x,global_size.y,global_size.z};
@@ -531,6 +545,30 @@ namespace CL
 
         cout << endl;
     }
+                 
+    void print_device_queue_properties(cl_device_id device, 
+                                       const string& indent)
+    {
+        cl_command_queue_properties props;
+
+        clGetDeviceInfo(device, CL_DEVICE_QUEUE_PROPERTIES, 
+                        sizeof(props), &props, NULL);
+        cout << indent << "  CL_DEVICE_QUEUE_PROPERTIES:";
+
+        if (props | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) {
+            cout << " out-of-order:YES";
+        } else {
+            cout << " out-of-order:NO";
+        }
+
+        if (props | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) {
+            cout << ", profiling:YES";
+        } else {
+            cout << ", profiling:NO";
+        }
+
+        cout << endl;
+    }
 
     #define PRINT_CL_DEVICE_INFO(type, name)                \
     print_device_param<type>(_device, name, #name, indent)
@@ -590,6 +628,7 @@ namespace CL
             PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF);
             PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_PROFILE);
             PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_PROFILING_TIMER_RESOLUTION);
+            print_device_queue_properties(_device, indent);
             PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_EXTENSIONS);
         }
     }

@@ -1,6 +1,7 @@
 #include "Statistics.h"
 
 #include "utility.h"
+#include "Config.h"
 
 namespace Reyes
 {
@@ -53,11 +54,14 @@ namespace Reyes
 
     void Statistics::print()
     {
-        cout << endl
-             << "Statistics:" << endl
-             << "  " << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl
-             << "  " << ms_per_render_pass << " ms/render pass" << endl
-             << "  " << patches_per_frame  << " bounded patches/frame" << endl;
+        if (config.verbose()) {
+            cout << endl
+                 << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl
+                 << ms_per_render_pass << " ms/render pass" << endl
+                 << patches_per_frame  << " bounded patches/frame" << endl;
+        } else {
+            cout  << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl;
+        }
     }
 
 }

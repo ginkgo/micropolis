@@ -3,11 +3,7 @@
 
 #include "Patch.h"
 
-namespace CL
-{
-    class Device;
-    class CommandQueue;
-}
+#include "OpenCL.h"
 
 namespace Reyes
 {
@@ -22,6 +18,14 @@ namespace Reyes
         Framebuffer& _framebuffer;
         Statistics& _statistics;
 
+        vector<vec4> _control_points;
+
+        size_t _patch_count;
+        
+        CL::Buffer _patch_buffer;
+
+        CL::Kernel _dice_kernel;
+
         public:
 
         Renderer(CL::Device& device, 
@@ -34,7 +38,13 @@ namespace Reyes
         void prepare();
         void finish();
 
+        void set_projection(const Projection& projection);
+
         virtual void draw_patch (const BezierPatch& patch);
+
+        private:
+
+        void flush();
         
     };
 

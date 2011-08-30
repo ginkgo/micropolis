@@ -52,6 +52,8 @@ namespace Reyes {
  
     void Scene::draw(Renderer& renderer) const
     {
+        renderer.set_projection(*_projection);
+
         BezierPatch patch;
         mat4x3 matrix(_view);
         for (size_t i = 0; i < _patches.size(); ++i) {

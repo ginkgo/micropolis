@@ -13,10 +13,10 @@ namespace Reyes
 
         public:
 
-        float frames_per_second;
-        float ms_per_frame;
-        float ms_per_render_pass;
-        int patches_per_frame;
+        float  frames_per_second;
+        float  ms_per_frame;
+        float  ms_per_render_pass;
+        int    patches_per_frame;
 
         public:
         
