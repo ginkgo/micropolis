@@ -362,7 +362,7 @@ namespace CL
             OPENCL_EXCEPTION("Failed to load OpenCL kernel program '" + file + "'."); 
         }
 
-        string file_content = read_file(file);
+        string file_content = "#include \"" + file + "\"\n"; //read_file(file);
         
         const char* c_content = file_content.c_str();
         size_t content_size = file_content.size();
@@ -376,7 +376,7 @@ namespace CL
 
         cl_device_id dev = device.get_device();
 
-        status = clBuildProgram(_program, 1, &dev, "", NULL, NULL);
+        status = clBuildProgram(_program, 1, &dev, "-I.", NULL, NULL);
 
         if (status != CL_SUCCESS && status != CL_BUILD_PROGRAM_FAILURE) {
             OPENCL_ASSERT(status);
