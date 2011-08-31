@@ -27,7 +27,7 @@ float4 eval_spline(float4 p0, float4 p1, float4 p2, float4 p3, float t)
     return s*s*s*p0 + 3*s*s*t*p1 + 3*s*t*t*p2 + t*t*t*p3;
 }
 
-float4 eval_patch(__local float4* patch, float2 st)
+float4 eval_patch(private float4* patch, float2 st)
 {
     float4 P[4];
 
@@ -58,13 +58,37 @@ __kernel void dice (__global float4* patch_buffer,
                     __global float4* framebuffer, int bsize, int2 gridsize,
                     float16 proj, int4 viewport)
 {
+    float4 patch[16];
+
     if (get_global_id(0) > 128 || get_global_id(1) > 128) {
         return;
     }
 
-    int ipos = calc_framebuffer_pos((int2){10+get_global_id(0), 10+get_global_id(1)}, bsize, gridsize);
+    int patch_id = get_global_id(2);
+
+    for (int i = 0; i < 16; ++i) {
+        patch[i] = patch_buffer[patch_id * 16 + i];
+    }
+
+    float2 st = (float2) {get_global_id(0)/128.0f, get_global_id(1)/128.0f};
+    float2 sT = st + (float2){0, 0.001f};
+    float2 St = st + (float2){0.001f, 0};
+
+    float4 pos = eval_patch(patch, st);
+    pos = mul_m44v4(proj, pos);
+
+    if (pos.w < 0) return;
+
+    int2 coord = {(int)(pos.x/pos.w * viewport.z/2 + viewport.z/2),
+                  (int)(pos.y/pos.w * viewport.w/2 + viewport.w/2)};
     
-    framebuffer[ipos] = (float4){1,1,1,1};
+    if (coord.x < 0 || coord.x >= viewport.z || 
+        coord.y < 0 || coord.y >= viewport.w)
+        return;
+
+    int ipos = calc_framebuffer_pos(coord, bsize, gridsize);
+
+    framebuffer[ipos] = (float4){1, 1, 1, 1};
 
     /* __local float4 patch[16]; */
 

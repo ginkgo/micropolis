@@ -1,6 +1,7 @@
 #include "Patch.h"
 
 #include "Projection.h"
+#include "Config.h"
 
 using Reyes::Projection;
 
@@ -243,7 +244,7 @@ void bound_n_split(const BezierPatch& patch, const Projection& projection,
     
     if (cull) return;
 
-    int s = 100;
+    int s = config.bound_n_split_limit();
 
     if (size.x < s && size.y < s) patch_drawer.draw_patch(patch);
     else {

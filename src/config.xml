@@ -49,6 +49,10 @@
       single rendering pass together.
     </value>
 
+    <value name="bound_n_split_limit" type="size_t" default="100">
+      Maximum size for patches before they can be sent to the dicing stage.
+    </value>
+
     <value name="dice_group_width" type="size_t" default="32">
       Width of the work-group for the dicing kernel.
     </value>

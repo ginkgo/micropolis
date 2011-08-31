@@ -36,21 +36,25 @@ void mainloop()
 
     Reyes::OGLSharedFramebuffer framebuffer(device, config.window_size(), 
                                             config.framebuffer_tile_size());
+    mat4 view;
+    view *= glm::translate<float>(0,-2,-8);
+    view *= glm::rotate<float>(-90, 1,0,0);
 
     CL::CommandQueue queue(device);
     Reyes::Renderer renderer(device, queue, framebuffer, statistics);
 
     bool running = true;
+
+    double last = glfwGetTime();
     while (running) {
-        
-        {
-            mat4 view;
-            view *= glm::translate<float>(0,-2,-8);
-            view *= glm::rotate<float>(-70, 1,0,0);
 
-            scene.set_view(view);
-        }
+        double now = glfwGetTime();
+        double time_diff = now - last;
+        last = now;
 
+        view *= glm::rotate<float>(time_diff * 5, 0,0,1);
+
+        scene.set_view(view);
         renderer.prepare();
 
         scene.draw(renderer);

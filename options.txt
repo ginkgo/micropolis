@@ -30,7 +30,10 @@ reyes_patch_size = 128
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 64
+reyes_patches_per_pass = 256
+
+// Maximum size for patches before they can be sent to the dicing stage.
+bound_n_split_limit = 100
 
 // Width of the work-group for the dicing kernel.
 dice_group_width = 16

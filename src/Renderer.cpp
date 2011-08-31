@@ -40,8 +40,11 @@ namespace Reyes
 
     void Renderer::finish()
     {
-        _statistics.end_render();
+        flush();
         _queue.finish();
+
+        _statistics.end_render();
+
         _framebuffer.release(_queue);
         _queue.finish();
     }
