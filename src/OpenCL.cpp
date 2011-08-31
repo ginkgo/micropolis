@@ -391,7 +391,7 @@ namespace CL
 
         OPENCL_ASSERT(status);
 
-        if (build_status != CL_BUILD_SUCCESS) {
+        if (config.verbose() || build_status != CL_BUILD_SUCCESS) {
             size_t size = 16 * 1024;
             char *buffer = new char[size];
 
@@ -399,15 +399,18 @@ namespace CL
                                            CL_PROGRAM_BUILD_LOG,
                                            size, buffer, NULL);
             OPENCL_ASSERT(status);
-
-            cerr << buffer << endl;
+            
+            cout << "--------------------------------------------------------------------------------" << endl;
+            cout << filename << " build log:" << endl;
+            cout << buffer << endl;
 
             delete[] buffer;
-            
-            OPENCL_EXCEPTION("Failed to build program '" + file + "'");
         }
 
 
+        if (build_status != CL_BUILD_SUCCESS) {
+            OPENCL_EXCEPTION("Failed to build program '" + file + "'");
+        }
 
         _kernel = clCreateKernel(_program, kernelname.c_str(), &status);
         OPENCL_ASSERT(status);        

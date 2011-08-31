@@ -22,8 +22,9 @@ namespace {
         glGetProgramInfoLog(program, LOG_BUFFER_SIZE, &length,logBuffer);
   
         if (length > 0) {
-            cerr << "Failed to link program '" << filename << "'" << endl;
-            cerr << logBuffer << endl;
+            cout << "--------------------------------------------------------------------------------" << endl;
+            cout << filename << " program link log:" << endl;
+            cout << logBuffer << endl;
         }
     };
 
@@ -42,7 +43,8 @@ namespace {
         glGetShaderInfoLog(shader, LOG_BUFFER_SIZE, &length,logBuffer);
 
         if (length > 0) {
-            cout << "Failed to compile shader '" << filename << "'" << endl;
+            cout << "--------------------------------------------------------------------------------" << endl;
+            cout << filename << " shader build log:" << endl;
             cout << logBuffer << endl;
         }
     };
@@ -134,15 +136,11 @@ namespace {
 
         glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &status);
     
-        if (status == GL_FALSE) {
+        if (config.verbose() || status == GL_FALSE) {
             shader_log(shader_handle, shader+file_extension+"@"+material);
+        }
 
-            // std::string line;
-            // int line_no = 0;
-            // while (std::getline(ss, line)) {
-            //     cerr << ++line_no << " " << line << endl;
-            // }
-
+        if (status == GL_FALSE) {
             glDeleteShader(shader_handle);
             return 0;
         }
@@ -208,11 +206,12 @@ namespace GL
 
         glGetProgramiv(_program, GL_LINK_STATUS, &status);
     
-        if (status == GL_FALSE) {
+        if (status == GL_FALSE || config.verbose()) {
             program_log(_program, shader+"@"+material);
+        }
 
+        if (status == GL_FALSE) {
             clean_up();
-        
             return;
         }
 
