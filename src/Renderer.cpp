@@ -20,9 +20,19 @@ namespace Reyes
         _control_points(16 * config.reyes_patches_per_pass()),
         _patch_count(0),
         _patch_buffer(device, _control_points.size() * sizeof(vec4), CL_MEM_READ_ONLY),
-        _dice_kernel(device, "reyes.cl", "dice")
+        _grid_buffer(device, 
+                     config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
+                     CL_MEM_READ_WRITE),
+        _dice_kernel(device, "reyes.cl", "dice"),
+        _shade_kernel(device, "reyes.cl", "shade")
     {
+        _dice_kernel.set_arg_r(0, _patch_buffer);
+        _dice_kernel.set_arg_r(1, _grid_buffer);
 
+        _shade_kernel.set_arg_r(0, _grid_buffer);
+        _shade_kernel.set_arg_r(1, _framebuffer.get_buffer());
+        _shade_kernel.set_arg  (2, _framebuffer.get_tile_size());
+        _shade_kernel.set_arg  (3, _framebuffer.get_grid_size());
     }
 
     Renderer::~Renderer()
@@ -53,15 +63,16 @@ namespace Reyes
     {
         mat4 proj;
         projection.calc_projection(proj);
-        _dice_kernel.set_arg(4, proj);
-        _dice_kernel.set_arg(5, projection.get_viewport());
+
+        _shade_kernel.set_arg  (4, proj);
+        _shade_kernel.set_arg  (5, projection.get_viewport());
     }
 
     void Renderer::draw_patch (const BezierPatch& patch) 
     {
         size_t cp_index = _patch_count * 16;
 
-        for (int i = 0; i < 4; ++i) {
+        for     (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
                 _control_points[cp_index] = vec4(patch.P[i][j], 1);
                 ++cp_index;
@@ -87,16 +98,18 @@ namespace Reyes
                                 _control_points.data(), 
                                 sizeof(vec4) * _patch_count * 16);
 
-        _dice_kernel.set_arg_r(0, _patch_buffer);
-        _dice_kernel.set_arg_r(1, _framebuffer.get_buffer());
-        _dice_kernel.set_arg  (2, _framebuffer.get_tile_size());
-        _dice_kernel.set_arg  (3, _framebuffer.get_grid_size());
+        int patch_size  = config.reyes_patch_size();
+        int group_width = config.dice_group_width();
 
         _queue.enq_kernel(_dice_kernel,
-                          ivec3(config.reyes_patch_size()+config.dice_group_width(), 
-                                config.reyes_patch_size()+config.dice_group_width(), _patch_count),
-                          ivec3(config.dice_group_width(), 
-                                config.dice_group_width(), 1));
+                          ivec3(patch_size + group_width, patch_size + group_width, _patch_count),
+                          ivec3(group_width, group_width, 1));
+
+
+        _queue.enq_kernel(_shade_kernel, 
+                          ivec3(patch_size, patch_size, _patch_count), 
+                          ivec3(8, 8, 1));
+                                
 
         // TODO: Make this more elegant
         _queue.finish();

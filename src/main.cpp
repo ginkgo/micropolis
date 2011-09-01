@@ -52,6 +52,14 @@ void mainloop()
         double time_diff = now - last;
         last = now;
 
+        if (glfwGetKey(GLFW_KEY_UP)) {
+            view = glm::translate<float>(0,0,-time_diff) * view;
+        }
+
+        if (glfwGetKey(GLFW_KEY_DOWN)) {
+            view = glm::translate<float>(0,0, time_diff) * view;
+        }
+
         view *= glm::rotate<float>(time_diff * 5, 0,0,1);
 
         scene.set_view(view);
@@ -66,6 +74,7 @@ void mainloop()
         glfwSwapBuffers();
         
         statistics.update();
+
 
         // Check if the window has been closed
         running = running && !glfwGetKey( GLFW_KEY_ESC );
@@ -99,10 +108,12 @@ int main(int argc, char** argv)
     if (!init_opengl(size)) {
         return 1;
     }
+    
+    cout << endl;
+    cout << "MICROPOLIS - A micropolygon rasterizer" << " (c) Thomas Weber 2011" << endl;
+    cout << endl;
 
-    cout << "MICROPOLIS - A micropolygon rasterizer" 
-         << " (c) Thomas Weber 2011" << endl;
-
+    glfwSetWindowTitle(config.window_title().c_str());
     glfwSetWindowCloseCallback(window_close_callback);
 
     try {

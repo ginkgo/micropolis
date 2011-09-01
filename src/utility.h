@@ -198,6 +198,10 @@ inline std::istream& operator>> (std::istream& is,
     return is >> v.x >> v.y >> v.z >> v.w;
 }
 
-
+template <typename T>
+inline T square (T a) 
+{
+    return a*a;
+}
 
 #endif

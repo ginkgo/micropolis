@@ -23,8 +23,10 @@ namespace Reyes
         size_t _patch_count;
         
         CL::Buffer _patch_buffer;
+        CL::Buffer _grid_buffer;
 
         CL::Kernel _dice_kernel;
+        CL::Kernel _shade_kernel;
 
         public:
 

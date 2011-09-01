@@ -8,6 +8,25 @@
 
 // Anonymous namespace
 namespace {
+
+    void insert_filename_n_print(char* clog, const string& filename)
+    {
+        string line;
+
+        const boost::regex pattern("(.+)([0-9]+):([0-9]+)(.+)");
+        boost::match_results<std::string::const_iterator> match;
+        
+        std::stringstream ss(clog);
+
+        while(std::getline(ss, line)) {
+            if (boost::regex_match(line, match, pattern)) {
+                cout << filename << ":" << match.str(3) << ":" << match.str(2) << "" << match.str(4) << endl;
+            } else {
+                cout << line << endl;
+            }
+        }
+    }
+
     /**
      * Print a shader program error log to the shell.
      * @param program OpenGL Shader Program handle.
@@ -24,7 +43,8 @@ namespace {
         if (length > 0) {
             cout << "--------------------------------------------------------------------------------" << endl;
             cout << filename << " program link log:" << endl;
-            cout << logBuffer << endl;
+            insert_filename_n_print(logBuffer, filename);
+            //cout << logBuffer << endl;
         }
     };
 
@@ -45,7 +65,8 @@ namespace {
         if (length > 0) {
             cout << "--------------------------------------------------------------------------------" << endl;
             cout << filename << " shader build log:" << endl;
-            cout << logBuffer << endl;
+            insert_filename_n_print(logBuffer, filename);
+            // cout << logBuffer << endl;
         }
     };
 
@@ -61,7 +82,7 @@ namespace {
         boost::match_results<std::string::const_iterator> match;
 
 
-        string shaderfile   = config.shader_dir()  +"/"+shader  +file_extension;
+        string shaderfile   = config.shader_dir() +"/"+shader  +file_extension;
 
         std::ifstream is(shaderfile.c_str());
 
@@ -137,7 +158,7 @@ namespace {
         glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &status);
     
         if (config.verbose() || status == GL_FALSE) {
-            shader_log(shader_handle, shader+file_extension+"@"+material);
+            shader_log(shader_handle, config.shader_dir() +"/"+shader+file_extension);
         }
 
         if (status == GL_FALSE) {
@@ -207,7 +228,7 @@ namespace GL
         glGetProgramiv(_program, GL_LINK_STATUS, &status);
     
         if (status == GL_FALSE || config.verbose()) {
-            program_log(_program, shader+"@"+material);
+            program_log(_program, shader);
         }
 
         if (status == GL_FALSE) {

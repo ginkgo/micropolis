@@ -8,6 +8,10 @@
       Size of the window in pixels.
     </value>
 
+    <value name="window_title" type="string" default="MICROPOLIS">
+      Application window title.
+    </value>
+
     <value name="framebuffer_tile_size" type="int" default="8">
       Framebuffer tile size.
     </value>
