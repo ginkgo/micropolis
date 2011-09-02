@@ -7,8 +7,6 @@ env['LINKFLAGS'] = ['-ggdb']
 
 python = 'python2.7'
 
-python = 'python2.7'
-
 env.Command(['#/generated/flextGL.c', '#/generated/flextGL.h'],
             ['#/src/extensions.txt'],
             python+' tools/flextGL/flextGLgen.py src/extensions.txt -Dgenerated -Tglfw')

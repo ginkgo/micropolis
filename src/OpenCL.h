@@ -5,10 +5,13 @@
 #include "CL/opencl.h"
 #include "Texture.h"
 
+#include <map>
+#include <sstream>
+
 namespace CL
 {
 
-    class Device : public boost::noncopyable
+    class Device : public noncopyable
     {
         cl_context   _context;
         cl_device_id _device;
@@ -28,7 +31,7 @@ namespace CL
         void print_info();
     };
 
-    class ImageBuffer : public boost::noncopyable
+    class ImageBuffer : public noncopyable
     {
         cl_mem _buffer;
 
@@ -40,7 +43,7 @@ namespace CL
         cl_mem get() { return _buffer; }
     };
 
-    class Buffer : public boost::noncopyable
+    class Buffer : public noncopyable
     {
         cl_mem _buffer;
 
@@ -55,7 +58,7 @@ namespace CL
         size_t get_size() const;
     };
 
-    class Kernel : public boost::noncopyable
+    class Kernel : public noncopyable
     {
         cl_kernel _kernel;
         cl_program _program;
@@ -63,6 +66,7 @@ namespace CL
         public:
 
         Kernel(Device& device, const string& filename, const string& kernelname);
+        Kernel(cl_program program, const string& kernelname);
         ~Kernel();
 
         template<typename T> void set_arg  (cl_uint arg_index, T buffer);
@@ -71,7 +75,25 @@ namespace CL
         cl_kernel get() { return _kernel;}
     };
 
-    class CommandQueue : public boost::noncopyable
+    class Program : public noncopyable
+    {
+        cl_program _program;
+        std::stringstream* _source_buffer;
+
+        public:
+
+        Program();
+        ~Program();
+
+        void set_constant(const string& name, int value);
+        void set_constant(const string& name, ivec2 value);
+
+        void compile(Device& device, const string& filename);
+
+        Kernel* get_kernel(const string& name);
+    };
+
+    class CommandQueue : public noncopyable
     {
         cl_command_queue _queue;
 

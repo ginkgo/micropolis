@@ -45,7 +45,13 @@ using std::endl;
 
 #include "utility.h"
 
-#include "boost/noncopyable.hpp"
-#include "boost/unordered_map.hpp"
+#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/unordered_map.hpp>
+
+using boost::shared_ptr;
+using boost::scoped_ptr;
+using boost::noncopyable;
 
 #endif

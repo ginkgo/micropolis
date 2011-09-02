@@ -1,24 +1,12 @@
 
-// #pragma OPENCL EXTENSION cl_amd_printf : enable
-
-inline int calc_framebuffer_pos(int2 pxlpos, int bsize, int2 gridsize)
+inline int calc_framebuffer_pos(int2 pxlpos)
 {
-    int2 gridpos = pxlpos / bsize;
-    int  grid_id = gridpos.x + gridsize.x * gridpos.y;
-    int2 loclpos = pxlpos - gridpos * bsize;
-    int  locl_id = loclpos.x + bsize * loclpos.y;
+    int2 gridpos = pxlpos / TILE_SIZE;
+    int  grid_id = gridpos.x + GRID_SIZE.x * gridpos.y;
+    int2 loclpos = pxlpos - gridpos * TILE_SIZE;
+    int  locl_id = loclpos.x + TILE_SIZE * loclpos.y;
 
-    return grid_id * bsize * bsize + locl_id;
-}
-
-__kernel void clear (__global float4* framebuffer, float4 color,
-                     int bsize, int2 gridsize)
-{
-    int2   pxlpos  = (int2)  {get_global_id(0),   get_global_id(1)};
- 
-    int pos = calc_framebuffer_pos(pxlpos, bsize, gridsize);
-
-    framebuffer[pos] = color;
+    return grid_id * TILE_SIZE * TILE_SIZE + locl_id;
 }
 
 float4 eval_spline(float4 p0, float4 p1, float4 p2, float4 p3, float t)
@@ -64,15 +52,15 @@ __kernel void dice (const global float4* patch_buffer, // 0
 {
     float4 patch[16];
 
-    if (get_global_id(0) > 128 || 
-        get_global_id(1) > 128) {
+    if (get_global_id(0) > PATCH_SIZE || 
+        get_global_id(1) > PATCH_SIZE) {
         return;
     }
 
     size_t nv = get_global_id(0), nu = get_global_id(1);
     size_t patch_id = get_global_id(2);
 
-    size_t w = 129, h = 129;
+    size_t w = PATCH_SIZE+1, h = PATCH_SIZE+1;
 
     for (int i = 0; i < 16; ++i) {
         patch[i] = patch_buffer[patch_id * 16 + i];
@@ -87,14 +75,12 @@ __kernel void dice (const global float4* patch_buffer, // 0
 
 __kernel void shade(const global float4* grid_buffer, // 0
                     global float4* framebuffer,       // 1
-                    int bsize,                        // 2
-                    int2 gridsize,                    // 3
-                    float16 proj,                     // 4
-                    int4 viewport)                    // 5
+                    float16 proj,                     // 2
+                    int4 viewport)                    // 3
 {
     float4 pos[2][2];
 
-    size_t w = get_global_size(0)+1, h = get_global_size(1)+1;
+    size_t w = PATCH_SIZE+1, h = PATCH_SIZE+1;
 
     int nv = get_global_id(0), nu = get_global_id(1);
     int patch_id = get_global_id(2);
@@ -121,7 +107,7 @@ __kernel void shade(const global float4* grid_buffer, // 0
         coord.y < 0 || coord.y >= viewport.w)
         return;
 
-    int ipos = calc_framebuffer_pos(coord, bsize, gridsize);
+    int ipos = calc_framebuffer_pos(coord);
 
     framebuffer[ipos] = (float4){n.x, n.y, n.z, 1};
 }

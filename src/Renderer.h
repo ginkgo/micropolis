@@ -1,8 +1,9 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include "Patch.h"
+#include "common.h"
 
+#include "Patch.h"
 #include "OpenCL.h"
 
 namespace Reyes
@@ -24,8 +25,10 @@ namespace Reyes
         CL::Buffer _patch_buffer;
         CL::Buffer _grid_buffer;
 
-        CL::Kernel _dice_kernel;
-        CL::Kernel _shade_kernel;
+        CL::Program _reyes_program;
+
+        scoped_ptr<CL::Kernel> _dice_kernel;
+        scoped_ptr<CL::Kernel> _shade_kernel;
 
         public:
 

@@ -100,6 +100,58 @@ namespace
 
         return type == CL_DEVICE_TYPE_GPU;
     }
+
+    cl_program compile_program (CL::Device& device, const string& source, const string& filename)
+    {
+        const char* c_content = source.c_str();
+        size_t content_size = source.size();
+
+        cl_int status;
+
+        cl_program program = clCreateProgramWithSource(device.get_context(), 1, 
+                                                       &c_content, &content_size, &status);
+        OPENCL_ASSERT(status);
+
+        cl_device_id dev = device.get_device();
+
+        status = clBuildProgram(program, 1, &dev, "-I.", NULL, NULL);
+
+        if (status != CL_SUCCESS && status != CL_BUILD_PROGRAM_FAILURE) {
+            OPENCL_ASSERT(status);
+        }
+
+        cl_build_status build_status;
+        
+        status = clGetProgramBuildInfo(program, dev, 
+                                       CL_PROGRAM_BUILD_STATUS,
+                                       sizeof(build_status), &build_status, 
+                                       NULL);
+
+        OPENCL_ASSERT(status);
+
+        if (config.verbose() || build_status != CL_BUILD_SUCCESS) {
+            size_t size = 16 * 1024;
+            char *buffer = new char[size];
+
+            status = clGetProgramBuildInfo(program, dev,
+                                           CL_PROGRAM_BUILD_LOG,
+                                           size, buffer, NULL);
+            OPENCL_ASSERT(status);
+            
+            cout << "--------------------------------------------------------------------------------" << endl;
+            cout << filename << " build log:" << endl;
+            cout << buffer << endl;
+
+            delete[] buffer;
+        }
+
+
+        if (build_status != CL_BUILD_SUCCESS) {
+            OPENCL_EXCEPTION("Failed to build program '" + filename + "'");
+        }
+
+        return program;
+    }
 }
 
 namespace CL
@@ -365,73 +417,79 @@ namespace CL
     Kernel::Kernel(Device& device, 
                    const string& filename, const string& kernelname)
     {
-        string file = config.kernel_dir()+"/"+filename;
-
-        if (!file_exists(file)) {
-            OPENCL_EXCEPTION("Failed to load OpenCL kernel program '" + file + "'."); 
-        }
-
-        string file_content = "#include \"" + file + "\"\n"; //read_file(file);
-        
-        const char* c_content = file_content.c_str();
-        size_t content_size = file_content.size();
-
         cl_int status;
 
-        _program = clCreateProgramWithSource(device.get_context(), 1, 
-                                             &c_content, &content_size,
-                                             &status);
-        OPENCL_ASSERT(status);
-
-        cl_device_id dev = device.get_device();
-
-        status = clBuildProgram(_program, 1, &dev, "-I.", NULL, NULL);
-
-        if (status != CL_SUCCESS && status != CL_BUILD_PROGRAM_FAILURE) {
-            OPENCL_ASSERT(status);
-        }
-
-        cl_build_status build_status;
+        string file_content = "#include \"" + config.kernel_dir() + "/" + filename + "\"\n";
         
-        status = clGetProgramBuildInfo(_program, dev, 
-                                       CL_PROGRAM_BUILD_STATUS,
-                                       sizeof(build_status), &build_status, 
-                                       NULL);
-
-        OPENCL_ASSERT(status);
-
-        if (config.verbose() || build_status != CL_BUILD_SUCCESS) {
-            size_t size = 16 * 1024;
-            char *buffer = new char[size];
-
-            status = clGetProgramBuildInfo(_program, dev,
-                                           CL_PROGRAM_BUILD_LOG,
-                                           size, buffer, NULL);
-            OPENCL_ASSERT(status);
-            
-            cout << "--------------------------------------------------------------------------------" << endl;
-            cout << filename << " build log:" << endl;
-            cout << buffer << endl;
-
-            delete[] buffer;
-        }
-
-
-        if (build_status != CL_BUILD_SUCCESS) {
-            OPENCL_EXCEPTION("Failed to build program '" + file + "'");
-        }
+        _program = compile_program(device, file_content, filename);
 
         _kernel = clCreateKernel(_program, kernelname.c_str(), &status);
         OPENCL_ASSERT(status);        
     }
 
+    Kernel::Kernel(cl_program program, const string& kernelname) :
+        _program(0)
+    {
+        cl_int status;
+
+        _kernel = clCreateKernel(program, kernelname.c_str(), &status);
+        OPENCL_ASSERT(status);   
+    }
+
     Kernel::~Kernel()
     {
         clReleaseKernel(_kernel);
-        clReleaseProgram(_program);
+        
+        if (_program != 0) {
+            clReleaseProgram(_program);
+        }
     }
 
+    Program::Program() :
+        _program(0),
+        _source_buffer(new std::stringstream())
+    {        
+    }
+    
 
+    Program::~Program()
+    {
+        if (_program != 0) {
+            clReleaseProgram(_program);
+        }
+    }
+
+    void Program::set_constant(const string& name, int value)
+    {
+        assert(_source_buffer);
+        *_source_buffer << "#define " << name << " " << value << endl;
+    }
+
+    void Program::set_constant(const string& name, ivec2 value)
+    {
+        assert(_source_buffer);
+        *_source_buffer << "#define " << name << " ((int2){" << value.x << ", " << value.y << "})" << endl;
+    }
+
+    void Program::compile(Device& device,  const string& filename)
+    {
+        assert(_program == 0);
+
+        *_source_buffer << "#include \"" << config.kernel_dir() << "/" << filename << "\"" << endl;
+
+        string file_content = _source_buffer->str();
+
+        _program = compile_program(device, file_content, filename);
+
+        delete _source_buffer;
+        _source_buffer = 0;
+    }
+
+    Kernel* Program::get_kernel(const string& name) 
+    {
+        return new Kernel(_program, name);
+    }
+ 
     Exception::Exception(cl_int err_code, const string& file, int line_no):
         _file(file), _line_no(line_no) 
     {
