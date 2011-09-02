@@ -1,6 +1,12 @@
 // Size of the window in pixels.
 window_size = 1024 768
 
+// Application window title.
+window_title = MICROPOLIS
+
+// Framebuffer tile size.
+framebuffer_tile_size = 8
+
 // Search directory for GLSL shader files.
 shader_dir = shaders
 
@@ -18,4 +24,26 @@ device_id = 0
 
 // Print more information.
 verbose = 1
+
+// Force slow path for OpenCL/OpenGL buffer sharing.
+disable_buffer_sharing = 1
+
+// Size used for bounding and dicing.
+reyes_patch_size = 128
+
+// Number of patches that get cached and are submitted as a
+// single rendering pass together.
+reyes_patches_per_pass = 256
+
+// Maximum size for patches before they can be sent to the dicing stage.
+bound_n_split_limit = 100
+
+// Width of the work-group for the dicing kernel.
+dice_group_width = 16
+
+// Clear color for framebuffer.
+clear_color = 0.15 0.25 0.8 0
+
+// Patch data input file.
+input_file = data/teapot
 

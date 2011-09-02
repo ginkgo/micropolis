@@ -1,5 +1,7 @@
 
-int calc_framebuffer_pos(int2 pxlpos, int bsize, int2 gridsize)
+// #pragma OPENCL EXTENSION cl_amd_printf : enable
+
+inline int calc_framebuffer_pos(int2 pxlpos, int bsize, int2 gridsize)
 {
     int2 gridpos = pxlpos / bsize;
     int  grid_id = gridpos.x + gridsize.x * gridpos.y;
@@ -25,7 +27,7 @@ float4 eval_spline(float4 p0, float4 p1, float4 p2, float4 p3, float t)
     return s*s*s*p0 + 3*s*s*t*p1 + 3*s*t*t*p2 + t*t*t*p3;
 }
 
-float4 eval_patch(__local float4* patch, float2 st)
+float4 eval_patch(private float4* patch, float2 st)
 {
     float4 P[4];
 
@@ -48,45 +50,82 @@ float4 mul_m44v4(float16 mat, float4 vec)
             
 }
 
-const sampler_t fbsampler = CLK_NORMALIZED_COORDS_FALSE | 
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
+constant sampler_t fbsampler = CLK_NORMALIZED_COORDS_FALSE |
+                               CLK_ADDRESS_CLAMP |
+                               CLK_FILTER_NEAREST;
 
-__kernel void dice (__global float4* patch_buffer,
-                    __global float4* framebuffer, int bsize, int2 gridsize,
-                    float16 proj, int4 viewport)
+inline size_t calc_grid_pos(size_t nu, size_t nv, size_t patch, size_t w, size_t h)
 {
-    __local float4 patch[16];
+    return nu + nv * w + patch * w * h;
+}
 
-    int2 vertex_id = {get_global_id(0), get_global_id(1)};
+__kernel void dice (const global float4* patch_buffer, // 0
+                    global float4* grid_buffer)        // 1
+{
+    float4 patch[16];
 
-    float2 st = {vertex_id.x/(float)(get_global_size(0)-1),
-                 vertex_id.y/(float)(get_global_size(1)-1)};
+    if (get_global_id(0) > 128 || 
+        get_global_id(1) > 128) {
+        return;
+    }
+
+    size_t nv = get_global_id(0), nu = get_global_id(1);
+    size_t patch_id = get_global_id(2);
+
+    size_t w = 129, h = 129;
+
+    for (int i = 0; i < 16; ++i) {
+        patch[i] = patch_buffer[patch_id * 16 + i];
+    }
+
+    float2 uv = (float2) {nu/(float)(128), nv/(float)(128)};
+
+    float4 pos = eval_patch(patch, uv);
+
+    grid_buffer[calc_grid_pos(nu, nv, patch_id, w, h)] = pos;
+}
+
+__kernel void shade(const global float4* grid_buffer, // 0
+                    global float4* framebuffer,       // 1
+                    int bsize,                        // 2
+                    int2 gridsize,                    // 3
+                    float16 proj,                     // 4
+                    int4 viewport)                    // 5
+{
+    float4 pos[2][2];
+
+    size_t w = get_global_size(0)+1, h = get_global_size(1)+1;
+
+    int nv = get_global_id(0), nu = get_global_id(1);
     int patch_id = get_global_id(2);
 
-    event_t event;
-    event = async_work_group_copy(patch, patch_buffer + 16 * patch_id, 16, 0);
-    wait_group_events(1, &event);
-           
-    float4 pos = eval_patch(patch, st);
+    for     (int vi = 0; vi < 2; ++vi) {
+        for (int ui = 0; ui < 2; ++ui) {
+            pos[ui][vi] = grid_buffer[calc_grid_pos(nu+ui, nv+vi, patch_id, w, h)];
+        }
+    }
 
-    pos = mul_m44v4(proj, pos);
+    float3 du = (pos[1][0] - pos[0][0] + pos[1][1] - pos[0][1]).xyz * 0.5f;
+    float3 dv = (pos[0][1] - pos[0][0] + pos[1][1] - pos[1][0]).xyz * 0.5f;
 
-    int2 coord = {(int)(pos.x/pos.w * viewport.z/2 + viewport.z/2), 
-                  (int)(pos.y/pos.w * viewport.w/2 + viewport.w/2)};
+    float3 n = normalize(cross(du,dv));
+
+    float4 p = mul_m44v4(proj, pos[0][0]);
+
+    if (p.w < 0) return;
+
+    int2 coord = {(int)(p.x/p.w * viewport.z/2 + viewport.z/2),
+                  (int)(p.y/p.w * viewport.w/2 + viewport.w/2)};
     
-    if (coord.x < 0 || coord.y < 0 || 
-        coord.x >= viewport.z || coord.y >= viewport.w)
+    if (coord.x < 0 || coord.x >= viewport.z || 
+        coord.y < 0 || coord.y >= viewport.w)
         return;
-
-    float depth = pos.w;
 
     int ipos = calc_framebuffer_pos(coord, bsize, gridsize);
 
-    if (framebuffer[ipos].w > depth) {
-        framebuffer[ipos] =  (float4){st.x,st.y,0,depth};
-    }
+    framebuffer[ipos] = (float4){n.x, n.y, n.z, 1};
 }
+                    
 
 /* struct triangle_buffer */
 /* { */

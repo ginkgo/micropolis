@@ -1,16 +1,17 @@
 #include "Projection.h"
 
-void PerspectiveProjection::calc_projection(mat4& proj) const
+
+void Reyes::PerspectiveProjection::calc_projection(mat4& proj) const
 {
     proj = glm::perspective<float>(_fovy, _aspect, _near, 1000);
 }
 
-ivec4 PerspectiveProjection::get_viewport() const
+ivec4 Reyes::PerspectiveProjection::get_viewport() const
 {
     return ivec4(0,0,_viewport.x, _viewport.y);
 }
 
-void PerspectiveProjection::bound(const BBox& bbox, vec2& size, bool& cull) const
+void Reyes::PerspectiveProjection::bound(const BBox& bbox, vec2& size, bool& cull) const
 {
     vec2 min,max;
 

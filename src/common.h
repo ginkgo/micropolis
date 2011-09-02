@@ -1,3 +1,4 @@
+
 #ifndef COMMON_H
 #define COMMON_H
 
@@ -39,6 +40,7 @@ using std::cerr;
 using std::endl;
 
 #include <flextGL.h>
+#define GLFW_NO_GLU
 #include <GL/glfw.h>
 
 #include "utility.h"

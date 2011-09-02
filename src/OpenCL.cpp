@@ -3,6 +3,10 @@
 
 #include "GL/glx.h"
 
+#include "utility.h"
+
+#include "Statistics.h"
+
 namespace
 {
     
@@ -51,7 +55,7 @@ namespace
         platform = platforms[platform_index];
     }
 
-    cl_context create_context(cl_platform_id platform, cl_device_id device)
+    cl_context create_context_with_GL(cl_platform_id platform, cl_device_id device)
     {
         cl_int status;
 
@@ -68,9 +72,37 @@ namespace
 
         return context;
     }
+
+    cl_context create_context_without_GL(cl_platform_id platform, cl_device_id device)
+    {
+        cl_int status;
+
+        cl_context_properties props[] = 
+            {CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0};
+        cl_context context = clCreateContext(props, 
+                                             1, &device,
+                                             NULL, NULL, &status);
+
+        OPENCL_ASSERT(status);
+
+        return context;
+    }
+
+    bool is_GPU_device(cl_device_id device)
+    {
+        cl_device_type type;
+        cl_int status;
+
+        status = clGetDeviceInfo(device, CL_DEVICE_TYPE,
+                                 sizeof(type), &type, NULL);
+
+        OPENCL_ASSERT(status);
+
+        return type == CL_DEVICE_TYPE_GPU;
+    }
 }
 
-namespace OpenCL
+namespace CL
 {
     Device::Device(int platform_index, int device_index) 
     {
@@ -78,7 +110,19 @@ namespace OpenCL
 
         get_opencl_device(platform_index, device_index, platform, _device);
 
-        _context = create_context(platform, _device);
+        if (!config.disable_buffer_sharing() && is_GPU_device(_device)) {
+            try {
+                _context = create_context_with_GL(platform, _device);
+                _share_gl = true;
+            } catch (Exception& e) {
+                _context = create_context_without_GL(platform, _device);
+                _share_gl = false;
+            }
+        } else {
+            _context = create_context_without_GL(platform, _device);
+            _share_gl = false;
+            
+        }
     }
 
     Device::~Device()
@@ -93,21 +137,53 @@ namespace OpenCL
                                  &status);
 
         OPENCL_ASSERT(status);
+
+        statistics.alloc_opencl_memory(get_size());
+    }
+
+    Buffer::Buffer(Device& device, size_t size, cl_mem_flags flags, void** host_ptr)
+    {
+        cl_int status;
+        _buffer = clCreateBuffer(device.get_context(), 
+                                 flags | CL_MEM_ALLOC_HOST_PTR, 
+                                 size, NULL, &status);
+
+        OPENCL_ASSERT(status);
+
+        status = clGetMemObjectInfo(_buffer, CL_MEM_HOST_PTR, 
+                                    sizeof(void*), host_ptr, NULL);
+
+        OPENCL_ASSERT(status);
+
+        statistics.alloc_opencl_memory(get_size());
     }
 
     Buffer::Buffer(Device& device, GLuint GL_buffer) 
     {
         cl_int status;
 
-        _buffer = clCreateFromGLBuffer(device.get_context(), CL_MEM_READ_WRITE, 
-                                       GL_buffer, &status);
+        _buffer = clCreateFromGLBuffer(device.get_context(), 
+                                       CL_MEM_WRITE_ONLY, GL_buffer, &status);
 
         OPENCL_ASSERT(status);
+
+        statistics.alloc_opencl_memory(get_size());
     }
 
     Buffer::~Buffer()
     {
+        statistics.free_opencl_memory(get_size());
         clReleaseMemObject(_buffer);
+    }
+
+    size_t Buffer::get_size() const
+    {
+        size_t size;
+        cl_int status = clGetMemObjectInfo(_buffer, CL_MEM_SIZE, sizeof(size), &size, NULL);
+
+        OPENCL_ASSERT(status);
+
+        return size;
     }
 
     CommandQueue::CommandQueue(Device& device)
@@ -126,8 +202,23 @@ namespace OpenCL
     }
 
 
-    void CommandQueue::enq_kernel(Kernel& kernel,
-                                  ivec2 global_size, ivec2 local_size)
+    void CommandQueue::enq_kernel(Kernel& kernel, int global_size, int local_size)
+    {
+        size_t offset[] = {0};
+        size_t global[] = {global_size};
+        size_t local[]  = {local_size};
+        
+
+        cl_int status;
+        status = clEnqueueNDRangeKernel(_queue, kernel.get(),
+                                         1, offset, global, local,
+                                         0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+
+    void CommandQueue::enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size)
     {
         size_t offset[] = {0,0};
         size_t global[] = {global_size.x,global_size.y};
@@ -142,8 +233,7 @@ namespace OpenCL
         OPENCL_ASSERT(status);
     }
 
-    void CommandQueue::enq_kernel(Kernel& kernel,
-                                  ivec3 global_size, ivec3 local_size)
+    void CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size)
     {
         size_t offset[] = {0,0,0};
         size_t global[] = {global_size.x,global_size.y,global_size.z};
@@ -206,23 +296,56 @@ namespace OpenCL
         OPENCL_ASSERT(status);
     }
 
+    void CommandQueue::enq_GL_acquire(Buffer& mem)
+    {
+        cl_mem m = mem.get();
+        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &m, 0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
+    void CommandQueue::enq_GL_release(Buffer& mem)
+    {
+        cl_mem m = mem.get();
+        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &m, 0, NULL, NULL);
+
+        OPENCL_ASSERT(status);
+    }
+
     void CommandQueue::enq_GL_acquire(cl_mem mem)
     {
-        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, 
-                                                  0, NULL, NULL);
+        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, 0, NULL, NULL);
 
         OPENCL_ASSERT(status);
     }
 
     void CommandQueue::enq_GL_release(cl_mem mem)
     {
-        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 
-                                                  0, NULL, NULL);
+        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 0, NULL, NULL);
 
         OPENCL_ASSERT(status);
     }
 
-    ImageBuffer::ImageBuffer(Device& device, Texture& texture, cl_mem_flags flags)
+    void* CommandQueue::map_buffer(Buffer& buffer)
+    {
+        cl_int status;
+
+        void* mapped = clEnqueueMapBuffer(_queue, buffer.get(), CL_TRUE, CL_MAP_READ,
+                                          0, buffer.get_size(), 0, 0, 0,
+                                          &status);
+        OPENCL_ASSERT(status);
+
+        return mapped;
+    }
+
+    void CommandQueue::unmap_buffer(Buffer& buffer, void* mapped)
+    {
+        cl_int status = clEnqueueUnmapMemObject(_queue, buffer.get(), mapped, 
+                                                0, NULL, NULL);
+        OPENCL_ASSERT(status);
+    }
+
+    ImageBuffer::ImageBuffer(Device& device, GL::Texture& texture, cl_mem_flags flags)
     {
         cl_int status;
 
@@ -248,7 +371,7 @@ namespace OpenCL
             OPENCL_EXCEPTION("Failed to load OpenCL kernel program '" + file + "'."); 
         }
 
-        string file_content = read_file(file);
+        string file_content = "#include \"" + file + "\"\n"; //read_file(file);
         
         const char* c_content = file_content.c_str();
         size_t content_size = file_content.size();
@@ -262,7 +385,7 @@ namespace OpenCL
 
         cl_device_id dev = device.get_device();
 
-        status = clBuildProgram(_program, 1, &dev, "", NULL, NULL);
+        status = clBuildProgram(_program, 1, &dev, "-I.", NULL, NULL);
 
         if (status != CL_SUCCESS && status != CL_BUILD_PROGRAM_FAILURE) {
             OPENCL_ASSERT(status);
@@ -277,7 +400,7 @@ namespace OpenCL
 
         OPENCL_ASSERT(status);
 
-        if (build_status != CL_BUILD_SUCCESS) {
+        if (config.verbose() || build_status != CL_BUILD_SUCCESS) {
             size_t size = 16 * 1024;
             char *buffer = new char[size];
 
@@ -285,15 +408,18 @@ namespace OpenCL
                                            CL_PROGRAM_BUILD_LOG,
                                            size, buffer, NULL);
             OPENCL_ASSERT(status);
-
-            cerr << buffer << endl;
+            
+            cout << "--------------------------------------------------------------------------------" << endl;
+            cout << filename << " build log:" << endl;
+            cout << buffer << endl;
 
             delete[] buffer;
-            
-            OPENCL_EXCEPTION("Failed to build program '" + file + "'");
         }
 
 
+        if (build_status != CL_BUILD_SUCCESS) {
+            OPENCL_EXCEPTION("Failed to build program '" + file + "'");
+        }
 
         _kernel = clCreateKernel(_program, kernelname.c_str(), &status);
         OPENCL_ASSERT(status);        
@@ -309,6 +435,8 @@ namespace OpenCL
     Exception::Exception(cl_int err_code, const string& file, int line_no):
         _file(file), _line_no(line_no) 
     {
+        get_errors();
+
         switch(err_code) {
         case CL_INVALID_PROGRAM: 
             _msg = "Invalid program"; break;
@@ -374,8 +502,10 @@ namespace OpenCL
             _msg = "Invalid sampler object"; break;
         case CL_INVALID_ARG_SIZE:
             _msg = "Invalid kernel argument size"; break;
+        case -1001:
+            _msg = "Vendor ICD not correctly installed(?)"; break;
         default:
-            _msg = "Unknown error";
+            _msg = "Unknown error: " + to_string(err_code);
         }
     }
 
@@ -423,6 +553,30 @@ namespace OpenCL
 
         for (uint i = 0; i < max_dim; ++i) {
             cout << " " << sizes[i];
+        }
+
+        cout << endl;
+    }
+                 
+    void print_device_queue_properties(cl_device_id device, 
+                                       const string& indent)
+    {
+        cl_command_queue_properties props;
+
+        clGetDeviceInfo(device, CL_DEVICE_QUEUE_PROPERTIES, 
+                        sizeof(props), &props, NULL);
+        cout << indent << "  CL_DEVICE_QUEUE_PROPERTIES:";
+
+        if (props | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) {
+            cout << " out-of-order:YES";
+        } else {
+            cout << " out-of-order:NO";
+        }
+
+        if (props | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) {
+            cout << ", profiling:YES";
+        } else {
+            cout << ", profiling:NO";
         }
 
         cout << endl;
@@ -486,6 +640,7 @@ namespace OpenCL
             PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF);
             PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_PROFILE);
             PRINT_CL_DEVICE_INFO(size_t, CL_DEVICE_PROFILING_TIMER_RESOLUTION);
+            print_device_queue_properties(_device, indent);
             PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_EXTENSIONS);
         }
     }

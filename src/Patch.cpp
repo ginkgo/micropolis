@@ -1,5 +1,10 @@
 #include "Patch.h"
 
+#include "Projection.h"
+#include "Config.h"
+
+using Reyes::Projection;
+
 void transform_patch(const BezierPatch& patch, 
                      const mat4x3& mat, 
                      BezierPatch& out)
@@ -11,7 +16,7 @@ void transform_patch(const BezierPatch& patch,
     }
 }
 
-void read_patches(char* filename, vector<BezierPatch>& patches)
+void read_patches(const char* filename, vector<BezierPatch>& patches)
 {
     vector<int> indices;
     vector<vec3> points;
@@ -225,7 +230,7 @@ void calc_bbox(const BezierPatch& patch, BBox& box) {
 
 
 
-void split_n_draw(const BezierPatch& patch, const Projection& projection,
+void bound_n_split(const BezierPatch& patch, const Projection& projection,
                   PatchDrawer& patch_drawer)
 {
     BBox box;
@@ -239,13 +244,13 @@ void split_n_draw(const BezierPatch& patch, const Projection& projection,
     
     if (cull) return;
 
-    int s = 100;
+    int s = config.bound_n_split_limit();
 
     if (size.x < s && size.y < s) patch_drawer.draw_patch(patch);
     else {
         BezierPatch p0, p1;
         isplit_patch(patch, p0, p1);
-        split_n_draw(p0, projection, patch_drawer);
-        split_n_draw(p1, projection, patch_drawer);
+        bound_n_split(p0, projection, patch_drawer);
+        bound_n_split(p1, projection, patch_drawer);
     }
 }

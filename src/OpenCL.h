@@ -5,13 +5,15 @@
 #include "CL/opencl.h"
 #include "Texture.h"
 
-namespace OpenCL
+namespace CL
 {
 
     class Device : public boost::noncopyable
     {
         cl_context   _context;
         cl_device_id _device;
+
+        bool _share_gl;
 
         public:
         
@@ -20,6 +22,8 @@ namespace OpenCL
 
         cl_device_id get_device()  { return _device; }
         cl_context   get_context() { return _context; }
+
+        bool share_gl() const { return _share_gl; }
 
         void print_info();
     };
@@ -30,7 +34,7 @@ namespace OpenCL
 
         public:
 
-        ImageBuffer(Device& device, Texture& texture, cl_mem_flags flags);
+        ImageBuffer(Device& device, GL::Texture& texture, cl_mem_flags flags);
         ~ImageBuffer();
 
         cl_mem get() { return _buffer; }
@@ -43,10 +47,12 @@ namespace OpenCL
         public:
 
         Buffer(Device& device, size_t size, cl_mem_flags flags);
+        Buffer(Device& device, size_t size, cl_mem_flags flags, void** host_ptr);
         Buffer(Device& device, GLuint GL_buffer);
         ~Buffer();
 
         cl_mem get() { return _buffer; }
+        size_t get_size() const;
     };
 
     class Kernel : public boost::noncopyable
@@ -74,12 +80,18 @@ namespace OpenCL
         CommandQueue(Device& device);
         ~CommandQueue();
         
+        void enq_kernel(Kernel& kernel, int global_size, int local_size);
         void enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size);
         void enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size);
         void enq_GL_acquire(ImageBuffer& buffer);
         void enq_GL_release(ImageBuffer& buffer);
+        void enq_GL_acquire(Buffer& buffer);
+        void enq_GL_release(Buffer& buffer);
         void enq_GL_acquire(cl_mem buffer);
         void enq_GL_release(cl_mem buffer);
+
+        void* map_buffer  (Buffer& buffer);
+        void  unmap_buffer(Buffer& buffer, void* mapped);
 
         void enq_write_buffer(Buffer& buffer, void* src, 
                               size_t length, size_t offset=0);
@@ -107,10 +119,10 @@ namespace OpenCL
     
 }
 
-#define OPENCL_EXCEPTION(error) throw OpenCL::Exception((error), __FILE__, __LINE__)
-#define OPENCL_ASSERT(error) if ((error)!= CL_SUCCESS) throw OpenCL::Exception((error), __FILE__, __LINE__)
+#define OPENCL_EXCEPTION(error) throw CL::Exception((error), __FILE__, __LINE__)
+#define OPENCL_ASSERT(error) if ((error)!= CL_SUCCESS) throw CL::Exception((error), __FILE__, __LINE__)
 
-namespace OpenCL
+namespace CL
 {
     template<typename T> 
     inline void Kernel::set_arg(cl_uint arg_index, T value) 

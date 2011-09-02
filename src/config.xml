@@ -8,6 +8,14 @@
       Size of the window in pixels.
     </value>
 
+    <value name="window_title" type="string" default="MICROPOLIS">
+      Application window title.
+    </value>
+
+    <value name="framebuffer_tile_size" type="int" default="8">
+      Framebuffer tile size.
+    </value>
+
     <value name="shader_dir" type="string" default="shaders">
       Search directory for GLSL shader files.
     </value>
@@ -31,6 +39,36 @@
     <value name="verbose" type="bool" default="false">
       Print more information.
     </value>
+
+    <value name="disable_buffer_sharing" type="bool" default="true">
+      Force slow path for OpenCL/OpenGL buffer sharing.
+    </value>
+
+    <value name="reyes_patch_size" type="size_t" default="128">
+      Size used for bounding and dicing.
+    </value>
+
+    <value name="reyes_patches_per_pass" type="size_t" default="64">
+      Number of patches that get cached and are submitted as a 
+      single rendering pass together.
+    </value>
+
+    <value name="bound_n_split_limit" type="size_t" default="100">
+      Maximum size for patches before they can be sent to the dicing stage.
+    </value>
+
+    <value name="dice_group_width" type="size_t" default="32">
+      Width of the work-group for the dicing kernel.
+    </value>
+
+    <value name="clear_color" type="vec4" default="0.1 0.2 1.0 0.0">
+      Clear color for framebuffer.
+    </value>
+
+    <value name="input_file" type="string" default="data/teapot">
+      Patch data input file.
+    </value>
+
   </values>
 
   <global name="config"/>

@@ -2,6 +2,8 @@
 #include "opengl_draw.h"
 #include "Config.h"
 
+#include "Projection.h"
+
 struct OGLPatchDrawer : public PatchDrawer
 {
     void draw_patch(const BezierPatch& patch);
@@ -110,7 +112,7 @@ void ogl_main(vector<BezierPatch>& patches)
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        PerspectiveProjection projection(60, 0.01, size);
+        Reyes::PerspectiveProjection projection(60, 0.01, size);
 
         mat4 proj;
         projection.calc_projection(proj);
@@ -133,9 +135,9 @@ void ogl_main(vector<BezierPatch>& patches)
             transform_patch(patches[i], view4x3, transformed);
 
             // if (glfwGetKey(GLFW_KEY_SPACE)) 
-                split_n_draw(transformed, projection, wire_patch_drawer);
+                bound_n_split(transformed, projection, wire_patch_drawer);
             // else
-            //     split_n_draw(transformed, projection, patch_drawer);
+            //     bound_n_split(transformed, projection, patch_drawer);
         }
 
         glfwSwapBuffers();
@@ -147,8 +149,8 @@ void ogl_main(vector<BezierPatch>& patches)
 
         wire_patch_drawer.patch_count = 0;
 
-        float fps, mspf;
-        calc_fps(fps, mspf);
+        // float fps, mspf;
+        // calc_fps(fps, mspf);
 
         if (glfwGetKey( GLFW_KEY_UP )) {
             s += time_diff;

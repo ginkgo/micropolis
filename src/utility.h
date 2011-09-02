@@ -5,8 +5,25 @@
 #include <sstream>
 #include <iostream>
 
+#define THOUSAND 1000L
+#define MILLION  1000000L
+#define BILLION  1000000000L
 
-void calc_fps(float& fps, float& mspf);
+#define KILO THOUSAND
+#define MEGA MILLION
+#define GIGA BILLION
+
+#define KIBI_SHIFT 10
+#define MEBI_SHIFT 20
+#define GIBI_SHIFT 30
+
+#define KIBI (1L << KIBI_SHIFT)
+#define MEBI (1L << MEBI_SHIFT)
+#define GIBI (1L << GIBI_SHIFT)
+
+long nanotime();
+
+// void calc_fps(float* fps = NULL, float* mspf = NULL);
 
 /**
  * Test if a file exists on the filesystem.
@@ -193,6 +210,10 @@ inline std::istream& operator>> (std::istream& is,
     return is >> v.x >> v.y >> v.z >> v.w;
 }
 
-
+template <typename T>
+inline T square (T a) 
+{
+    return a*a;
+}
 
 #endif

@@ -2,15 +2,18 @@
 #define PATCH_H
 
 #include "common.h"
-#include "Projection.h"
 
 struct BezierPatch
 {
     vec3 P[4][4];
 };
 
+namespace Reyes
+{
+    class Projection;
+}
 
-void read_patches(char* filename, vector<BezierPatch>& patches);
+void read_patches(const char* filename, vector<BezierPatch>& patches);
 
 void transform_patch(const BezierPatch& patch, const mat4x3& mat,
                      BezierPatch& out);
@@ -34,11 +37,12 @@ void calc_bbox(const BezierPatch& patch, BBox& box);
 
 struct PatchDrawer
 {
+    virtual ~PatchDrawer() {};
     virtual void draw_patch(const BezierPatch& patch) = 0;
 };
 
-void split_n_draw(const BezierPatch& patch, 
-                  const Projection& projection,
+void bound_n_split(const BezierPatch& patch, 
+                  const Reyes::Projection& projection,
                   PatchDrawer& patch_drawer);
 
 
