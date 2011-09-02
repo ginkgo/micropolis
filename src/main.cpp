@@ -20,16 +20,11 @@ static int GLFWCALL window_close_callback( void )
 
 void mainloop()
 {
-    Reyes::Statistics statistics;
-
     CL::Device device(config.platform_id(), config.device_id());
 
     if (config.verbose()) {
         device.print_info();
-        cout << endl;
-        cout << "Device is" << (device.share_gl() ? " " : " not ") << "shared." << endl << endl;
     }
-
 
     Reyes::Scene scene(new Reyes::PerspectiveProjection(60.0f, 0.01f, config.window_size()));
     scene.add_patches(config.input_file());
@@ -41,7 +36,13 @@ void mainloop()
     view *= glm::rotate<float>(-90, 1,0,0);
 
     CL::CommandQueue queue(device);
-    Reyes::Renderer renderer(device, queue, framebuffer, statistics);
+    Reyes::Renderer renderer(device, queue, framebuffer);
+
+
+    if(config.verbose()) {
+        cout << endl;
+        cout << "Device is" << (device.share_gl() ? " " : " not ") << "shared." << endl << endl;
+    }
 
     bool running = true;
 
@@ -126,6 +127,8 @@ int main(int argc, char** argv)
 
     }
 
+    assert(statistics.opencl_memory == 0L);
+    
     glfwCloseWindow();
 
     glfwTerminate();

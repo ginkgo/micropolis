@@ -12,11 +12,9 @@ namespace Reyes
 
     Renderer::Renderer(CL::Device& device,
                        CL::CommandQueue& queue,
-                       Framebuffer& framebuffer,
-                       Statistics& statistics) :
+                       Framebuffer& framebuffer) :
         _queue(queue),
         _framebuffer(framebuffer),
-        _statistics(statistics),
         _control_points(16 * config.reyes_patches_per_pass()),
         _patch_count(0),
         _patch_buffer(device, _control_points.size() * sizeof(vec4), CL_MEM_READ_ONLY),
@@ -45,7 +43,7 @@ namespace Reyes
         _framebuffer.acquire(_queue);
         _framebuffer.clear(_queue);
 
-        _statistics.start_render();
+        statistics.start_render();
     }
 
     void Renderer::finish()
@@ -53,7 +51,7 @@ namespace Reyes
         flush();
         _queue.finish();
 
-        _statistics.end_render();
+        statistics.end_render();
 
         _framebuffer.release(_queue);
         _queue.finish();
@@ -85,7 +83,7 @@ namespace Reyes
             flush();
         }
     
-        _statistics.inc_patch_count();
+        statistics.inc_patch_count();
     }
 
     void Renderer::flush()

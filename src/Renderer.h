@@ -16,7 +16,6 @@ namespace Reyes
 
         CL::CommandQueue& _queue;
         Framebuffer& _framebuffer;
-        Statistics& _statistics;
 
         vector<vec4> _control_points;
 
@@ -32,8 +31,7 @@ namespace Reyes
 
         Renderer(CL::Device& device, 
                  CL::CommandQueue& queue, 
-                 Framebuffer& framebuffer,
-                 Statistics& statistics);
+                 Framebuffer& framebuffer);
 
         ~Renderer();
 

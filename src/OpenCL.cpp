@@ -5,6 +5,8 @@
 
 #include "utility.h"
 
+#include "Statistics.h"
+
 namespace
 {
     
@@ -135,6 +137,8 @@ namespace CL
                                  &status);
 
         OPENCL_ASSERT(status);
+
+        statistics.alloc_opencl_memory(get_size());
     }
 
     Buffer::Buffer(Device& device, size_t size, cl_mem_flags flags, void** host_ptr)
@@ -150,6 +154,8 @@ namespace CL
                                     sizeof(void*), host_ptr, NULL);
 
         OPENCL_ASSERT(status);
+
+        statistics.alloc_opencl_memory(get_size());
     }
 
     Buffer::Buffer(Device& device, GLuint GL_buffer) 
@@ -160,10 +166,13 @@ namespace CL
                                        CL_MEM_WRITE_ONLY, GL_buffer, &status);
 
         OPENCL_ASSERT(status);
+
+        statistics.alloc_opencl_memory(get_size());
     }
 
     Buffer::~Buffer()
     {
+        statistics.free_opencl_memory(get_size());
         clReleaseMemObject(_buffer);
     }
 
