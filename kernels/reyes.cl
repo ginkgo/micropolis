@@ -42,9 +42,9 @@ constant sampler_t fbsampler = CLK_NORMALIZED_COORDS_FALSE |
                                CLK_ADDRESS_CLAMP |
                                CLK_FILTER_NEAREST;
 
-inline size_t calc_grid_pos(size_t nu, size_t nv, size_t patch, size_t w, size_t h)
+inline size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
 {
-    return nu + nv * w + patch * w * h;
+    return nu + nv * (PATCH_SIZE+1) + patch * (PATCH_SIZE+1)*(PATCH_SIZE+1);
 }
 
 __kernel void dice (const global float4* patch_buffer, // 0
@@ -60,17 +60,15 @@ __kernel void dice (const global float4* patch_buffer, // 0
     size_t nv = get_global_id(0), nu = get_global_id(1);
     size_t patch_id = get_global_id(2);
 
-    size_t w = PATCH_SIZE+1, h = PATCH_SIZE+1;
-
     for (int i = 0; i < 16; ++i) {
         patch[i] = patch_buffer[patch_id * 16 + i];
     }
 
-    float2 uv = (float2) {nu/(float)(128), nv/(float)(128)};
+    float2 uv = (float2) {nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE};
 
     float4 pos = eval_patch(patch, uv);
 
-    grid_buffer[calc_grid_pos(nu, nv, patch_id, w, h)] = pos;
+    grid_buffer[calc_grid_pos(nu, nv, patch_id)] = pos;
 }
 
 __kernel void shade(const global float4* grid_buffer, // 0
@@ -80,14 +78,12 @@ __kernel void shade(const global float4* grid_buffer, // 0
 {
     float4 pos[2][2];
 
-    size_t w = PATCH_SIZE+1, h = PATCH_SIZE+1;
-
     int nv = get_global_id(0), nu = get_global_id(1);
     int patch_id = get_global_id(2);
 
     for     (int vi = 0; vi < 2; ++vi) {
         for (int ui = 0; ui < 2; ++ui) {
-            pos[ui][vi] = grid_buffer[calc_grid_pos(nu+ui, nv+vi, patch_id, w, h)];
+            pos[ui][vi] = grid_buffer[calc_grid_pos(nu+ui, nv+vi, patch_id)];
         }
     }
 

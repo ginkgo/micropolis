@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 
     } catch (CL::Exception& e) {
 
-        cerr << "OpenCL error (" << e.file() << ":" << e.line_no() << "): " <<  e.msg() << endl;
+        cerr << e.file() << ":" << e.line_no() << ": error: " <<  e.msg() << endl;
 
     }
 
