@@ -47,7 +47,15 @@ namespace Reyes
         if (_shared) {
             _cl_buffer = new CL::Buffer(device, _tex_buffer.get_buffer());
         } else {
-            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_size(), CL_MEM_WRITE_ONLY, &_local);
+            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_size(), CL_MEM_READ_WRITE);
+            _local = malloc(_tex_buffer.get_size());
+        }
+    }
+
+    OGLSharedFramebuffer::~OGLSharedFramebuffer()
+    {
+        if (_local) {
+            free(_local);
         }
     }
 
@@ -64,6 +72,7 @@ namespace Reyes
             queue.enq_GL_release(_cl_buffer->get());
         } else {
 
+            assert(_local);
             queue.enq_read_buffer(*_cl_buffer, _local, _tex_buffer.get_size());
             queue.finish();
 

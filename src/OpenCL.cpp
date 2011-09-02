@@ -62,12 +62,12 @@ namespace
         cl_context_properties props[] = 
             {CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 
              CL_GL_CONTEXT_KHR,   (cl_context_properties)glXGetCurrentContext(),
-             CL_GLX_DISPLAY_KHR,  (cl_context_properties)XOpenDisplay(":0.0"),
+             CL_GLX_DISPLAY_KHR,  (cl_context_properties)glXGetCurrentDisplay(),
              0};
         cl_context context = clCreateContext(props, 
                                              1, &device,
                                              NULL, NULL, &status);
-
+        
         OPENCL_ASSERT(status);
 
         return context;
@@ -97,7 +97,6 @@ namespace
                                  sizeof(type), &type, NULL);
 
         OPENCL_ASSERT(status);
-
         return type == CL_DEVICE_TYPE_GPU;
     }
 

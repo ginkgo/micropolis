@@ -59,7 +59,7 @@ namespace Reyes
 
         OGLSharedFramebuffer(CL::Device& device, const ivec2& size, int tile_size);
 
-        virtual ~OGLSharedFramebuffer() {};
+        virtual ~OGLSharedFramebuffer();
 
 
         virtual void acquire(CL::CommandQueue& queue);
