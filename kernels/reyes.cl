@@ -90,7 +90,7 @@ __kernel void shade(const global float4* grid_buffer, // 0
     float3 du = (pos[1][0] - pos[0][0] + pos[1][1] - pos[0][1]).xyz * 0.5f;
     float3 dv = (pos[0][1] - pos[0][0] + pos[1][1] - pos[1][0]).xyz * 0.5f;
 
-    float3 n = normalize(cross(du,dv));
+    float3 n = normalize(cross(du,dv)) * 0.5 + 0.5;
 
     float4 p = mul_m44v4(proj, pos[0][0]);
 
