@@ -39,6 +39,7 @@ namespace Reyes
 
 
         const CL::Buffer& get_buffer() { return *_cl_buffer; }
+        ivec2 size() {return _size; }
         int   get_tile_size() { return _tile_size; }
         ivec2 get_grid_size() { return _grid_size; }
 

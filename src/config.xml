@@ -61,6 +61,10 @@
       Width of the work-group for the dicing kernel.
     </value>
 
+    <value name="max_block_assignments" type="size_t" default="9">
+      Maximum number of framebuffer tiles, a block can be assigned to.
+    </value>
+
     <value name="clear_color" type="vec4" default="0.1 0.2 1.0 0.0">
       Clear color for framebuffer.
     </value>

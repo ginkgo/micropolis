@@ -39,9 +39,9 @@ void mainloop()
     Reyes::Renderer renderer(device, queue, framebuffer);
 
 
-    if(config.verbose()) {
+    if(config.verbose() || !device.share_gl()) {
         cout << endl;
-        cout << "Device is" << (device.share_gl() ? " " : " not ") << "shared." << endl << endl;
+        cout << "Device is" << (device.share_gl() ? " " : " NOT ") << "shared." << endl << endl;
     }
 
     bool running = true;
