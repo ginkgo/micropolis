@@ -97,9 +97,9 @@ inline int is_front_facing(const int2 *ps)
     return 1;//(d1.x*d3.y-d3.x*d1.y > 0 || d3.x*d2.y-d2.x*d3.y > 0);
 }
 
-inline int is_nonempty(int2 min, int2 max)
+inline int is_empty(int2 min, int2 max)
 {
-    return 1;//min.x < max.x && min.y < max.y;
+    return min.x > max.x && min.y > max.y;
 }
 
 inline int calc_block_pos(int u, int v, int patch_id)
@@ -111,10 +111,10 @@ __kernel void shade(const global float4* pos_grid,
                     const global int2* pxlpos_grid,
                     global int4* block_index)
 {
-    volatile __local int x_min;
-    volatile __local int y_min;
-    volatile __local int x_max;
-    volatile __local int y_max;
+    volatile local int x_min;
+    volatile local int y_min;
+    volatile local int x_max;
+    volatile local int y_max;
 
     if (get_local_id(0) == 0 && get_local_id(1) == 0) {
         x_min = VIEWPORT_MAX.x;
@@ -151,7 +151,7 @@ __kernel void shade(const global float4* pos_grid,
         }
     }
 
-    if (is_front_facing(pxlpos) && is_nonempty(pmin, pmax)) {
+    if (is_front_facing(pxlpos)) {
         atomic_min(&x_min, pmin.x); 
         atomic_min(&y_min, pmin.y);
         atomic_max(&x_max, pmax.x); 
@@ -199,7 +199,7 @@ __kernel void assign(global const int4* block_index,
 
     int assign_cnt = 0;
     
-    if (!is_nonempty(block_bound.xy, block_bound.zw)) {
+    if (is_empty(block_bound.xy, block_bound.zw)) {
         // Empty block
         return;
     }
@@ -254,6 +254,7 @@ __kernel void sample(global const int* heads,
         /* framebuffer[fb_id] = (float4){0,1,0,1}; */
        
         float v = 1.0f - (1.0f / cnt);
+        v = v*v*v;
 
         framebuffer[fb_id] = (float4){v,v,v,1};     
     }

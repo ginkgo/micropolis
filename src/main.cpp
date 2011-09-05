@@ -4,7 +4,7 @@
 #include "Patch.h"
 #include "Config.h"
 
-#include "opengl_draw.h"
+// #include "opengl_draw.h"
 
 #include "OpenCL.h"
 #include "Reyes.h"
@@ -37,6 +37,7 @@ void mainloop()
 
     CL::CommandQueue queue(device);
     Reyes::Renderer renderer(device, queue, framebuffer);
+    Reyes::WireGLRenderer wire_renderer;
 
 
     if(config.verbose() || !device.share_gl()) {
@@ -46,6 +47,7 @@ void mainloop()
 
     bool running = true;
 
+    statistics.reset_timer();
     double last = glfwGetTime();
     while (running) {
 
@@ -64,16 +66,13 @@ void mainloop()
         view *= glm::rotate<float>(time_diff * 5, 0,0,1);
 
         scene.set_view(view);
-        renderer.prepare();
 
-        scene.draw(renderer);
+        if (glfwGetKey(GLFW_KEY_F3)) {
+            scene.draw(wire_renderer);
+        } else {
+            scene.draw(renderer);
+        }
 
-        renderer.finish();
-
-        framebuffer.show();
-
-        glfwSwapBuffers();
-        
         statistics.update();
 
 

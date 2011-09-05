@@ -91,6 +91,8 @@ namespace Reyes
 
         _framebuffer.release(_queue);
         _queue.finish();
+
+        _framebuffer.show();
     }
 
     void Renderer::set_projection(const Projection& projection)

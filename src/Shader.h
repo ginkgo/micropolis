@@ -55,9 +55,7 @@ class Shader
      */
     void unbind() const
     {
-#ifdef DEBUG_OPENGL
         glUseProgram(0);
-#endif
     }
 
     /**

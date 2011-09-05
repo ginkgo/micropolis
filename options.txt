@@ -20,7 +20,7 @@ max_anisotropy = 1
 platform_id = 0
 
 // OpenCL device ID.
-device_id = 0
+device_id = 1
 
 // Print more information.
 verbose = 1

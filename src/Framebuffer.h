@@ -45,6 +45,7 @@ namespace Reyes
 
         virtual void acquire(CL::CommandQueue& queue) = 0;
         virtual void release(CL::CommandQueue& queue) = 0;
+        virtual void show() = 0;
 
     };
 

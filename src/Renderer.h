@@ -6,6 +6,8 @@
 #include "Patch.h"
 #include "OpenCL.h"
 
+#include "PatchDrawer.h"
+
 namespace Reyes
 {
 
@@ -46,11 +48,10 @@ namespace Reyes
 
         ~Renderer();
 
-        void prepare();
-        void finish();
+        virtual void prepare();
+        virtual void finish();
 
-        void set_projection(const Projection& projection);
-
+        virtual void set_projection(const Projection& projection);
         virtual void draw_patch (const BezierPatch& patch);
 
         private:
