@@ -14,6 +14,7 @@ namespace {
         string line;
 
         const boost::regex pattern("(.+)([0-9]+):([0-9]+)(.+)");
+        const boost::regex pattern2("([0-9]+)\\(([0-9]+)\\) :(.+)");
         boost::match_results<std::string::const_iterator> match;
         
         std::stringstream ss(clog);
@@ -21,6 +22,8 @@ namespace {
         while(std::getline(ss, line)) {
             if (boost::regex_match(line, match, pattern)) {
                 cout << filename << ":" << match.str(3) << ":" << match.str(2) << "" << match.str(4) << endl;
+            } else if (boost::regex_match(line, match, pattern2)) {
+                cout << filename << ":" << match.str(2) << ":" << match.str(1) << ":" << match.str(3) << endl;
             } else {
                 cout << line << endl;
             }

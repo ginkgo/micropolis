@@ -69,6 +69,7 @@ void mainloop()
 
         if (glfwGetKey(GLFW_KEY_F3)) {
             scene.draw(wire_renderer);
+            statistics.reset_timer();
         } else {
             scene.draw(renderer);
         }

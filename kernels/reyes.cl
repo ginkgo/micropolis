@@ -9,6 +9,9 @@
 // MAX_BLOCK_COUNT       - int
 // MAX_BLOCK_ASSIGNMENTS - int
 
+#define BLOCKS_PER_LINE (PATCH_SIZE/8)
+#define BLOCKS_PER_PATCH (BLOCKS_PER_LINE*BLOCKS_PER_LINE)
+
 inline int calc_framebuffer_pos(int2 pxlpos)
 {
     int2 gridpos = pxlpos / TILE_SIZE;
@@ -104,7 +107,7 @@ inline int is_empty(int2 min, int2 max)
 
 inline int calc_block_pos(int u, int v, int patch_id)
 {
-    return u + v * (PATCH_SIZE/8) + patch_id * (PATCH_SIZE/8) * (PATCH_SIZE/8);
+    return u + v * BLOCKS_PER_LINE + patch_id * BLOCKS_PER_PATCH;
 }
 
 __kernel void shade(const global float4* pos_grid,
@@ -224,39 +227,73 @@ __kernel void assign(global const int4* block_index,
     
 }
 
+inline size_t calc_gridline_id(size_t block_id, size_t line)
+{
+    size_t patch = block_id / BLOCKS_PER_PATCH;
+    size_t local_block_id = block_id % BLOCKS_PER_PATCH;
+    size_t nv = local_block_id / BLOCKS_PER_LINE;
+    size_t nu = local_block_id % BLOCKS_PER_LINE;
+
+    return calc_grid_pos(nv*8, nu*8+line, patch);
+}
 
 __kernel void sample(global const int* heads,
                      global const int2* node_heap,
+                     global const int2* pxlpos_grid,
                      global float4* framebuffer)
 {
+    local int2 positions[81];
+    local float4 color[8][8];
+
     int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1)); 
     int next = heads[tile_id];
 
-    /* if (get_local_id(0) == 0 && get_local_id(1) == 0) { */
-    /*     tile_id; */
-    /*     next = heads[t; */
-    /* } */
-
-    int cnt = 1;
+    int2 l = {get_local_id(0), get_local_id(1)};
+    int2 o = (int2){get_group_id(0), get_group_id(1)} * 8;
+    
+    color[l.x][l.y] = (float4){0,0,0,0};
 
     while (next >= 0) {
         int2 node = node_heap[next];
-        
-        ++cnt;
-
         next = node.y;
+        int block_id = node.x;
+
+        event_t event = 0;
+        for (int i = 0; i < 9; ++i) {
+            event = async_work_group_copy(positions + i * 9, 
+                                          pxlpos_grid + calc_gridline_id(block_id, i),
+                                          9, event);
+        }        
+        wait_group_events(1, &event);
+
+        int2 minp = positions[(l.x)+(l.y)*9] - o;
+        int2 maxp = positions[(l.x)+(l.y)*9] - o;
+
+        minp = min(minp, positions[(l.x+1)+(l.y)*9] - o);
+        maxp = max(maxp, positions[(l.x+1)+(l.y)*9] - o);
+
+        minp = min(minp, positions[(l.x)+(l.y+1)*9] - o);
+        maxp = max(maxp, positions[(l.x)+(l.y+1)*9] - o);
+
+        minp = min(minp, positions[(l.x+1)+(l.y+1)*9] - o);
+        maxp = max(maxp, positions[(l.x+1)+(l.y+1)*9] - o);
+        
+        minp = max(minp, (int2){0, 0});
+        maxp = min(maxp, (int2){7, 7});
+
+        for (int y = minp.y; y <= maxp.y; ++y) {
+            for (int x = minp.x; x <= maxp.x; ++x) {
+                color[x][y] += (float4){0.01,0.01,0.01,0.01};
+            }
+        }
+        
     }
 
     int fb_id = calc_framebuffer_pos((int2){get_global_id(0), get_global_id(1)});
     if (next == -2) {
         framebuffer[fb_id] = (float4){1,0,0,1};
     } else {
-        /* framebuffer[fb_id] = (float4){0,1,0,1}; */
-       
-        float v = 1.0f - (1.0f / cnt);
-        v = v*v*v;
-
-        framebuffer[fb_id] = (float4){v,v,v,1};     
+        framebuffer[fb_id] = color[l.x][l.y];
     }
 }
                      

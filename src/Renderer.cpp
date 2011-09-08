@@ -40,7 +40,7 @@ namespace Reyes
         _reyes_program.set_constant("MAX_BLOCK_COUNT", _max_block_count);
         _reyes_program.set_constant("MAX_BLOCK_ASSIGNMENTS", config.max_block_assignments());
         _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
-        
+                
         _reyes_program.compile(device, "reyes.cl");
 
         _dice_kernel.reset(_reyes_program.get_kernel("dice"));
@@ -65,7 +65,8 @@ namespace Reyes
 
         _sample_kernel->set_arg_r(0, _head_buffer);
         _sample_kernel->set_arg_r(1, _node_heap);
-        _sample_kernel->set_arg_r(2, _framebuffer.get_buffer());
+        _sample_kernel->set_arg_r(2, _pxlpos_grid);
+        _sample_kernel->set_arg_r(3, _framebuffer.get_buffer());
         
     }
 
