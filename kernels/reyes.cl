@@ -97,7 +97,7 @@ inline int is_front_facing(const int2 *ps)
     int2 d2 = ps[2] - ps[0];
     int2 d3 = ps[3] - ps[0];
 
-    return 1;//(d1.x*d3.y-d3.x*d1.y > 0 || d3.x*d2.y-d2.x*d3.y > 0);
+    return 1;//(d1.x*d3.y-d3.x*d1.y < 0 || d3.x*d2.y-d2.x*d3.y < 0);
 }
 
 inline int is_empty(int2 min, int2 max)
@@ -244,6 +244,7 @@ __kernel void sample(global const int* heads,
 {
     local int2 positions[81];
     local float4 color[8][8];
+    local int ccount[8][8];
 
     int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1)); 
     int next = heads[tile_id];
@@ -252,6 +253,7 @@ __kernel void sample(global const int* heads,
     int2 o = (int2){get_group_id(0), get_group_id(1)} * 8;
     
     color[l.x][l.y] = (float4){0,0,0,0};
+    ccount[l.x][l.y] = 1;
 
     while (next >= 0) {
         int2 node = node_heap[next];
@@ -283,10 +285,10 @@ __kernel void sample(global const int* heads,
 
         for (int y = minp.y; y <= maxp.y; ++y) {
             for (int x = minp.x; x <= maxp.x; ++x) {
-                color[x][y] += (float4){0.01,0.01,0.01,0.01};
+                //atomic_inc(&ccount[x][y]);
+                color[x][y] = (float4){1,1,1,1};
             }
         }
-        
     }
 
     int fb_id = calc_framebuffer_pos((int2){get_global_id(0), get_global_id(1)});
