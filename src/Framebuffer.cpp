@@ -25,6 +25,7 @@ namespace Reyes
     {
         if (_cl_buffer) {
             delete _cl_buffer;
+            _cl_buffer = NULL;
         }
     }
     
