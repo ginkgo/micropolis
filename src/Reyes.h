@@ -5,5 +5,6 @@
 #include "Projection.h"
 #include "Scene.h"
 #include "Renderer.h"
+#include "WireGLRenderer.h"
 
 #endif

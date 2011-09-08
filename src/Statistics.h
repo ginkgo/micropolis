@@ -29,6 +29,7 @@ class Statistics
     void free_opencl_memory(long mem_size);
 
     void update();
+    void reset_timer();
 
     void print();
         

@@ -1,4 +1,14 @@
 
+// Compile time constants:
+// PATCH_SIZE            - int
+// TILE_SIZE             - int
+// GRID_SIZE             - int2
+// VIEWPORT_MIN          - int2
+// VIEWPORT_MAX          - int2
+// VIEWPORT_SIZE         - int2
+// MAX_BLOCK_COUNT       - int
+// MAX_BLOCK_ASSIGNMENTS - int
+
 inline int calc_framebuffer_pos(int2 pxlpos)
 {
     int2 gridpos = pxlpos / TILE_SIZE;
@@ -35,24 +45,22 @@ float4 mul_m44v4(float16 mat, float4 vec)
                      dot(mat.s159D, vec),
                      dot(mat.s26AE, vec),
                      dot(mat.s37BF, vec)};
-            
-}
 
-constant sampler_t fbsampler = CLK_NORMALIZED_COORDS_FALSE |
-                               CLK_ADDRESS_CLAMP |
-                               CLK_FILTER_NEAREST;
+}
 
 inline size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
 {
     return nu + nv * (PATCH_SIZE+1) + patch * (PATCH_SIZE+1)*(PATCH_SIZE+1);
 }
 
-__kernel void dice (const global float4* patch_buffer, // 0
-                    global float4* grid_buffer)        // 1
+__kernel void dice (const global float4* patch_buffer,
+                    global float4* pos_grid,
+                    global int2* pxlpos_grid,
+                    float16 proj)
 {
     float4 patch[16];
 
-    if (get_global_id(0) > PATCH_SIZE || 
+    if (get_global_id(0) > PATCH_SIZE ||
         get_global_id(1) > PATCH_SIZE) {
         return;
     }
@@ -68,121 +76,187 @@ __kernel void dice (const global float4* patch_buffer, // 0
 
     float4 pos = eval_patch(patch, uv);
 
-    grid_buffer[calc_grid_pos(nu, nv, patch_id)] = pos;
+    float4 p = mul_m44v4(proj, pos);
+
+    int2 coord = {(int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
+                  (int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2)};
+
+    
+    int grid_index = calc_grid_pos(nu, nv, patch_id);
+    pos_grid[grid_index] = pos;
+    pxlpos_grid[grid_index] = coord;
 }
 
-__kernel void shade(const global float4* grid_buffer, // 0
-                    global float4* framebuffer,       // 1
-                    float16 proj,                     // 2
-                    int4 viewport)                    // 3
+
+inline int is_front_facing(const int2 *ps)
 {
-    float4 pos[2][2];
+    int2 d1 = ps[1] - ps[0];
+    int2 d2 = ps[2] - ps[0];
+    int2 d3 = ps[3] - ps[0];
+
+    return 1;//(d1.x*d3.y-d3.x*d1.y > 0 || d3.x*d2.y-d2.x*d3.y > 0);
+}
+
+inline int is_empty(int2 min, int2 max)
+{
+    return min.x > max.x && min.y > max.y;
+}
+
+inline int calc_block_pos(int u, int v, int patch_id)
+{
+    return u + v * (PATCH_SIZE/8) + patch_id * (PATCH_SIZE/8) * (PATCH_SIZE/8);
+}
+
+__kernel void shade(const global float4* pos_grid,
+                    const global int2* pxlpos_grid,
+                    global int4* block_index)
+{
+    volatile local int x_min;
+    volatile local int y_min;
+    volatile local int x_max;
+    volatile local int y_max;
+
+    if (get_local_id(0) == 0 && get_local_id(1) == 0) {
+        x_min = VIEWPORT_MAX.x;
+        y_min = VIEWPORT_MAX.y;
+        x_max = VIEWPORT_MIN.x;
+        y_max = VIEWPORT_MIN.y;
+    }
+
+    // V
+    // |
+    // 2 - 3 
+    // | / |
+    // 0 - 1 - U
+
+    float4 pos[4];
+    int2 pxlpos[4];
 
     int nv = get_global_id(0), nu = get_global_id(1);
     int patch_id = get_global_id(2);
 
+    int2 pmin = VIEWPORT_MAX;
+    int2 pmax = VIEWPORT_MIN;
+
     for     (int vi = 0; vi < 2; ++vi) {
         for (int ui = 0; ui < 2; ++ui) {
-            pos[ui][vi] = grid_buffer[calc_grid_pos(nu+ui, nv+vi, patch_id)];
+            int i = ui + vi * 2;
+            pos[i] = pos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
+            int2 p  = pxlpos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
+            
+            pmin = min(pmin, p);
+            pmax = max(pmax, p);
+
+            pxlpos[i] = p;
         }
     }
 
-    float3 du = (pos[1][0] - pos[0][0] + pos[1][1] - pos[0][1]).xyz * 0.5f;
-    float3 dv = (pos[0][1] - pos[0][0] + pos[1][1] - pos[1][0]).xyz * 0.5f;
+    if (is_front_facing(pxlpos)) {
+        atomic_min(&x_min, pmin.x); 
+        atomic_min(&y_min, pmin.y);
+        atomic_max(&x_max, pmax.x); 
+        atomic_max(&y_max, pmax.y);
 
-    float3 n = normalize(cross(du,dv));
+        /* float3 du = (pos[1] - pos[0] +  */
+        /*              pos[3] - pos[2]).xyz * 0.5f; */
+        /* float3 dv = (pos[2] - pos[0] +  */
+        /*              pos[3] - pos[1]).xyz * 0.5f; */
 
-    float4 p = mul_m44v4(proj, pos[0][0]);
+        /* float3 n = normalize(cross(du,dv)) * 0.5f + 0.5f; */
+    }
 
-    if (p.w < 0) return;
-
-    int2 coord = {(int)(p.x/p.w * viewport.z/2 + viewport.z/2),
-                  (int)(p.y/p.w * viewport.w/2 + viewport.w/2)};
-    
-    if (coord.x < 0 || coord.x >= viewport.z || 
-        coord.y < 0 || coord.y >= viewport.w)
-        return;
-
-    int ipos = calc_framebuffer_pos(coord);
-
-    framebuffer[ipos] = (float4){n.x, n.y, n.z, 1};
+    if (get_local_id(0) == 0 &&  get_local_id(1) == 0) {
+        int i = calc_block_pos(get_group_id(0), get_group_id(1), get_group_id(2));
+        block_index[i] = (int4){x_min, y_min, x_max, y_max};
+    }   
 }
-                    
 
-/* struct triangle_buffer */
-/* { */
-/*     float16 Ax, Ay, Ad; */
-/*     float16 Bx, By, Bd; */
+__kernel void clear_heads(global int* heads)
+{
+    heads[get_global_id(0)] = -1;
+}
 
-/*     float16 D1, D2, D3; */
+inline int calc_node_pos(int block_id, int assign_cnt)
+{
+    if (assign_cnt >= MAX_BLOCK_ASSIGNMENTS) {
+        return -2;
+    }
+    
+    return block_id + assign_cnt * MAX_BLOCK_COUNT;
+}
 
-/*     float4 color[16]; */
-/* }; */
+inline int calc_tile_id(int tx, int ty)
+{
+    return tx + FRAMEBUFFER_SIZE.x/8 * ty;
+}
 
-/* struct index_elem */
-/* { */
-/*     int next; */
-/*     size_t start, end; */
-/* }; */
+__kernel void assign(global const int4* block_index,
+                     volatile global int* heads,
+                     global int2* node_heap)
+{
+    int block_id = get_global_id(0);
+    int4 block_bound = block_index[block_id];
 
-/* __kernel void hider (__global triangle_block* triangle_buffer, */
-/*                      __global int* index_heads, __global index_elem* index_buffer, */
-/*                      __global float4* framebuffer, __global float* depthbuffer, */
-/*                      int bsize, int2 gridsize) */
-/* { */
-/*     __local index_elem block; */
-/*     __local triangle_block triangles; */
-/*     __local block_event, event; */
+    int assign_cnt = 0;
+    
+    if (is_empty(block_bound.xy, block_bound.zw)) {
+        // Empty block
+        return;
+    }
 
-/*     int2 tile_id = {get_group_id(0), get_group_id(1)};    */
-/*     int tilepos = tile_id.x + gridsize.x * tile_id.y; */
+    int2 min_tile = block_bound.xy / 8;
+    int2 max_tile = block_bound.zw / 8;
 
-/*     float2 global_id = {get_global_id(0), get_global_id(1)}; */
-/*     float2 pos = {(float)global_id.x, (float)global_id.y}; */
-/*     int fbpos = calc_framebuffer_pos(global_id, bsize, gridsize); */
+    for     (int ty = min_tile.y; ty <= max_tile.y; ++ty) {
+        for (int tx = min_tile.x; tx <= max_tile.x; ++tx) {
+            int tile_id = calc_tile_id(tx,ty);
+            int heap_pos = calc_node_pos(block_id, assign_cnt);
 
-/*     float4 color = framebuffer[fbpos]; */
-/*     float depth = depthbuffer[fbpos]; */
+            ++assign_cnt;
 
-/*     int block_id = index_heads[tilepos]; */
+            int old_head = atomic_xchg(heads + tile_id, heap_pos);
 
-/*     while (block_id >= 0) { */
-/*         block_event = async_work_group_copy(&block, index_buffer + block_id, 1, 0); */
-/*         wait_group_events(1, &block_event); */
+            if (heap_pos >= 0) {
+                node_heap[heap_pos] = (int2){block_id, old_head};
+            }
+        }
+    }
+    
+}
 
-/*         size_t start_block = block->start; */
-/*         size_t end_block = block->end; */
-     
-/*         for (size_t i = start_block; i < end_block; ++i) { */
 
-/*             event = async_work_group_copy(&triangle_cache, */
-/*                                           triangle_buffer + i, 1, 0); */
-/*             wait_group_events(1, &event); */
+__kernel void sample(global const int* heads,
+                     global const int2* node_heap,
+                     global float4* framebuffer)
+{
+    int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1)); 
+    int next = heads[tile_id];
+
+    /* if (get_local_id(0) == 0 && get_local_id(1) == 0) { */
+    /*     tile_id; */
+    /*     next = heads[t; */
+    /* } */
+
+    int cnt = 1;
+
+    while (next >= 0) {
+        int2 node = node_heap[next];
         
-/*             float16 S = (triangles->Ax * pos.x +  */
-/*                          triangles->Ay * pos.y +  */
-/*                          triangles->Ad); */
-/*             float16 T = (triangles->Bx * pos.x +  */
-/*                          triangles->By * pos.y +  */
-/*                          triangles->Bd); */
-/*             float16 R = 1 - (S + T); */
+        ++cnt;
 
-/*             bool16 mask = S < 1 && S > 0 && T < 1 && T > 0 && R < 1 && R > 0; */
+        next = node.y;
+    }
 
-/*             float16 D = triangles->D1 * S + triangles->D2 * T + triangles->D3 * R; */
+    int fb_id = calc_framebuffer_pos((int2){get_global_id(0), get_global_id(1)});
+    if (next == -2) {
+        framebuffer[fb_id] = (float4){1,0,0,1};
+    } else {
+        /* framebuffer[fb_id] = (float4){0,1,0,1}; */
+       
+        float v = 1.0f - (1.0f / cnt);
+        v = v*v*v;
 
-/*             for (int t = 0; t < 16; ++t) { */
-/*                 if (mask[t] && D[t] < depth) { */
-/*                     depth = D[t]; */
-/*                     color = triangles->color[t]; */
-/*                 } */
-/*             } */
-/*         } */
-        
-/*         block_id = block->next; */
-/*     } */
-
-/*     framebuffer[fbpos] = color; */
-/*     depthbuffer[fbpos] = depth; */
-
-/* } */
+        framebuffer[fb_id] = (float4){v,v,v,1};     
+    }
+}
+                     

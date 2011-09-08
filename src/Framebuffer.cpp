@@ -83,6 +83,8 @@ namespace Reyes
 
     void OGLSharedFramebuffer::show()
     {
+        glEnable(GL_TEXTURE_2D);
+
         _tex_buffer.bind();
         
         _shader.bind();
@@ -101,5 +103,7 @@ namespace Reyes
         _shader.unbind();
         
         _tex_buffer.unbind();
+
+        glfwSwapBuffers();        
     }
 }

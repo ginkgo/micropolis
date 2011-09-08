@@ -62,6 +62,12 @@ void Statistics::update()
     }
 }
 
+void Statistics::reset_timer()
+{
+    _last_fps_calculation = nanotime();
+    _frames = 0;
+}
+
 void Statistics::print()
 {
     if (config.verbose()) {

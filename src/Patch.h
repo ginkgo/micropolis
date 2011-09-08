@@ -35,15 +35,5 @@ void qsplit_patch(const BezierPatch& patch,
 void calc_bbox(const BezierPatch& patch, BBox& box);
 
 
-struct PatchDrawer
-{
-    virtual ~PatchDrawer() {};
-    virtual void draw_patch(const BezierPatch& patch) = 0;
-};
-
-void bound_n_split(const BezierPatch& patch, 
-                  const Reyes::Projection& projection,
-                  PatchDrawer& patch_drawer);
-
 
 #endif

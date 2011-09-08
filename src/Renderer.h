@@ -6,6 +6,8 @@
 #include "Patch.h"
 #include "OpenCL.h"
 
+#include "PatchDrawer.h"
+
 namespace Reyes
 {
 
@@ -21,14 +23,22 @@ namespace Reyes
         vector<vec4> _control_points;
 
         size_t _patch_count;
-        
-        CL::Buffer _patch_buffer;
-        CL::Buffer _grid_buffer;
+        size_t _max_block_count;
 
+        CL::Buffer _patch_buffer;
+        CL::Buffer _pos_grid;
+        CL::Buffer _pxlpos_grid;
+        CL::Buffer _block_index;
+        CL::Buffer _head_buffer;
+        CL::Buffer _node_heap;
+        
         CL::Program _reyes_program;
 
         scoped_ptr<CL::Kernel> _dice_kernel;
         scoped_ptr<CL::Kernel> _shade_kernel;
+        scoped_ptr<CL::Kernel> _clear_heads_kernel;
+        scoped_ptr<CL::Kernel> _assign_kernel;
+        scoped_ptr<CL::Kernel> _sample_kernel;
 
         public:
 
@@ -38,11 +48,10 @@ namespace Reyes
 
         ~Renderer();
 
-        void prepare();
-        void finish();
+        virtual void prepare();
+        virtual void finish();
 
-        void set_projection(const Projection& projection);
-
+        virtual void set_projection(const Projection& projection);
         virtual void draw_patch (const BezierPatch& patch);
 
         private:

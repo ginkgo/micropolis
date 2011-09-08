@@ -50,8 +50,9 @@ namespace Reyes {
         return _patches.at(id);
     }
  
-    void Scene::draw(Renderer& renderer) const
+    void Scene::draw(PatchDrawer& renderer) const
     {
+        renderer.prepare();
         renderer.set_projection(*_projection);
 
         BezierPatch patch;
@@ -63,6 +64,8 @@ namespace Reyes {
             bound_n_split(patch, *_projection, renderer);
 
         }
+
+        renderer.finish();
     }
        
 }
