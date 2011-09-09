@@ -40,6 +40,11 @@ namespace Reyes
         scoped_ptr<CL::Kernel> _assign_kernel;
         scoped_ptr<CL::Kernel> _sample_kernel;
 
+        CL::Event _last_patch_write;
+        CL::Event _last_dice;
+        CL::Event _last_sample;
+        CL::Event _framebuffer_acquire;
+
         public:
 
         Renderer(CL::Device& device, 

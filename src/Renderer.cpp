@@ -77,8 +77,7 @@ namespace Reyes
 
     void Renderer::prepare()
     {
-        _framebuffer.acquire(_queue);
-        _framebuffer.clear(_queue);
+        _framebuffer_acquire = _framebuffer.acquire(_queue, CL::Event());
 
         statistics.start_render();
     }
@@ -86,11 +85,9 @@ namespace Reyes
     void Renderer::finish()
     {
         flush();
-        _queue.finish();
 
-        statistics.end_render();
+        CL::Event e = _framebuffer.release(_queue, _last_sample);
 
-        _framebuffer.release(_queue);
         _queue.finish();
 
         _framebuffer.show();
@@ -129,27 +126,37 @@ namespace Reyes
         if (_patch_count == 0) {
             return;
         }
+        
+        _queue.wait_for_events("wait for patch write", _last_patch_write);
 
-        _queue.enq_write_buffer(_patch_buffer, 
-                                _control_points.data(), 
-                                sizeof(vec4) * _patch_count * 16);
+        const CL::Event e;
+        e = _queue.enq_write_buffer(_patch_buffer, 
+                                    _control_points.data(), 
+                                    sizeof(vec4) * _patch_count * 16,
+                                    "write patches", _last_dice);
+
+        _last_patch_write = e;
 
         int patch_size  = config.reyes_patch_size();
         int group_width = config.dice_group_width();
 
-        _queue.enq_kernel(*_dice_kernel,
-                          ivec3(patch_size + group_width, patch_size + group_width, _patch_count),
-                          ivec3(group_width, group_width, 1));
+        e = _queue.enq_kernel(*_dice_kernel,
+                              ivec3(patch_size + group_width, patch_size + group_width, _patch_count),
+                              ivec3(group_width, group_width, 1),
+                              "dice", e | _last_sample);
 
+        _last_dice = e;
 
-        _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, _patch_count),  ivec3(8, 8, 1));
-        _queue.enq_kernel(*_clear_heads_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64);
-        _queue.enq_kernel(*_assign_kernel, _patch_count * square(patch_size/8), 64);
-        _queue.enq_kernel(*_sample_kernel, _framebuffer.size(), ivec2(8, 8));
+        e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, _patch_count),  ivec3(8, 8, 1),
+                              "shade", e);
+        e = _queue.enq_kernel(*_clear_heads_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64,
+                              "clear heads", e);
+        e = _queue.enq_kernel(*_assign_kernel, _patch_count * square(patch_size/8), 64,
+                              "assign", e);
+        e = _queue.enq_kernel(*_sample_kernel, _framebuffer.size(), ivec2(8, 8),
+                              "sample", _framebuffer_acquire | e);
                                 
-
-        // TODO: Make this more elegant
-        _queue.finish();
+        _last_sample = e;
 
         _patch_count = 0;
     }

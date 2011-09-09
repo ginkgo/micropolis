@@ -34,7 +34,8 @@ namespace Reyes
     {
         _clear_kernel.set_arg(0, _cl_buffer->get());
         _clear_kernel.set_arg(1, config.clear_color());
-        queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256);
+        queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256,
+                         "clear framebuffer");
     }
 
 
@@ -60,24 +61,31 @@ namespace Reyes
         }
     }
 
-    void OGLSharedFramebuffer::acquire(CL::CommandQueue& queue)
+    CL::Event OGLSharedFramebuffer::acquire(CL::CommandQueue& queue, const CL::Event& e)
     {
         if (_shared) {
-            queue.enq_GL_acquire(_cl_buffer->get());
-        } 
+            return queue.enq_GL_acquire(_cl_buffer->get(),
+                                        "acquire framebuffer", e);
+        } else {
+            return e;
+        }
     }
 
-    void OGLSharedFramebuffer::release(CL::CommandQueue& queue)
+    CL::Event OGLSharedFramebuffer::release(CL::CommandQueue& queue, const CL::Event& evt)
     {
         if (_shared) {
-            queue.enq_GL_release(_cl_buffer->get());
+            CL::Event e = queue.enq_GL_release(_cl_buffer->get(),
+                                               "release framebuffer", evt);
+            return e;
         } else {
 
             assert(_local);
-            queue.enq_read_buffer(*_cl_buffer, _local, _tex_buffer.get_size());
-            queue.finish();
+            CL::Event e = queue.enq_read_buffer(*_cl_buffer, _local, _tex_buffer.get_size(),
+                                                "read framebuffer", evt);
+            e = queue.wait_for_events("wait for framebuffer read", e);
 
             _tex_buffer.load(_local);
+            return e;
         }
     }
 

@@ -43,8 +43,8 @@ namespace Reyes
         int   get_tile_size() { return _tile_size; }
         ivec2 get_grid_size() { return _grid_size; }
 
-        virtual void acquire(CL::CommandQueue& queue) = 0;
-        virtual void release(CL::CommandQueue& queue) = 0;
+        virtual CL::Event acquire(CL::CommandQueue& queue, const CL::Event& e) = 0;
+        virtual CL::Event void release(CL::CommandQueue& queue, const CL::Event& e) = 0;
         virtual void show() = 0;
 
     };
@@ -64,8 +64,8 @@ namespace Reyes
         virtual ~OGLSharedFramebuffer();
 
 
-        virtual void acquire(CL::CommandQueue& queue);
-        virtual void release(CL::CommandQueue& queue);
+        virtual CL::Event acquire(CL::CommandQueue& queue, const CL::Event& e);
+        virtual CL::Event release(CL::CommandQueue& queue, const CL::Event& e);
                              
 
         void show();
