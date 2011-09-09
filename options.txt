@@ -33,7 +33,7 @@ reyes_patch_size = 128
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 256
+reyes_patches_per_pass = 64
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 100
@@ -49,4 +49,10 @@ clear_color = 0.15 0.25 0.8 0
 
 // Patch data input file.
 input_file = data/teapot
+
+// Create an OpenCL timing trace.
+create_trace = 0
+
+// Target file for writing OpenCL trace to.
+trace_file = reyes.trace
 

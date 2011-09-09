@@ -6,6 +6,7 @@
 #include "utility.h"
 
 #include "Statistics.h"
+#include <fstream>
 
 namespace
 {
@@ -241,11 +242,71 @@ namespace CL
         return size;
     }
 
-    CommandQueue::CommandQueue(Device& device)
+    Event::Event() :
+        _count(0)
+    {
+
+    }
+
+    Event::Event(long id) :
+        _count(1)
+    {
+        _ids[0] = id;
+    }
+
+    Event::Event(const Event& event) :
+        _count(event._count)
+    {
+        assert(event._count < MAX_ID_COUNT);
+
+        for (int i = 0; i < _count; ++i) {
+            _ids[i] = event._ids[i];
+        }
+    }
+
+    const size_t Event::get_id_count() const
+    {
+        return _count;
+    }
+
+    const long* Event::get_ids() const
+    {
+        return _ids;
+    }
+
+    Event Event::operator | (const Event& other) const
+    {
+        Event e(other);
+
+        e._count += _count;
+
+        assert(e._count < MAX_ID_COUNT);
+
+        for (size_t i = 0; i < _count; ++i) {
+            e._ids[i + other._count] = _ids[i];
+        }
+
+        return e;
+    }
+
+    Event& Event::operator = (const Event& other)
+    {
+        _count = other._count;
+
+        for (int i = 0; i < _count; ++i) {
+            _ids[i] = other._ids[i];
+        }
+
+        return *this;
+    }
+
+    CommandQueue::CommandQueue(Device& device) :
+        _id_count(0)
     {
         cl_int status;
         _queue = clCreateCommandQueue(device.get_context(), device.get_device(),
-                                      CL_QUEUE_PROFILING_ENABLE, &status);
+                                      CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, 
+                                      &status);
 
         OPENCL_ASSERT(status);
     }
@@ -256,74 +317,148 @@ namespace CL
         clReleaseCommandQueue(_queue);
     }
 
+    Event CommandQueue::insert_event(const string& name, cl_event event)
+    {
+        long id = _id_count;
+        ++_id_count;
 
-    void CommandQueue::enq_kernel(Kernel& kernel, int global_size, int local_size)
+        EventIndex& idx = _events[id];
+
+        idx.id = id;
+        idx.name = name;
+        idx.event =  event;
+
+        return Event(id);
+    }
+
+    size_t CommandQueue::init_event_pad(const Event& event)
+    {
+        const long* ids = event.get_ids();
+        size_t cnt = event.get_id_count();
+
+        if (_event_pad.size() < cnt) {
+            _event_pad.resize(cnt);
+        }
+
+        for (size_t i = 0; i < cnt; ++i) {
+            _event_pad[i] = _events.at(ids[i]).event;
+        }
+
+        if (cnt == 0) {
+            _event_pad_ptr = 0;
+        } else {
+            _event_pad_ptr = _event_pad.data();
+        }
+        
+        return cnt;
+    }
+
+    Event CommandQueue::enq_kernel(Kernel& kernel, int global_size, int local_size,
+                                   const string& name, const Event& events)
     {
         size_t offset[] = {0};
         size_t global[] = {global_size};
         size_t local[]  = {local_size};
         
+        size_t cnt = init_event_pad(events);
+        cl_event e;
 
         cl_int status;
         status = clEnqueueNDRangeKernel(_queue, kernel.get(),
-                                         1, offset, global, local,
-                                         0, NULL, NULL);
+                                        1, offset, global, local,
+                                        cnt, _event_pad_ptr, &e);
 
         OPENCL_ASSERT(status);
+
+        return insert_event(name, e);
     }
 
 
-    void CommandQueue::enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size)
+    Event CommandQueue::enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size,
+                                   const string& name, const Event& events)
     {
         size_t offset[] = {0,0};
         size_t global[] = {global_size.x,global_size.y};
         size_t local[]  = {local_size.x, local_size.y};
         
+        size_t cnt = init_event_pad(events);
+        cl_event e;        
 
         cl_int status;
         status = clEnqueueNDRangeKernel(_queue, kernel.get(),
                                          2, offset, global, local,
-                                         0, NULL, NULL);
+                                         cnt, _event_pad_ptr, &e);
 
         OPENCL_ASSERT(status);
+
+        return insert_event(name, e);
     }
 
-    void CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size)
+    Event CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size,
+                                   const string& name, const Event& events)
     {
         size_t offset[] = {0,0,0};
         size_t global[] = {global_size.x,global_size.y,global_size.z};
         size_t local[]  = {local_size.x, local_size.y, local_size.z};
         
+        size_t cnt = init_event_pad(events);
+        cl_event e;        
 
         cl_int status;
         status = clEnqueueNDRangeKernel(_queue, kernel.get(),
                                          3, offset, global, local,
-                                         0, NULL, NULL);
+                                         cnt, _event_pad_ptr, &e);
 
         OPENCL_ASSERT(status);
+
+        return insert_event(name, e);
     }
 
-    void CommandQueue::enq_write_buffer(Buffer& buffer, void* src,
-                                        size_t len, size_t offset)
+    Event CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t len, size_t offset,
+                                        const string& name, const Event& events)
     {
+        
+        size_t cnt = init_event_pad(events);
+        cl_event e;
+
         cl_int status;
 
         status = clEnqueueWriteBuffer(_queue, buffer.get(), CL_FALSE, 
                                       offset, len, src,
-                                      0, NULL, NULL);
+                                      cnt, _event_pad_ptr, &e);
 
         OPENCL_ASSERT(status);
+
+        return insert_event(name, e);
     }
 
-    void CommandQueue::enq_read_buffer(Buffer& buffer, void* src,
-                                        size_t len, size_t offset)
+    Event CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t len,
+                                        const string& name, const Event& events)
+    {
+        return enq_write_buffer(buffer, src, len, 0, name, events);
+    }
+
+    Event CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t len, size_t offset,
+                                       const string& name, const Event& events)
     {
         cl_int status;
+        
+        size_t cnt = init_event_pad(events);
+        cl_event e;
 
         status = clEnqueueReadBuffer(_queue, buffer.get(), CL_FALSE, 
-                                     offset, len, src, 0, NULL, NULL);
+                                     offset, len, src, cnt, _event_pad_ptr, &e);
 
         OPENCL_ASSERT(status);
+
+        return insert_event(name, e);
+    }
+
+
+    Event CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t len,
+                                       const string& name, const Event& events)
+    {
+        return enq_read_buffer(buffer, src, len, 0, name, events);
     }
 
     void CommandQueue::finish()
@@ -331,74 +466,134 @@ namespace CL
         cl_int status = clFinish(_queue);
 
         OPENCL_ASSERT(status);
+
+        if (config.create_trace()) {
+            std::ofstream fs(config.trace_file().c_str());
+
+            for (std::map<long, EventIndex>::iterator i = _events.begin(); i != _events.end(); ++i) {
+                const EventIndex* idx = &i->second;
+            
+                cl_ulong queued, submit, start, end;
+
+                clGetEventProfilingInfo(idx->event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
+                clGetEventProfilingInfo(idx->event, CL_PROFILING_COMMAND_SUBMIT, sizeof(submit), &submit, NULL);
+                clGetEventProfilingInfo(idx->event, CL_PROFILING_COMMAND_START, sizeof(start), &start, NULL);
+                clGetEventProfilingInfo(idx->event, CL_PROFILING_COMMAND_END, sizeof(end), &end, NULL);
+    
+                fs << idx->name << ":" << queued << ":" << submit << ":" << start << ":" << end << endl;
+
+                status = clReleaseEvent(idx->event);
+
+                OPENCL_ASSERT(status);
+            }
+
+            config.set_create_trace(false);
+        } else {
+            for (std::map<long, EventIndex>::iterator i = _events.begin(); i != _events.end(); ++i) {
+                const EventIndex* idx = &i->second;
+                
+                status = clReleaseEvent(idx->event);
+
+                OPENCL_ASSERT(status);
+            }
+        }
+
+        _events.clear();
     }
 
-    void CommandQueue::enq_GL_acquire(ImageBuffer& buffer)
+    void CommandQueue::wait_for_events(const Event& events)
     {
-        cl_mem mem = buffer.get();
-        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, 
-                                                  0, NULL, NULL);
+        size_t num_events = init_event_pad(events);
+
+        if (num_events == 0) return;
+
+        cl_int status = clWaitForEvents(num_events, _event_pad_ptr);
 
         OPENCL_ASSERT(status);
     }
 
-    void CommandQueue::enq_GL_release(ImageBuffer& buffer)
+    // void CommandQueue::enq_GL_acquire(ImageBuffer& buffer,
+    //                      const string& name, const Event& events)
+    // {
+    //     cl_mem mem = buffer.get();
+    //     cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, 
+    //                                               cnt, _event_pad_ptr, &e);
+
+    //     OPENCL_ASSERT(status);
+    // }
+
+    // void CommandQueue::enq_GL_release(ImageBuffer& buffer,
+    //                      const string& name, const Event& events)
+    // {
+    //     cl_mem mem = buffer.get();
+    //     cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 
+    //                                               cnt, _event_pad_ptr, &e);
+
+    //     OPENCL_ASSERT(status);
+    // }
+
+    // void CommandQueue::enq_GL_acquire(Buffer& mem,
+    //                      const string& name, const Event& events)
+    // {
+    //     cl_mem m = mem.get();
+    //     cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &m, cnt, _event_pad_ptr, &e);
+
+    //     OPENCL_ASSERT(status);
+    // }
+
+    // void CommandQueue::enq_GL_release(Buffer& mem,
+    //                      const string& name, const Event& events)
+    // {
+    //     cl_mem m = mem.get();
+    //     cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &m, cnt, _event_pad_ptr, &e);
+
+    //     OPENCL_ASSERT(status);
+    // }
+
+    Event CommandQueue::enq_GL_acquire(cl_mem mem, const string& name, const Event& events)
     {
-        cl_mem mem = buffer.get();
-        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 
-                                                  0, NULL, NULL);
+        
+        size_t cnt = init_event_pad(events);
+        cl_event e;
+
+        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, cnt, _event_pad_ptr, &e);
 
         OPENCL_ASSERT(status);
+
+        return insert_event(name, e);
     }
 
-    void CommandQueue::enq_GL_acquire(Buffer& mem)
+    Event CommandQueue::enq_GL_release(cl_mem mem, const string& name, const Event& events)
     {
-        cl_mem m = mem.get();
-        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &m, 0, NULL, NULL);
+        
+        size_t cnt = init_event_pad(events);
+        cl_event e;
+
+        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, cnt, _event_pad_ptr, &e);
 
         OPENCL_ASSERT(status);
+
+        return insert_event(name, e);
     }
 
-    void CommandQueue::enq_GL_release(Buffer& mem)
-    {
-        cl_mem m = mem.get();
-        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &m, 0, NULL, NULL);
+    // void* CommandQueue::map_buffer(Buffer& buffer)
+    // {
+    //     cl_int status;
 
-        OPENCL_ASSERT(status);
-    }
+    //     void* mapped = clEnqueueMapBuffer(_queue, buffer.get(), CL_TRUE, CL_MAP_READ,
+    //                                       0, buffer.get_size(), 0, 0, 0,
+    //                                       &status);
+    //     OPENCL_ASSERT(status);
 
-    void CommandQueue::enq_GL_acquire(cl_mem mem)
-    {
-        cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, 0, NULL, NULL);
+    //     return mapped;
+    // }
 
-        OPENCL_ASSERT(status);
-    }
-
-    void CommandQueue::enq_GL_release(cl_mem mem)
-    {
-        cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, 0, NULL, NULL);
-
-        OPENCL_ASSERT(status);
-    }
-
-    void* CommandQueue::map_buffer(Buffer& buffer)
-    {
-        cl_int status;
-
-        void* mapped = clEnqueueMapBuffer(_queue, buffer.get(), CL_TRUE, CL_MAP_READ,
-                                          0, buffer.get_size(), 0, 0, 0,
-                                          &status);
-        OPENCL_ASSERT(status);
-
-        return mapped;
-    }
-
-    void CommandQueue::unmap_buffer(Buffer& buffer, void* mapped)
-    {
-        cl_int status = clEnqueueUnmapMemObject(_queue, buffer.get(), mapped, 
-                                                0, NULL, NULL);
-        OPENCL_ASSERT(status);
-    }
+    // void CommandQueue::unmap_buffer(Buffer& buffer, void* mapped)
+    // {
+    //     cl_int status = clEnqueueUnmapMemObject(_queue, buffer.get(), mapped, 
+    //                                             0, NULL, NULL);
+    //     OPENCL_ASSERT(status);
+    // }
 
     ImageBuffer::ImageBuffer(Device& device, GL::Texture& texture, cl_mem_flags flags)
     {
@@ -510,6 +705,7 @@ namespace CL
         case CL_INVALID_COMMAND_QUEUE:               _msg = "Invalid command queue";                 break;
         case CL_INVALID_CONTEXT:                     _msg = "Invalid context";                       break;
         case CL_INVALID_DEVICE:                      _msg = "Invalid device";                        break;
+        case CL_INVALID_EVENT_WAIT_LIST:             _msg = "Invalid event wait list";               break;
         case CL_INVALID_GLOBAL_OFFSET:               _msg = "Invalid global offset";                 break;
         case CL_INVALID_GLOBAL_WORK_SIZE:            _msg = "Invalid global work size";              break;
         case CL_INVALID_GL_OBJECT:                   _msg = "Invalid OpenGL object";                 break;
@@ -520,6 +716,7 @@ namespace CL
         case CL_INVALID_KERNEL_DEFINITION:           _msg = "Invalid kernel definition";             break;
         case CL_INVALID_KERNEL_NAME:                 _msg = "Kernel name not found in program";      break;
         case CL_INVALID_MIP_LEVEL:                   _msg = "Invalid miplevel";                      break;
+        case CL_INVALID_MEM_OBJECT:                  _msg = "Invalid mem object";                    break;
         case CL_INVALID_OPERATION:                   _msg = "Invalid operation";                     break;
         case CL_INVALID_PROGRAM:                     _msg = "Invalid program";                       break;
         case CL_INVALID_PROGRAM_EXECUTABLE:          _msg = "Program not built successfully";        break;
@@ -530,6 +727,7 @@ namespace CL
         case CL_INVALID_WORK_GROUP_SIZE:             _msg = "Invalid work group size";               break;
         case CL_INVALID_WORK_ITEM_SIZE:              _msg = "Invalid work item size";                break;
         case CL_MEM_OBJECT_ALLOCATION_FAILURE:       _msg = "Mem-object allocation failure";         break;
+        case CL_MISALIGNED_SUB_BUFFER_OFFSET:        _msg = "Misaligned sub-buffer offset";          break;
         case CL_OUT_OF_HOST_MEMORY:                  _msg = "Out of host memory";                    break;
         case CL_OUT_OF_RESOURCES:                    _msg = "Out of resources";                      break;
         case -1001:                                  _msg = "Vendor ICD not correctly installed(?)"; break;

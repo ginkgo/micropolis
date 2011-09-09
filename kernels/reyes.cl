@@ -285,11 +285,15 @@ __kernel void sample(global const int* heads,
 
         for (int y = minp.y; y <= maxp.y; ++y) {
             for (int x = minp.x; x <= maxp.x; ++x) {
-                //atomic_inc(&ccount[x][y]);
-                color[x][y] = (float4){1,1,1,1};
+                atomic_inc(&ccount[x][y]);
+                //color[x][y] = (float4){1,1,1,1};
             }
         }
     }
+
+    int c = ccount[l.x][l.y];
+    float f = pow(1.0f - (1.0f / c), 12.0f);
+    color[l.x][l.y] = (float4){f,f,f,1};
 
     int fb_id = calc_framebuffer_pos((int2){get_global_id(0), get_global_id(1)});
     if (next == -2) {

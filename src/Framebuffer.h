@@ -44,7 +44,7 @@ namespace Reyes
         ivec2 get_grid_size() { return _grid_size; }
 
         virtual CL::Event acquire(CL::CommandQueue& queue, const CL::Event& e) = 0;
-        virtual CL::Event void release(CL::CommandQueue& queue, const CL::Event& e) = 0;
+        virtual CL::Event release(CL::CommandQueue& queue, const CL::Event& e) = 0;
         virtual void show() = 0;
 
     };

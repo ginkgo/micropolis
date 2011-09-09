@@ -32,10 +32,11 @@ namespace Reyes
 
     void Framebuffer::clear(CL::CommandQueue& queue)
     {
-        _clear_kernel.set_arg(0, _cl_buffer->get());
-        _clear_kernel.set_arg(1, config.clear_color());
-        queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256,
-                         "clear framebuffer");
+        assert(0);
+        // _clear_kernel.set_arg(0, _cl_buffer->get());
+        // _clear_kernel.set_arg(1, config.clear_color());
+        // queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256,
+        //                  "clear framebuffer");
     }
 
 
@@ -82,10 +83,10 @@ namespace Reyes
             assert(_local);
             CL::Event e = queue.enq_read_buffer(*_cl_buffer, _local, _tex_buffer.get_size(),
                                                 "read framebuffer", evt);
-            e = queue.wait_for_events("wait for framebuffer read", e);
+            queue.wait_for_events(e);
 
             _tex_buffer.load(_local);
-            return e;
+            return CL::Event();
         }
     }
 

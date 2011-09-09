@@ -73,6 +73,14 @@
       Patch data input file.
     </value>
 
+    <value name="create_trace" type="bool" default="false">
+      Create an OpenCL timing trace.
+    </value>
+
+    <value name="trace_file" type="string" default="reyes.trace">
+      Target file for writing OpenCL trace to.
+    </value>
+
   </values>
 
   <global name="config"/>

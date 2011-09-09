@@ -91,6 +91,13 @@ namespace Reyes
         _queue.finish();
 
         _framebuffer.show();
+
+        _last_patch_write = CL::Event();
+        _last_dice = CL::Event();
+        _last_sample = CL::Event();
+        _framebuffer_acquire = CL::Event();
+
+        statistics.end_render();
     }
 
     void Renderer::set_projection(const Projection& projection)
@@ -127,9 +134,9 @@ namespace Reyes
             return;
         }
         
-        _queue.wait_for_events("wait for patch write", _last_patch_write);
+        _queue.wait_for_events(_last_patch_write);
 
-        const CL::Event e;
+        CL::Event e;
         e = _queue.enq_write_buffer(_patch_buffer, 
                                     _control_points.data(), 
                                     sizeof(vec4) * _patch_count * 16,

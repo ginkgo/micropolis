@@ -93,32 +93,83 @@ namespace CL
         Kernel* get_kernel(const string& name);
     };
 
+    class Event : public noncopyable
+    {
+        static const int MAX_ID_COUNT = 16;
+        
+        long _ids[MAX_ID_COUNT];
+        size_t _count;
+
+        public:
+
+        Event();
+        Event(long id);
+        Event(const Event& event);
+
+        Event operator  | (const Event& other) const;
+        Event& operator = (const Event& other);
+        const size_t get_id_count() const;
+        const long* get_ids() const;        
+    };
+
     class CommandQueue : public noncopyable
     {
+        struct EventIndex
+        {
+            long id;
+            string name;
+            cl_event event;
+        };
+
+
         cl_command_queue _queue;
+
+        std::map<long, EventIndex> _events;
+        std::vector<cl_event> _event_pad;
+        cl_event* _event_pad_ptr;
+        long _id_count;
+
+        Event insert_event(const string& name, cl_event event);
+        size_t init_event_pad(const Event& event);
 
         public:
 
         CommandQueue(Device& device);
         ~CommandQueue();
         
-        void enq_kernel(Kernel& kernel, int global_size, int local_size);
-        void enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size);
-        void enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size);
-        void enq_GL_acquire(ImageBuffer& buffer);
-        void enq_GL_release(ImageBuffer& buffer);
-        void enq_GL_acquire(Buffer& buffer);
-        void enq_GL_release(Buffer& buffer);
-        void enq_GL_acquire(cl_mem buffer);
-        void enq_GL_release(cl_mem buffer);
+        Event enq_kernel(Kernel& kernel, int global_size, int local_size,
+                         const string& name, const Event& events);
+        Event enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 local_size,
+                         const string& name, const Event& events);
+        Event enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size,
+                         const string& name, const Event& events);
+        // Event enq_GL_acquire(ImageBuffer& buffer,
+        //                      const string& name, const Event& events);
+        // Event enq_GL_release(ImageBuffer& buffer,
+        //                      const string& name, const Event& events);
+        // Event enq_GL_acquire(Buffer& buffer,
+        //                      const string& name, const Event& events);
+        // Event enq_GL_release(Buffer& buffer,
+        //                      const string& name, const Event& events);
+        Event enq_GL_acquire(cl_mem buffer,
+                             const string& name, const Event& events);
+        Event enq_GL_release(cl_mem buffer,
+                             const string& name, const Event& events);
 
-        void* map_buffer  (Buffer& buffer);
-        void  unmap_buffer(Buffer& buffer, void* mapped);
+        // void* map_buffer  (Buffer& buffer);
+        // void  unmap_buffer(Buffer& buffer, void* mapped);
 
-        void enq_write_buffer(Buffer& buffer, void* src, 
-                              size_t length, size_t offset=0);
-        void enq_read_buffer (Buffer& buffer, void* dst, 
-                              size_t length, size_t offset=0);
+        Event enq_write_buffer(Buffer& buffer, void* src, size_t length, size_t offset,
+                               const string& name, const Event& events);
+        Event enq_read_buffer (Buffer& buffer, void* dst, size_t length, size_t offset,
+                               const string& name, const Event& events);
+
+        Event enq_write_buffer(Buffer& buffer, void* src, size_t length,
+                               const string& name, const Event& events);
+        Event enq_read_buffer (Buffer& buffer, void* dst, size_t length,
+                               const string& name, const Event& events);
+
+        void wait_for_events (const Event& events);
 
         void finish();
     };
