@@ -343,7 +343,7 @@ namespace CL
         for (size_t i = 0; i < cnt; ++i) {
             _event_pad[i] = _events.at(ids[i]).event;
         }
-
+        
         if (cnt == 0) {
             _event_pad_ptr = 0;
         } else {
@@ -467,7 +467,7 @@ namespace CL
 
         OPENCL_ASSERT(status);
 
-        if (config.create_trace()) {
+        if (config.create_trace() && rand() % 100 == 0) {
             std::ofstream fs(config.trace_file().c_str());
 
             for (std::map<long, EventIndex>::iterator i = _events.begin(); i != _events.end(); ++i) {

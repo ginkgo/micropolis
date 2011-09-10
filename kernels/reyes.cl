@@ -227,14 +227,14 @@ __kernel void assign(global const int4* block_index,
     
 }
 
-inline size_t calc_gridline_id(size_t block_id, size_t line)
+inline size_t calc_gridline_id(size_t block_id, size_t lx, size_t ly)
 {
     size_t patch = block_id / BLOCKS_PER_PATCH;
     size_t local_block_id = block_id % BLOCKS_PER_PATCH;
     size_t nv = local_block_id / BLOCKS_PER_LINE;
     size_t nu = local_block_id % BLOCKS_PER_LINE;
 
-    return calc_grid_pos(nv*8, nu*8+line, patch);
+    return calc_grid_pos(nv*8+lx, nu*8+ly, patch);
 }
 
 __kernel void sample(global const int* heads,
@@ -242,7 +242,7 @@ __kernel void sample(global const int* heads,
                      global const int2* pxlpos_grid,
                      global float4* framebuffer)
 {
-    local int2 positions[81];
+    local int2 positions[9][9];
     local float4 color[8][8];
     local int ccount[8][8];
 
@@ -260,25 +260,24 @@ __kernel void sample(global const int* heads,
         next = node.y;
         int block_id = node.x;
 
-        event_t event = 0;
-        for (int i = 0; i < 9; ++i) {
-            event = async_work_group_copy(positions + i * 9, 
-                                          pxlpos_grid + calc_gridline_id(block_id, i),
-                                          9, event);
-        }        
-        wait_group_events(1, &event);
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                size_t p = calc_gridline_id(block_id, l.x+i, l.y+j);
+                positions[l.x+i][l.y+j] = pxlpos_grid[p] - o;
+            }
+        }
 
-        int2 minp = positions[(l.x)+(l.y)*9] - o;
-        int2 maxp = positions[(l.x)+(l.y)*9] - o;
+        int2 minp = positions[l.x][l.y];
+        int2 maxp = positions[l.x][l.y];
 
-        minp = min(minp, positions[(l.x+1)+(l.y)*9] - o);
-        maxp = max(maxp, positions[(l.x+1)+(l.y)*9] - o);
+        minp = min(minp, positions[l.x+1][l.y]);
+        maxp = max(maxp, positions[l.x+1][l.y]);
 
-        minp = min(minp, positions[(l.x)+(l.y+1)*9] - o);
-        maxp = max(maxp, positions[(l.x)+(l.y+1)*9] - o);
+        minp = min(minp, positions[l.x][l.y+1]);
+        maxp = max(maxp, positions[l.x][l.y+1]);
 
-        minp = min(minp, positions[(l.x+1)+(l.y+1)*9] - o);
-        maxp = max(maxp, positions[(l.x+1)+(l.y+1)*9] - o);
+        minp = min(minp, positions[l.x+1][l.y+1]);
+        maxp = max(maxp, positions[l.x+1][l.y+1]);
         
         minp = max(minp, (int2){0, 0});
         maxp = min(maxp, (int2){7, 7});

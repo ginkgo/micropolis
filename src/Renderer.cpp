@@ -136,7 +136,7 @@ namespace Reyes
         
         _queue.wait_for_events(_last_patch_write);
 
-        CL::Event e;
+        CL::Event e, f;
         e = _queue.enq_write_buffer(_patch_buffer, 
                                     _control_points.data(), 
                                     sizeof(vec4) * _patch_count * 16,
@@ -156,10 +156,10 @@ namespace Reyes
 
         e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, _patch_count),  ivec3(8, 8, 1),
                               "shade", e);
-        e = _queue.enq_kernel(*_clear_heads_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64,
-                              "clear heads", e);
+        f = _queue.enq_kernel(*_clear_heads_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64,
+                              "clear heads", CL::Event());
         e = _queue.enq_kernel(*_assign_kernel, _patch_count * square(patch_size/8), 64,
-                              "assign", e);
+                              "assign", e | f);
         e = _queue.enq_kernel(*_sample_kernel, _framebuffer.size(), ivec2(8, 8),
                               "sample", _framebuffer_acquire | e);
                                 
