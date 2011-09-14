@@ -34,9 +34,9 @@ namespace Reyes
         _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
         _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
         _reyes_program.set_constant("PATCH_SIZE", config.reyes_patch_size());
-        _reyes_program.set_constant("VIEWPORT_MIN", ivec2(0,0));
-        _reyes_program.set_constant("VIEWPORT_MAX", _framebuffer.size());
-        _reyes_program.set_constant("VIEWPORT_SIZE", _framebuffer.size());
+        _reyes_program.set_constant("VIEWPORT_MIN_PIXEL", ivec2(0,0));
+        _reyes_program.set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
+        _reyes_program.set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
         _reyes_program.set_constant("MAX_BLOCK_COUNT", _max_block_count);
         _reyes_program.set_constant("MAX_BLOCK_ASSIGNMENTS", config.max_block_assignments());
         _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());

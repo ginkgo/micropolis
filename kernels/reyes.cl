@@ -1,16 +1,22 @@
-
+\
 // Compile time constants:
 // PATCH_SIZE            - int
 // TILE_SIZE             - int
 // GRID_SIZE             - int2
-// VIEWPORT_MIN          - int2
-// VIEWPORT_MAX          - int2
-// VIEWPORT_SIZE         - int2
+// VIEWPORT_MIN_PIXEL    - int2
+// VIEWPORT_MAX_PIXEL    - int2
+// VIEWPORT_SIZE_PIXEL   - int2
 // MAX_BLOCK_COUNT       - int
 // MAX_BLOCK_ASSIGNMENTS - int
 
 #define BLOCKS_PER_LINE (PATCH_SIZE/8)
 #define BLOCKS_PER_PATCH (BLOCKS_PER_LINE*BLOCKS_PER_LINE)
+
+#define PXLCOORD_SHIFT 4
+
+#define VIEWPORT_MIN  (VIEWPORT_MIN_PIXEL  << PXLCOORD_SHIFT)
+#define VIEWPORT_MAX  (VIEWPORT_MAX_PIXEL  << PXLCOORD_SHIFT)
+#define VIEWPORT_SIZE (VIEWPORT_SIZE_PIXEL << PXLCOORD_SHIFT)
 
 inline int calc_framebuffer_pos(int2 pxlpos)
 {
@@ -102,7 +108,7 @@ inline int is_front_facing(const int2 *ps)
 
 inline int is_empty(int2 min, int2 max)
 {
-    return min.x > max.x && min.y > max.y;
+    return min.x >= max.x && min.y >= max.y;
 }
 
 inline int calc_block_pos(int u, int v, int patch_id)
@@ -125,6 +131,8 @@ __kernel void shade(const global float4* pos_grid,
         x_max = VIEWPORT_MIN.x;
         y_max = VIEWPORT_MIN.y;
     }
+
+    barrier(CLK_LOCAL_MEM_FENCE);
 
     // V
     // |
@@ -207,8 +215,8 @@ __kernel void assign(global const int4* block_index,
         return;
     }
 
-    int2 min_tile = block_bound.xy / 8;
-    int2 max_tile = block_bound.zw / 8;
+    int2 min_tile = block_bound.xy >> (PXLCOORD_SHIFT + 3);
+    int2 max_tile = block_bound.zw >> (PXLCOORD_SHIFT + 3);
 
     for     (int ty = min_tile.y; ty <= max_tile.y; ++ty) {
         for (int tx = min_tile.x; tx <= max_tile.x; ++tx) {
@@ -231,74 +239,104 @@ inline size_t calc_gridline_id(size_t block_id, size_t lx, size_t ly)
 {
     size_t patch = block_id / BLOCKS_PER_PATCH;
     size_t local_block_id = block_id % BLOCKS_PER_PATCH;
-    size_t nv = local_block_id / BLOCKS_PER_LINE;
-    size_t nu = local_block_id % BLOCKS_PER_LINE;
+    size_t v = local_block_id / BLOCKS_PER_LINE;
+    size_t u = local_block_id % BLOCKS_PER_LINE;
 
-    return calc_grid_pos(nv*8+lx, nu*8+ly, patch);
+    return calc_grid_pos(v*8+lx, u*8+ly, patch);
 }
+
+/* inline int idot (int2 a, int2 b) */
+/* { */
+/*     return a.x * b.x + a.y * b.y; */
+/* } */
+
+/* bool triangle_test(int2 p1, int2 p2, int2 p3, int2 tp) */
+/* { */
+/*     int2 d1 = p2-p1; */
+/*     int2 d2 = p3-p2; */
+/*     int2 d3 = p1-p3; */
+
+/*     d1 = (int2){-d1.y, d1.x}; */
+/*     d2 = (int2){-d2.y, d2.x}; */
+/*     d3 = (int2){-d3.y, d3.x}; */
+
+/*     int o1 = idot(d1, p1);  */
+/*     int o2 = idot(d2, p2); */
+/*     int o3 = idot(d3, p3); */
+
+/*     return idot(tp, d1) - o1 > 0 && idot(tp, d2) - o2 > 0 && idot(tp, d3) - o3 > 0; */
+/* } */
 
 __kernel void sample(global const int* heads,
                      global const int2* node_heap,
                      global const int2* pxlpos_grid,
                      global float4* framebuffer)
 {
-    local int2 positions[9][9];
-    local float4 color[8][8];
-    local int ccount[8][8];
-
+    //local int count;
+    local float4 colors[8][8];
+    local int locks[8][8];
+    
     int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1)); 
     int next = heads[tile_id];
 
-    int2 l = {get_local_id(0), get_local_id(1)};
-    int2 o = (int2){get_group_id(0), get_group_id(1)} * 8;
+    const int2 o = (int2){get_group_id(0), get_group_id(1)} << (3 + PXLCOORD_SHIFT);
+    const int2 g = {get_global_id(0), get_global_id(1)};
+    const int2 l = {get_local_id(0), get_local_id(1)};
     
-    color[l.x][l.y] = (float4){0,0,0,0};
-    ccount[l.x][l.y] = 1;
+    colors[l.x][l.y] = (float4){0,0,0,1};
+    locks[l.x][l.y] = 1;
+    //count = 1;
 
     while (next >= 0) {
         int2 node = node_heap[next];
         next = node.y;
         int block_id = node.x;
 
-        for (int i = 0; i < 2; ++i) {
-            for (int j = 0; j < 2; ++j) {
+        int2 ps[2][2];
+
+        int2 min_p = (int2) {(8<<PXLCOORD_SHIFT)-1, (8<<PXLCOORD_SHIFT)-1};
+        int2 max_p = (int2) {0,0};
+
+        for (int j = 0; j < 2; ++j) {
+            for (int i = 0; i < 2; ++i) {
                 size_t p = calc_gridline_id(block_id, l.x+i, l.y+j);
-                positions[l.x+i][l.y+j] = pxlpos_grid[p] - o;
+                int2 pxlpos = pxlpos_grid[p];
+
+                ps[i][j] = pxlpos;
+                min_p = min(min_p, pxlpos - o);
+                max_p = max(max_p, pxlpos - o);
             }
         }
 
-        int2 minp = positions[l.x][l.y];
-        int2 maxp = positions[l.x][l.y];
+        //colors[l.x][l.y] += (float4){0.01f, 0.01f, 0.01f, 1};
 
-        minp = min(minp, positions[l.x+1][l.y]);
-        maxp = max(maxp, positions[l.x+1][l.y]);
 
-        minp = min(minp, positions[l.x][l.y+1]);
-        maxp = max(maxp, positions[l.x][l.y+1]);
+        min_p = max(min_p, (int2) {0,0});
+        max_p = min(max_p, (int2) {(8<<PXLCOORD_SHIFT)-1, (8<<PXLCOORD_SHIFT)-1});
 
-        minp = min(minp, positions[l.x+1][l.y+1]);
-        maxp = max(maxp, positions[l.x+1][l.y+1]);
-        
-        minp = max(minp, (int2){0, 0});
-        maxp = min(maxp, (int2){7, 7});
+        if (is_empty(min_p, max_p)) {
+            continue;
+        }
 
-        for (int y = minp.y; y <= maxp.y; ++y) {
-            for (int x = minp.x; x <= maxp.x; ++x) {
-                atomic_inc(&ccount[x][y]);
-                //color[x][y] = (float4){1,1,1,1};
+        min_p = min_p >> PXLCOORD_SHIFT;
+        max_p = max_p >> PXLCOORD_SHIFT;
+
+        for (int y = min_p.y; y <= max_p.y; ++y) {
+            for (int x = min_p.x; x <= max_p.x; ++x) {
+                
+                //while (atomic_cmpxchg(&locks[x][y], 1, 0)) {};
+
+                colors[x][y] += (float4){0.05, 0.05, 0.05,0};
+                //atomic_xchg(&locks[x][y], 1);                
             }
         }
     }
 
-    int c = ccount[l.x][l.y];
-    float f = pow(1.0f - (1.0f / c), 12.0f);
-    color[l.x][l.y] = (float4){f,f,f,1};
-
-    int fb_id = calc_framebuffer_pos((int2){get_global_id(0), get_global_id(1)});
+    int fb_id = calc_framebuffer_pos(g);
     if (next == -2) {
         framebuffer[fb_id] = (float4){1,0,0,1};
     } else {
-        framebuffer[fb_id] = color[l.x][l.y];
+        framebuffer[fb_id] = colors[l.x][l.y];
     }
 }
                      

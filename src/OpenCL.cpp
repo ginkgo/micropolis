@@ -488,6 +488,9 @@ namespace CL
             }
 
             config.set_create_trace(false);
+
+            cout << endl << "OpenCL trace dumped." << endl << endl;
+            
         } else {
             for (std::map<long, EventIndex>::iterator i = _events.begin(); i != _events.end(); ++i) {
                 const EventIndex* idx = &i->second;

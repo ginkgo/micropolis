@@ -122,17 +122,18 @@ ctx.translate(BORDER, BORDER+AXIS)
 ctx.scale(LEN_PER_MS, LEN_PER_MS)
 
 ctx.set_font_size(0.05)
+ctx.select_font_face('FreeSans')
 
-for t in range(int(length*10)):
+for t in range(0, int(length*10)):
 
 
     ctx.stroke()
     if t == 166:
         ctx.set_source_rgb(1,0,0)
     elif t % 10 == 0:
-        ctx.set_source_rgb(0.8,0.8,0.8)
+        ctx.set_source_rgb(0.75,0.75,0.75)
     elif t % 5 == 0:
-        ctx.set_source_rgb(0.9,0.9,0.9)
+        ctx.set_source_rgb(0.87,0.87,0.87)
     else:
         ctx.set_source_rgb(0.95,0.95,0.95)
     ctx.move_to(t * 0.1, -0)
@@ -188,7 +189,7 @@ for i,v in enumerate(items):
     _, _, w, _, _, _ = ctx.text_extents(n)
     p = 0.05
     wb = end-start
-    if w < wb - 2*p and w > wb/5:
+    if w < wb - 2*p and w > wb/2:
         ctx.set_source_rgb(1,1,1)
         ctx.move_to(start + wb/2, y + h/2)
         aligned_text(ctx, n, 0.5, 0.5)
