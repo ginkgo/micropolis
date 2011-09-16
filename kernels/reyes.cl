@@ -176,6 +176,8 @@ __kernel void shade(const global float4* pos_grid,
         /* float3 n = normalize(cross(du,dv)) * 0.5f + 0.5f; */
     }
 
+    barrier(CLK_LOCAL_MEM_FENCE);
+
     if (get_local_id(0) == 0 &&  get_local_id(1) == 0) {
         int i = calc_block_pos(get_group_id(0), get_group_id(1), get_group_id(2));
         block_index[i] = (int4){x_min, y_min, x_max, y_max};
@@ -274,7 +276,7 @@ __kernel void sample(global const int* heads,
 {
     //local int count;
     local float4 colors[8][8];
-    local int locks[8][8];
+    //local int locks[8][8];
     
     int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1)); 
     int next = heads[tile_id];
@@ -284,8 +286,10 @@ __kernel void sample(global const int* heads,
     const int2 l = {get_local_id(0), get_local_id(1)};
     
     colors[l.x][l.y] = (float4){0,0,0,1};
-    locks[l.x][l.y] = 1;
+    //locks[l.x][l.y] = 1;
     //count = 1;
+
+    barrier(CLK_LOCAL_MEM_FENCE);
 
     while (next >= 0) {
         int2 node = node_heap[next];
@@ -294,17 +298,17 @@ __kernel void sample(global const int* heads,
 
         int2 ps[2][2];
 
-        int2 min_p = (int2) {(8<<PXLCOORD_SHIFT)-1, (8<<PXLCOORD_SHIFT)-1};
+        int2 min_p = (int2) {(8<<PXLCOORD_SHIFT), (8<<PXLCOORD_SHIFT)};
         int2 max_p = (int2) {0,0};
 
         for (int j = 0; j < 2; ++j) {
             for (int i = 0; i < 2; ++i) {
                 size_t p = calc_gridline_id(block_id, l.x+i, l.y+j);
-                int2 pxlpos = pxlpos_grid[p];
+                int2 pxlpos = pxlpos_grid[p] - o;
 
                 ps[i][j] = pxlpos;
-                min_p = min(min_p, pxlpos - o);
-                max_p = max(max_p, pxlpos - o);
+                min_p = min(min_p, pxlpos);
+                max_p = max(max_p, pxlpos);
             }
         }
 
@@ -312,7 +316,7 @@ __kernel void sample(global const int* heads,
 
 
         min_p = max(min_p, (int2) {0,0});
-        max_p = min(max_p, (int2) {(8<<PXLCOORD_SHIFT)-1, (8<<PXLCOORD_SHIFT)-1});
+        max_p = min(max_p, (int2) {(8<<PXLCOORD_SHIFT), (8<<PXLCOORD_SHIFT)});
 
         if (is_empty(min_p, max_p)) {
             continue;
@@ -321,16 +325,18 @@ __kernel void sample(global const int* heads,
         min_p = min_p >> PXLCOORD_SHIFT;
         max_p = max_p >> PXLCOORD_SHIFT;
 
-        for (int y = min_p.y; y <= max_p.y; ++y) {
-            for (int x = min_p.x; x <= max_p.x; ++x) {
+        for (int y = min_p.y; y < max_p.y; ++y) {
+            for (int x = min_p.x; x < max_p.x; ++x) {
                 
                 //while (atomic_cmpxchg(&locks[x][y], 1, 0)) {};
 
-                colors[x][y] += (float4){0.05, 0.05, 0.05,0};
+                colors[x][y] = (float4){0.5, 0.5, 0.5,0};
                 //atomic_xchg(&locks[x][y], 1);                
             }
         }
     }
+
+    barrier(CLK_LOCAL_MEM_FENCE);
 
     int fb_id = calc_framebuffer_pos(g);
     if (next == -2) {

@@ -467,7 +467,7 @@ namespace CL
 
         OPENCL_ASSERT(status);
 
-        if (config.create_trace() && rand() % 100 == 0) {
+        if (config.create_trace() && rand() % 10 == 0) {
             std::ofstream fs(config.trace_file().c_str());
 
             for (std::map<long, EventIndex>::iterator i = _events.begin(); i != _events.end(); ++i) {
