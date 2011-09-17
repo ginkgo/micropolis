@@ -12,7 +12,7 @@
 #define BLOCKS_PER_LINE (PATCH_SIZE/8)
 #define BLOCKS_PER_PATCH (BLOCKS_PER_LINE*BLOCKS_PER_LINE)
 
-#define PXLCOORD_SHIFT 4
+#define PXLCOORD_SHIFT 8
 
 #define VIEWPORT_MIN  (VIEWPORT_MIN_PIXEL  << PXLCOORD_SHIFT)
 #define VIEWPORT_MAX  (VIEWPORT_MAX_PIXEL  << PXLCOORD_SHIFT)
@@ -90,7 +90,7 @@ __kernel void dice (const global float4* patch_buffer,
     int2 coord = {(int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
                   (int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2)};
 
-    
+
     int grid_index = calc_grid_pos(nu, nv, patch_id);
     pos_grid[grid_index] = pos;
     pxlpos_grid[grid_index] = coord;
@@ -99,11 +99,15 @@ __kernel void dice (const global float4* patch_buffer,
 
 inline int is_front_facing(const int2 *ps)
 {
-    int2 d1 = ps[1] - ps[0];
-    int2 d2 = ps[2] - ps[0];
-    int2 d3 = ps[3] - ps[0];
+    if (BACKFACE_CULLING) {
+        int2 d1 = ps[1] - ps[0];
+        int2 d2 = ps[2] - ps[0];
+        int2 d3 = ps[3] - ps[0];
 
-    return 1;//(d1.x*d3.y-d3.x*d1.y < 0 || d3.x*d2.y-d2.x*d3.y < 0);
+        return (d1.x*d3.y-d3.x*d1.y < 0 || d3.x*d2.y-d2.x*d3.y < 0);
+    } else {
+        return 1;
+    }
 }
 
 inline int is_empty(int2 min, int2 max)
@@ -136,11 +140,11 @@ __kernel void shade(const global float4* pos_grid,
 
     // V
     // |
-    // 2 - 3 
+    // 2 - 3
     // | / |
     // 0 - 1 - U
 
-    float4 pos[4];
+    //float4 pos[4];
     int2 pxlpos[4];
 
     int nv = get_global_id(0), nu = get_global_id(1);
@@ -152,9 +156,9 @@ __kernel void shade(const global float4* pos_grid,
     for     (int vi = 0; vi < 2; ++vi) {
         for (int ui = 0; ui < 2; ++ui) {
             int i = ui + vi * 2;
-            pos[i] = pos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
+            //pos[i] = pos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
             int2 p  = pxlpos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
-            
+
             pmin = min(pmin, p);
             pmax = max(pmax, p);
 
@@ -163,9 +167,9 @@ __kernel void shade(const global float4* pos_grid,
     }
 
     if (is_front_facing(pxlpos)) {
-        atomic_min(&x_min, pmin.x); 
+        atomic_min(&x_min, pmin.x);
         atomic_min(&y_min, pmin.y);
-        atomic_max(&x_max, pmax.x); 
+        atomic_max(&x_max, pmax.x);
         atomic_max(&y_max, pmax.y);
 
         /* float3 du = (pos[1] - pos[0] +  */
@@ -181,7 +185,7 @@ __kernel void shade(const global float4* pos_grid,
     if (get_local_id(0) == 0 &&  get_local_id(1) == 0) {
         int i = calc_block_pos(get_group_id(0), get_group_id(1), get_group_id(2));
         block_index[i] = (int4){x_min, y_min, x_max, y_max};
-    }   
+    }
 }
 
 __kernel void clear_heads(global int* heads)
@@ -194,7 +198,7 @@ inline int calc_node_pos(int block_id, int assign_cnt)
     if (assign_cnt >= MAX_BLOCK_ASSIGNMENTS) {
         return -2;
     }
-    
+
     return block_id + assign_cnt * MAX_BLOCK_COUNT;
 }
 
@@ -211,7 +215,7 @@ __kernel void assign(global const int4* block_index,
     int4 block_bound = block_index[block_id];
 
     int assign_cnt = 0;
-    
+
     if (is_empty(block_bound.xy, block_bound.zw)) {
         // Empty block
         return;
@@ -234,7 +238,7 @@ __kernel void assign(global const int4* block_index,
             }
         }
     }
-    
+
 }
 
 inline size_t calc_gridline_id(size_t block_id, size_t lx, size_t ly)
@@ -247,47 +251,67 @@ inline size_t calc_gridline_id(size_t block_id, size_t lx, size_t ly)
     return calc_grid_pos(v*8+lx, u*8+ly, patch);
 }
 
-/* inline int idot (int2 a, int2 b) */
-/* { */
-/*     return a.x * b.x + a.y * b.y; */
-/* } */
+inline int idot (int2 a, int2 b)
+{
+    return a.x * b.x + a.y * b.y;
+}
 
-/* bool triangle_test(int2 p1, int2 p2, int2 p3, int2 tp) */
-/* { */
-/*     int2 d1 = p2-p1; */
-/*     int2 d2 = p3-p2; */
-/*     int2 d3 = p1-p3; */
+int triangle_test(const int2* ps, int2 tp)
+{
 
-/*     d1 = (int2){-d1.y, d1.x}; */
-/*     d2 = (int2){-d2.y, d2.x}; */
-/*     d3 = (int2){-d3.y, d3.x}; */
+    //   2      TT      3
+    //    +<-----------+
+    //    |          ++A
+    //    |        ++  |
+    //  RR|     MM     |LL
+    //    |  ++        |
+    //    V++          |
+    //    +----------->+
+    //   0      BB      1
 
-/*     int o1 = idot(d1, p1);  */
-/*     int o2 = idot(d2, p2); */
-/*     int o3 = idot(d3, p3); */
 
-/*     return idot(tp, d1) - o1 > 0 && idot(tp, d2) - o2 > 0 && idot(tp, d3) - o3 > 0; */
-/* } */
+    int2 dm = ps[3] - ps[0];
+    int2 db = ps[1] - ps[0];
+    int2 dl = ps[3] - ps[1];
+    int2 dr = ps[0] - ps[2];
+    int2 dt = ps[2] - ps[3];
+
+    dm = (int2){-dm.y, dm.x};
+    db = (int2){-db.y, db.x};
+    dl = (int2){-dl.y, dl.x};
+    dr = (int2){-dr.y, dr.x};
+    dt = (int2){-dt.y, dt.x};
+
+    int om = idot(dm, ps[3]);
+    int ob = idot(db, ps[1]);
+    int ol = idot(dl, ps[3]) + 1;
+    int or = idot(dr, ps[0]);
+    int ot = idot(dt, ps[2]) + 1;
+
+    if (idot(tp, dm) - om <= 0) {
+        return idot(tp, dr) - or <= 0 && idot(tp, dt) - ot <= 0;
+    } else {
+        return idot(tp, db) - ob <= 0 && idot(tp, dl) - ol <= 0;
+    }
+}
 
 __kernel void sample(global const int* heads,
                      global const int2* node_heap,
                      global const int2* pxlpos_grid,
                      global float4* framebuffer)
 {
-    //local int count;
     local float4 colors[8][8];
-    //local int locks[8][8];
-    
-    int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1)); 
+    local int locks[8][8];
+
+    int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1));
     int next = heads[tile_id];
 
     const int2 o = (int2){get_group_id(0), get_group_id(1)} << (3 + PXLCOORD_SHIFT);
     const int2 g = {get_global_id(0), get_global_id(1)};
     const int2 l = {get_local_id(0), get_local_id(1)};
-    
+
     colors[l.x][l.y] = (float4){0,0,0,1};
-    //locks[l.x][l.y] = 1;
-    //count = 1;
+    locks[l.x][l.y] = 1;
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -296,9 +320,14 @@ __kernel void sample(global const int* heads,
         next = node.y;
         int block_id = node.x;
 
-        int2 ps[2][2];
+        // V
+        // |
+        // 2 - 3
+        // | / |
+        // 0 - 1 - U
+        int2 ps[4];
 
-        int2 min_p = (int2) {(8<<PXLCOORD_SHIFT), (8<<PXLCOORD_SHIFT)};
+        int2 min_p = (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT};
         int2 max_p = (int2) {0,0};
 
         for (int j = 0; j < 2; ++j) {
@@ -306,32 +335,40 @@ __kernel void sample(global const int* heads,
                 size_t p = calc_gridline_id(block_id, l.x+i, l.y+j);
                 int2 pxlpos = pxlpos_grid[p] - o;
 
-                ps[i][j] = pxlpos;
+                int idx = i + j * 2;
+                ps[idx] = pxlpos;
                 min_p = min(min_p, pxlpos);
                 max_p = max(max_p, pxlpos);
             }
         }
 
-        //colors[l.x][l.y] += (float4){0.01f, 0.01f, 0.01f, 1};
-
-
         min_p = max(min_p, (int2) {0,0});
-        max_p = min(max_p, (int2) {(8<<PXLCOORD_SHIFT), (8<<PXLCOORD_SHIFT)});
+        max_p = min(max_p, (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT});
 
-        if (is_empty(min_p, max_p)) {
-            continue;
-        }
+        /* if (is_empty(min_p, max_p) || !is_front_facing(&(ps[0][0]))) { */
+        /*     continue; */
+        /* } */
 
         min_p = min_p >> PXLCOORD_SHIFT;
         max_p = max_p >> PXLCOORD_SHIFT;
 
+        /* min_p = (int2){0,0}; */
+        /* max_p = (int2){8,8}; */
+
         for (int y = min_p.y; y < max_p.y; ++y) {
             for (int x = min_p.x; x < max_p.x; ++x) {
-                
-                //while (atomic_cmpxchg(&locks[x][y], 1, 0)) {};
 
-                colors[x][y] = (float4){0.5, 0.5, 0.5,0};
-                //atomic_xchg(&locks[x][y], 1);                
+                int2 tp = ((int2){x,y} << PXLCOORD_SHIFT) + (1 << (PXLCOORD_SHIFT));
+
+                if (triangle_test(ps, tp)) {
+
+                    while (atomic_cmpxchg(&locks[x][y], 1, 0)) {};
+
+                    colors[x][y] += (float4){0.15f, 0.15f, 0.15f,0};
+                    // colors[x][y] = (float4){0.5f, 0.5f, 0.5f,0};
+
+                    atomic_xchg(&locks[x][y], 1);
+                }
             }
         }
     }
@@ -345,4 +382,4 @@ __kernel void sample(global const int* heads,
         framebuffer[fb_id] = colors[l.x][l.y];
     }
 }
-                     
+

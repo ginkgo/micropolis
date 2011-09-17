@@ -40,6 +40,7 @@ namespace Reyes
         _reyes_program.set_constant("MAX_BLOCK_COUNT", _max_block_count);
         _reyes_program.set_constant("MAX_BLOCK_ASSIGNMENTS", config.max_block_assignments());
         _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
+        _reyes_program.set_constant("BACKFACE_CULLING", config.backface_culling());
                 
         _reyes_program.compile(device, "reyes.cl");
 

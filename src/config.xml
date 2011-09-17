@@ -81,6 +81,10 @@
       Target file for writing OpenCL trace to.
     </value>
 
+    <value name="backface_culling" type="bool" default="true">
+      Controls backface-culling.
+    </value>
+
   </values>
 
   <global name="config"/>
