@@ -28,6 +28,7 @@ namespace Reyes
         CL::Buffer _patch_buffer;
         CL::Buffer _pos_grid;
         CL::Buffer _pxlpos_grid;
+        CL::Buffer _color_grid;
         CL::Buffer _block_index;
         CL::Buffer _head_buffer;
         CL::Buffer _node_heap;

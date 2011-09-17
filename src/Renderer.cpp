@@ -25,6 +25,9 @@ namespace Reyes
         _pxlpos_grid(device, 
                      config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(ivec2),
                      CL_MEM_READ_WRITE),
+        _color_grid(device, 
+                    config.reyes_patches_per_pass() * square(config.reyes_patch_size()) * sizeof(vec4),
+                    CL_MEM_READ_WRITE),
         _block_index(device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE),
         _head_buffer(device,
                      framebuffer.size().x/8 * framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
@@ -57,6 +60,7 @@ namespace Reyes
         _shade_kernel->set_arg_r(0, _pos_grid);
         _shade_kernel->set_arg_r(1, _pxlpos_grid);
         _shade_kernel->set_arg_r(2, _block_index);
+        _shade_kernel->set_arg_r(3, _color_grid);
 
         _clear_heads_kernel->set_arg_r(0, _head_buffer);
 
@@ -68,6 +72,7 @@ namespace Reyes
         _sample_kernel->set_arg_r(1, _node_heap);
         _sample_kernel->set_arg_r(2, _pxlpos_grid);
         _sample_kernel->set_arg_r(3, _framebuffer.get_buffer());
+        _sample_kernel->set_arg_r(4, _color_grid);
         
     }
 

@@ -12,7 +12,7 @@
 #define BLOCKS_PER_LINE (PATCH_SIZE/8)
 #define BLOCKS_PER_PATCH (BLOCKS_PER_LINE*BLOCKS_PER_LINE)
 
-#define PXLCOORD_SHIFT 8
+#define PXLCOORD_SHIFT 10
 
 #define VIEWPORT_MIN  (VIEWPORT_MIN_PIXEL  << PXLCOORD_SHIFT)
 #define VIEWPORT_MAX  (VIEWPORT_MAX_PIXEL  << PXLCOORD_SHIFT)
@@ -85,6 +85,8 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_patch(patch, uv);
 
+    pos.y += sin(pos.x*15) * 0.1f;
+
     float4 p = mul_m44v4(proj, pos);
 
     int2 coord = {(int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
@@ -120,9 +122,15 @@ inline int calc_block_pos(int u, int v, int patch_id)
     return u + v * BLOCKS_PER_LINE + patch_id * BLOCKS_PER_PATCH;
 }
 
+inline int calc_color_grid_pos(int u, int v, int patch_id)
+{
+    return u + v * PATCH_SIZE + patch_id * (PATCH_SIZE*PATCH_SIZE);
+}
+
 __kernel void shade(const global float4* pos_grid,
                     const global int2* pxlpos_grid,
-                    global int4* block_index)
+                    global int4* block_index,
+                    global float4* color_grid)
 {
     volatile local int x_min;
     volatile local int y_min;
@@ -144,7 +152,7 @@ __kernel void shade(const global float4* pos_grid,
     // | / |
     // 0 - 1 - U
 
-    //float4 pos[4];
+    float4 pos[4];
     int2 pxlpos[4];
 
     int nv = get_global_id(0), nu = get_global_id(1);
@@ -156,7 +164,7 @@ __kernel void shade(const global float4* pos_grid,
     for     (int vi = 0; vi < 2; ++vi) {
         for (int ui = 0; ui < 2; ++ui) {
             int i = ui + vi * 2;
-            //pos[i] = pos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
+            pos[i] = pos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
             int2 p  = pxlpos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
 
             pmin = min(pmin, p);
@@ -172,12 +180,14 @@ __kernel void shade(const global float4* pos_grid,
         atomic_max(&x_max, pmax.x);
         atomic_max(&y_max, pmax.y);
 
-        /* float3 du = (pos[1] - pos[0] +  */
-        /*              pos[3] - pos[2]).xyz * 0.5f; */
-        /* float3 dv = (pos[2] - pos[0] +  */
-        /*              pos[3] - pos[1]).xyz * 0.5f; */
+        float3 du = (pos[1] - pos[0] +
+                     pos[3] - pos[2]).xyz * 0.5f;
+        float3 dv = (pos[2] - pos[0] +
+                     pos[3] - pos[1]).xyz * 0.5f;
 
-        /* float3 n = normalize(cross(du,dv)) * 0.5f + 0.5f; */
+        float3 n = normalize(cross(du,dv)) * 0.5f + 0.5f;
+
+        color_grid[calc_color_grid_pos(nu, nv, patch_id)] = n.xyzz;
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -241,14 +251,16 @@ __kernel void assign(global const int4* block_index,
 
 }
 
-inline size_t calc_gridline_id(size_t block_id, size_t lx, size_t ly)
+inline void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
+                              private size_t* u, private size_t* v, private size_t* patch)
 {
-    size_t patch = block_id / BLOCKS_PER_PATCH;
+    *patch = block_id / BLOCKS_PER_PATCH;
     size_t local_block_id = block_id % BLOCKS_PER_PATCH;
-    size_t v = local_block_id / BLOCKS_PER_LINE;
-    size_t u = local_block_id % BLOCKS_PER_LINE;
+    size_t bv = local_block_id / BLOCKS_PER_LINE;
+    size_t bu = local_block_id % BLOCKS_PER_LINE;
 
-    return calc_grid_pos(v*8+lx, u*8+ly, patch);
+    *u = bv * 8 + lx;
+    *v = bu * 8 + ly;
 }
 
 inline int idot (int2 a, int2 b)
@@ -256,7 +268,7 @@ inline int idot (int2 a, int2 b)
     return a.x * b.x + a.y * b.y;
 }
 
-int triangle_test(const int2* ps, int2 tp)
+int inside_quad(const int2* ps, int2 tp)
 {
 
     //   2      TT      3
@@ -268,6 +280,8 @@ int triangle_test(const int2* ps, int2 tp)
     //    V++          |
     //    +----------->+
     //   0      BB      1
+    //
+    // (M goes 0 -> 3)
 
 
     int2 dm = ps[3] - ps[0];
@@ -284,9 +298,9 @@ int triangle_test(const int2* ps, int2 tp)
 
     int om = idot(dm, ps[3]);
     int ob = idot(db, ps[1]);
-    int ol = idot(dl, ps[3]) + 1;
+    int ol = idot(dl, ps[3]);    
     int or = idot(dr, ps[0]);
-    int ot = idot(dt, ps[2]) + 1;
+    int ot = idot(dt, ps[2]);    
 
     if (idot(tp, dm) - om <= 0) {
         return idot(tp, dr) - or <= 0 && idot(tp, dt) - ot <= 0;
@@ -298,7 +312,8 @@ int triangle_test(const int2* ps, int2 tp)
 __kernel void sample(global const int* heads,
                      global const int2* node_heap,
                      global const int2* pxlpos_grid,
-                     global float4* framebuffer)
+                     global float4* framebuffer,
+                     global const float4* color_grid)
 {
     local float4 colors[8][8];
     local int locks[8][8];
@@ -330,9 +345,13 @@ __kernel void sample(global const int* heads,
         int2 min_p = (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT};
         int2 max_p = (int2) {0,0};
 
+        size_t patch_id, u, v;
+
+        recover_patch_pos(block_id, l.x, l.y,  &u, &v, &patch_id);
+
         for (int j = 0; j < 2; ++j) {
             for (int i = 0; i < 2; ++i) {
-                size_t p = calc_gridline_id(block_id, l.x+i, l.y+j);
+                size_t p = calc_grid_pos(u+i, v+j, patch_id);
                 int2 pxlpos = pxlpos_grid[p] - o;
 
                 int idx = i + j * 2;
@@ -341,6 +360,8 @@ __kernel void sample(global const int* heads,
                 max_p = max(max_p, pxlpos);
             }
         }
+
+        float4 c = color_grid[calc_color_grid_pos(u, v, patch_id)];
 
         min_p = max(min_p, (int2) {0,0});
         max_p = min(max_p, (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT});
@@ -360,12 +381,12 @@ __kernel void sample(global const int* heads,
 
                 int2 tp = ((int2){x,y} << PXLCOORD_SHIFT) + (1 << (PXLCOORD_SHIFT));
 
-                if (triangle_test(ps, tp)) {
+                if (inside_quad(ps, tp)) {
 
                     while (atomic_cmpxchg(&locks[x][y], 1, 0)) {};
 
-                    colors[x][y] += (float4){0.15f, 0.15f, 0.15f,0};
-                    // colors[x][y] = (float4){0.5f, 0.5f, 0.5f,0};
+                    colors[x][y] = c;
+                    //colors[x][y] += (float4){0.2, 0.2, 0.2, 1};
 
                     atomic_xchg(&locks[x][y], 1);
                 }
