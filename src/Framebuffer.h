@@ -35,7 +35,7 @@ namespace Reyes
         virtual ~Framebuffer();
 
 
-        void clear(CL::CommandQueue& queue);
+        CL::Event clear(CL::CommandQueue& queue, const CL::Event& e);
 
 
         const CL::Buffer& get_buffer() { return *_cl_buffer; }

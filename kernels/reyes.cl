@@ -1,4 +1,4 @@
-\
+
 // Compile time constants:
 // PATCH_SIZE            - int
 // TILE_SIZE             - int
@@ -200,7 +200,7 @@ __kernel void shade(const global float4* pos_grid,
         
         float sh = 60.0f;
 
-        float4 c = clamp(dot(n,l),0,10) * dc + pow(clamp(dot(n,h), 0, 10), sh) * sc;
+        float4 c = max(dot(n,l),0) * dc + pow(max(dot(n,h), 0), sh) * sc;
 
         color_grid[calc_color_grid_pos(nu, nv, patch_id)] = c;
     }
@@ -365,9 +365,10 @@ __kernel void sample(global const int* heads,
     const int2 g = {get_global_id(0), get_global_id(1)};
     const int2 l = {get_local_id(0), get_local_id(1)};
 
-    // TODO: Make configurable
-    colors[l.x][l.y] = (float4){0,0,0,1};
-    depths[l.x][l.y] = 100000.0f;
+    int fb_id = calc_framebuffer_pos(g);
+
+    colors[l.x][l.y] = framebuffer[fb_id];
+    depths[l.x][l.y] = colors[l.x][l.y].w;
     
     locks[l.x][l.y] = 1;
 
@@ -447,11 +448,12 @@ __kernel void sample(global const int* heads,
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    int fb_id = calc_framebuffer_pos(g);
     if (next == -2) {
         framebuffer[fb_id] = (float4){1,0,0,1};
     } else {
-        framebuffer[fb_id] = colors[l.x][l.y];
+        float4 c = colors[l.x][l.y];
+        float  d = depths[l.x][l.y];
+        framebuffer[fb_id] = (float4){c.y, c.z, c.x, d};
     }
 }
 

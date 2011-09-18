@@ -45,7 +45,7 @@ dice_group_width = 16
 max_block_assignments = 12
 
 // Clear color for framebuffer.
-clear_color = 0.15 0.25 0.8 0
+clear_color = 0.025 0.05 0.2 0
 
 // Patch data input file.
 input_file = data/teapot

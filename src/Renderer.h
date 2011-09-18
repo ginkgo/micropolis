@@ -20,7 +20,8 @@ namespace Reyes
         CL::CommandQueue& _queue;
         Framebuffer& _framebuffer;
 
-        vector<vec4> _control_points;
+        vector<vec4> _control_points_front;
+        vector<vec4> _control_points_back;
 
         size_t _patch_count;
         size_t _max_block_count;
@@ -43,9 +44,10 @@ namespace Reyes
         scoped_ptr<CL::Kernel> _sample_kernel;
 
         CL::Event _last_patch_write;
+        CL::Event _previous_to_last_patch_write;
         CL::Event _last_dice;
         CL::Event _last_sample;
-        CL::Event _framebuffer_acquire;
+        CL::Event _framebuffer_cleared;
 
         public:
 

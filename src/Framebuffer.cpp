@@ -30,13 +30,13 @@ namespace Reyes
     }
     
 
-    void Framebuffer::clear(CL::CommandQueue& queue)
+    CL::Event Framebuffer::clear(CL::CommandQueue& queue, const CL::Event& e)
     {
-        assert(0);
-        // _clear_kernel.set_arg(0, _cl_buffer->get());
-        // _clear_kernel.set_arg(1, config.clear_color());
-        // queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256,
-        //                  "clear framebuffer");
+        _clear_kernel.set_arg(0, _cl_buffer->get());
+        vec4 color = config.clear_color();
+        _clear_kernel.set_arg(1, vec4(color.x, color.y, color.z, 1000));
+        return queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256,
+                                "clear framebuffer", e);
     }
 
 

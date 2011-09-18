@@ -16,5 +16,5 @@ void main (void)
 
     int pos = grid_id * bsize * bsize + locl_id;
 
-    gl_FragColor = texelFetch(framebuffer, pos);
+    gl_FragColor = vec4(texelFetch(framebuffer, pos).xyz, 1);
 }

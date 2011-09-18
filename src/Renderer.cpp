@@ -15,10 +15,11 @@ namespace Reyes
                        Framebuffer& framebuffer) :
         _queue(queue),
         _framebuffer(framebuffer),
-        _control_points(16 * config.reyes_patches_per_pass()),
+        _control_points_back(16 * config.reyes_patches_per_pass()),
+        _control_points_front(16 * config.reyes_patches_per_pass()),
         _patch_count(0),
         _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass()),
-        _patch_buffer(device, _control_points.size() * sizeof(vec4), CL_MEM_READ_ONLY),
+        _patch_buffer(device, _control_points_back.size() * sizeof(vec4), CL_MEM_READ_ONLY),
         _pos_grid(device, 
                   config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
                   CL_MEM_READ_WRITE),
@@ -88,7 +89,9 @@ namespace Reyes
 
     void Renderer::prepare()
     {
-        _framebuffer_acquire = _framebuffer.acquire(_queue, CL::Event());
+        CL::Event e = _framebuffer.acquire(_queue, CL::Event());
+
+        _framebuffer_cleared = _framebuffer.clear(_queue, e);
 
         statistics.start_render();
     }
@@ -97,16 +100,17 @@ namespace Reyes
     {
         flush();
 
-        CL::Event e = _framebuffer.release(_queue, _last_sample);
+        _framebuffer.release(_queue, _last_sample);
 
         _queue.finish();
 
         _framebuffer.show();
 
+        _previous_to_last_patch_write = CL::Event();
         _last_patch_write = CL::Event();
         _last_dice = CL::Event();
         _last_sample = CL::Event();
-        _framebuffer_acquire = CL::Event();
+        _framebuffer_cleared = CL::Event();
 
         statistics.end_render();
     }
@@ -125,7 +129,7 @@ namespace Reyes
 
         for     (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
-                _control_points[cp_index] = vec4(patch.P[i][j], 1);
+                _control_points_back[cp_index] = vec4(patch.P[i][j], 1);
                 ++cp_index;
             }
         }
@@ -134,6 +138,7 @@ namespace Reyes
         
         if (_patch_count >= config.reyes_patches_per_pass()) {
             flush();
+            _queue.wait_for_events(_previous_to_last_patch_write);
         }
     
         statistics.inc_patch_count();
@@ -145,14 +150,14 @@ namespace Reyes
             return;
         }
         
-        _queue.wait_for_events(_last_patch_write);
 
         CL::Event e, f;
         e = _queue.enq_write_buffer(_patch_buffer, 
-                                    _control_points.data(), 
+                                    _control_points_back.data(), 
                                     sizeof(vec4) * _patch_count * 16,
                                     "write patches", _last_dice);
 
+        _previous_to_last_patch_write = _last_patch_write;
         _last_patch_write = e;
 
         int patch_size  = config.reyes_patch_size();
@@ -172,11 +177,14 @@ namespace Reyes
         e = _queue.enq_kernel(*_assign_kernel, _patch_count * square(patch_size/8), 64,
                               "assign blocks", e | f);
         e = _queue.enq_kernel(*_sample_kernel, _framebuffer.size(), ivec2(8, 8),
-                              "sample", _framebuffer_acquire | e);
+                              "sample", _framebuffer_cleared | e);
                                 
         _last_sample = e;
 
         _patch_count = 0;
+
+
+        _control_points_back.swap(_control_points_front);
     }
 
 }
