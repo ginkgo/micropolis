@@ -7,6 +7,7 @@
 
 #include "Statistics.h"
 #include <fstream>
+#include <iomanip>
 
 namespace
 {
@@ -650,6 +651,7 @@ namespace CL
         _program(0),
         _source_buffer(new std::stringstream())
     {        
+        *_source_buffer << std::setiosflags(std::ios::fixed) << std::setprecision(22);
     }
     
 
@@ -675,7 +677,7 @@ namespace CL
     void Program::set_constant(const string& name, float value)
     {
         assert(_source_buffer);
-        *_source_buffer << "#define " << name << " " << value << endl;
+        *_source_buffer << "#define " << name << " " << value << "f" << endl;
     }
 
     void Program::set_constant(const string& name, ivec2 value)
@@ -689,8 +691,8 @@ namespace CL
     {
         assert(_source_buffer);
         *_source_buffer << "#define " << name << " ((float4){" 
-                        << value.x << ", " << value.y << ", " 
-                        << value.z << ", " << value.w <<  "})" << endl;
+                        << value.x << "f, " << value.y << "f, " 
+                        << value.z << "f, " << value.w <<  "f})" << endl;
     }
 
     void Program::compile(Device& device,  const string& filename)

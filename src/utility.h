@@ -4,6 +4,7 @@
 #include "common.h"
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 
 #define THOUSAND 1000L
 #define MILLION  1000000L
@@ -134,6 +135,30 @@ template<typename T> inline bool from_string(const string& s, T& t)
     return true;
 }
 
+
+template<> inline bool from_string(const string& s, bool& t)
+{
+    if (s == "true") {
+        t = true;
+        return true;
+    } 
+    if (s == "false") {
+        t = false;
+        return true;
+    }
+
+    std::stringstream ss(s);
+    
+    bool tmp;
+
+    if ((ss >> tmp).fail()) {
+        return false;
+    }
+    
+    t = tmp;
+    return true;
+}
+
 /**
  * Convert an arbitrary type variable to a string.
  * This is the default implementation which should work with types that 
@@ -145,6 +170,7 @@ template<typename T> inline string to_string(const T& t)
 {
     std::stringstream ss;
     
+    ss << std::boolalpha;
     ss << t;
 
     return ss.str();    

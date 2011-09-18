@@ -23,10 +23,10 @@ platform_id = 0
 device_id = 0
 
 // Print more information.
-verbose = 1
+verbose = true
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
-disable_buffer_sharing = 1
+disable_buffer_sharing = true
 
 // Size used for bounding and dicing.
 reyes_patch_size = 128
@@ -51,11 +51,11 @@ clear_color = 0.025 0.05 0.2 0
 input_file = data/teapot
 
 // Create an OpenCL timing trace.
-create_trace = 1
+create_trace = true
 
 // Target file for writing OpenCL trace to.
 trace_file = reyes.trace
 
 // Controls backface-culling.
-backface_culling = 1
+backface_culling = true
 
