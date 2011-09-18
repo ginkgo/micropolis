@@ -42,7 +42,7 @@ bound_n_split_limit = 100
 dice_group_width = 16
 
 // Maximum number of framebuffer tiles, a block can be assigned to.
-max_block_assignments = 16
+max_block_assignments = 12
 
 // Clear color for framebuffer.
 clear_color = 0.15 0.25 0.8 0

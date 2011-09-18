@@ -64,6 +64,9 @@ void mainloop()
         }
 
         view *= glm::rotate<float>(time_diff * 5, 0,0,1);
+        view *= glm::rotate<float>(time_diff * 7, 0,1,0);
+        view *= glm::rotate<float>(time_diff * 11, 1,0,0);
+
 
         scene.set_view(view);
 

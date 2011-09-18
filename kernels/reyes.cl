@@ -65,7 +65,8 @@ inline size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
 __kernel void dice (const global float4* patch_buffer,
                     global float4* pos_grid,
                     global int2* pxlpos_grid,
-                    float16 proj)
+                    float16 proj,
+                    global float* depth_grid)
 {
     float4 patch[16];
 
@@ -85,8 +86,8 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_patch(patch, uv);
 
-    pos.y += sin(pos.x*15) * 0.1f;
-
+    pos.y += sin(pos.x*15) * 0.05f;
+    
     float4 p = mul_m44v4(proj, pos);
 
     int2 coord = {(int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
@@ -96,6 +97,7 @@ __kernel void dice (const global float4* patch_buffer,
     int grid_index = calc_grid_pos(nu, nv, patch_id);
     pos_grid[grid_index] = pos;
     pxlpos_grid[grid_index] = coord;
+    depth_grid[grid_index] = p.z/p.w;
 }
 
 
@@ -185,9 +187,22 @@ __kernel void shade(const global float4* pos_grid,
         float3 dv = (pos[2] - pos[0] +
                      pos[3] - pos[1]).xyz * 0.5f;
 
-        float3 n = normalize(cross(du,dv)) * 0.5f + 0.5f;
+        float3 n = normalize(cross(dv,du));
 
-        color_grid[calc_color_grid_pos(nu, nv, patch_id)] = n.xyzz;
+        float3 l = normalize((float3){4,3,8});
+
+        float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
+
+        float4 dc = {0.1f, 0.2f, 1, 1};
+        float4 sc = {1, 1, 1, 1};
+        
+        float3 h = normalize(l+v);
+        
+        float sh = 60.0f;
+
+        float4 c = clamp(dot(n,l),0,10) * dc + pow(clamp(dot(n,h), 0, 10), sh) * sc;
+
+        color_grid[calc_color_grid_pos(nu, nv, patch_id)] = c;
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -268,8 +283,10 @@ inline int idot (int2 a, int2 b)
     return a.x * b.x + a.y * b.y;
 }
 
-int inside_quad(const int2* ps, int2 tp)
+int inside_quad(const int2* ps, int2 tp, float4* weights)
 {
+    // TODO: Vectorize
+
 
     //   2      TT      3
     //    +<-----------+
@@ -290,11 +307,11 @@ int inside_quad(const int2* ps, int2 tp)
     int2 dr = ps[0] - ps[2];
     int2 dt = ps[2] - ps[3];
 
-    dm = (int2){-dm.y, dm.x};
-    db = (int2){-db.y, db.x};
-    dl = (int2){-dl.y, dl.x};
-    dr = (int2){-dr.y, dr.x};
-    dt = (int2){-dt.y, dt.x};
+    dm = (int2){dm.y, -dm.x};
+    db = (int2){db.y, -db.x};
+    dl = (int2){dl.y, -dl.x};
+    dr = (int2){dr.y, -dr.x};
+    dt = (int2){dt.y, -dt.x};
 
     int om = idot(dm, ps[3]);
     int ob = idot(db, ps[1]);
@@ -302,10 +319,30 @@ int inside_quad(const int2* ps, int2 tp)
     int or = idot(dr, ps[0]);
     int ot = idot(dt, ps[2]);    
 
-    if (idot(tp, dm) - om <= 0) {
-        return idot(tp, dr) - or <= 0 && idot(tp, dt) - ot <= 0;
+    int vm = idot(tp, dm) - om;
+
+    if (vm > 0) {
+        int vr = idot(tp, dr) - or;
+        int vt = idot(tp, dt) - ot;
+
+        *weights = (float4){(float)vt/(idot(ps[0], dt) - ot),
+                            0,
+                            (float)vm/(idot(ps[2], dm) - om),
+                            (float)vr/(idot(ps[3], dr) - or)};                           
+                            
+
+        return  vr >= 0 && vt >= 0;
     } else {
-        return idot(tp, db) - ob <= 0 && idot(tp, dl) - ol <= 0;
+        int vl = idot(tp, dl) - ol;
+        int vb = idot(tp, db) - ob;
+
+        *weights = (float4){(float)vl/(idot(ps[0], dl) - ol),
+                            (float)vm/(idot(ps[1], dm) - om),
+                            0,
+                            (float)vb/(idot(ps[3], db) - ob)};                           
+                            
+
+        return  vl >= 0 && vb >= 0;
     }
 }
 
@@ -313,10 +350,13 @@ __kernel void sample(global const int* heads,
                      global const int2* node_heap,
                      global const int2* pxlpos_grid,
                      global float4* framebuffer,
-                     global const float4* color_grid)
+                     global const float4* color_grid,
+                     global const float* depth_grid)
 {
     local float4 colors[8][8];
+    local float depths[8][8];
     local int locks[8][8];
+    
 
     int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1));
     int next = heads[tile_id];
@@ -325,7 +365,10 @@ __kernel void sample(global const int* heads,
     const int2 g = {get_global_id(0), get_global_id(1)};
     const int2 l = {get_local_id(0), get_local_id(1)};
 
+    // TODO: Make configurable
     colors[l.x][l.y] = (float4){0,0,0,1};
+    depths[l.x][l.y] = 100000.0f;
+    
     locks[l.x][l.y] = 1;
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -341,6 +384,7 @@ __kernel void sample(global const int* heads,
         // | / |
         // 0 - 1 - U
         int2 ps[4];
+        float4 ds;
 
         int2 min_p = (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT};
         int2 max_p = (int2) {0,0};
@@ -353,6 +397,10 @@ __kernel void sample(global const int* heads,
             for (int i = 0; i < 2; ++i) {
                 size_t p = calc_grid_pos(u+i, v+j, patch_id);
                 int2 pxlpos = pxlpos_grid[p] - o;
+                float depth = depth_grid[p];
+                
+                ds = ds.yzwx;
+                ds.w = depth;
 
                 int idx = i + j * 2;
                 ps[idx] = pxlpos;
@@ -366,27 +414,30 @@ __kernel void sample(global const int* heads,
         min_p = max(min_p, (int2) {0,0});
         max_p = min(max_p, (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT});
 
-        /* if (is_empty(min_p, max_p) || !is_front_facing(&(ps[0][0]))) { */
-        /*     continue; */
-        /* } */
+        if (is_empty(min_p, max_p) || !is_front_facing(ps)) {
+            continue;
+        }
 
         min_p = min_p >> PXLCOORD_SHIFT;
         max_p = max_p >> PXLCOORD_SHIFT;
 
-        /* min_p = (int2){0,0}; */
-        /* max_p = (int2){8,8}; */
+        float4 weights;
 
         for (int y = min_p.y; y < max_p.y; ++y) {
             for (int x = min_p.x; x < max_p.x; ++x) {
 
                 int2 tp = ((int2){x,y} << PXLCOORD_SHIFT) + (1 << (PXLCOORD_SHIFT));
 
-                if (inside_quad(ps, tp)) {
+                if (inside_quad(ps, tp, &weights)) {
 
                     while (atomic_cmpxchg(&locks[x][y], 1, 0)) {};
-
-                    colors[x][y] = c;
-                    //colors[x][y] += (float4){0.2, 0.2, 0.2, 1};
+                    
+                    float depth = dot(ds, weights);
+                    
+                    if (depths[x][y] > depth) {
+                        colors[x][y] = c;
+                        depths[x][y] = depth;
+                    }
 
                     atomic_xchg(&locks[x][y], 1);
                 }
