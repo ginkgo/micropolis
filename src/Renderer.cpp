@@ -40,7 +40,7 @@ namespace Reyes
     {
         _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
         _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
-        _reyes_program.set_constant("PATCH_SIZE", config.reyes_patch_size());
+        _reyes_program.set_constant("PATCH_SIZE", (int)config.reyes_patch_size());
         _reyes_program.set_constant("VIEWPORT_MIN_PIXEL", ivec2(0,0));
         _reyes_program.set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
         _reyes_program.set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
@@ -48,6 +48,8 @@ namespace Reyes
         _reyes_program.set_constant("MAX_BLOCK_ASSIGNMENTS", config.max_block_assignments());
         _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
         _reyes_program.set_constant("BACKFACE_CULLING", config.backface_culling());
+        _reyes_program.set_constant("CLEAR_COLOR", config.clear_color());
+        _reyes_program.set_constant("CLEAR_DEPTH", 1.0f);
                 
         _reyes_program.compile(device, "reyes.cl");
 
@@ -91,9 +93,9 @@ namespace Reyes
     {
         CL::Event e = _framebuffer.acquire(_queue, CL::Event());
 
-        _framebuffer_cleared = _framebuffer.clear(_queue, e);
-
         statistics.start_render();
+
+        _sample_kernel->set_arg(6, (cl_int)1);
     }
 
     void Renderer::finish()
@@ -180,11 +182,12 @@ namespace Reyes
                               "sample", _framebuffer_cleared | e);
                                 
         _last_sample = e;
-
         _patch_count = 0;
 
+        _sample_kernel->set_arg(6, (cl_int)0);
 
         _control_points_back.swap(_control_points_front);
+        
     }
 
 }

@@ -666,10 +666,31 @@ namespace CL
         *_source_buffer << "#define " << name << " " << value << endl;
     }
 
+    void Program::set_constant(const string& name, size_t value)
+    {
+        assert(_source_buffer);
+        *_source_buffer << "#define " << name << " " << value << endl;
+    }
+
+    void Program::set_constant(const string& name, float value)
+    {
+        assert(_source_buffer);
+        *_source_buffer << "#define " << name << " " << value << endl;
+    }
+
     void Program::set_constant(const string& name, ivec2 value)
     {
         assert(_source_buffer);
-        *_source_buffer << "#define " << name << " ((int2){" << value.x << ", " << value.y << "})" << endl;
+        *_source_buffer << "#define " << name << " ((int2){" 
+                        << value.x << ", " << value.y << "})" << endl;
+    }
+
+    void Program::set_constant(const string& name, vec4 value)
+    {
+        assert(_source_buffer);
+        *_source_buffer << "#define " << name << " ((float4){" 
+                        << value.x << ", " << value.y << ", " 
+                        << value.z << ", " << value.w <<  "})" << endl;
     }
 
     void Program::compile(Device& device,  const string& filename)

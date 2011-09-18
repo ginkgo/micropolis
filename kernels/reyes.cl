@@ -356,7 +356,8 @@ __kernel void sample(global const int* heads,
                      global const int2* pxlpos_grid,
                      global float4* framebuffer,
                      global const float4* color_grid,
-                     global const float* depth_grid)
+                     global const float* depth_grid,
+                     int first_sample)
 {
     local float4 colors[8][8];
     local float depths[8][8];
@@ -372,8 +373,13 @@ __kernel void sample(global const int* heads,
 
     int fb_id = calc_framebuffer_pos(g);
 
-    colors[l.x][l.y] = framebuffer[fb_id];
-    depths[l.x][l.y] = colors[l.x][l.y].w;
+    if (first_sample) {
+        colors[l.x][l.y] = CLEAR_COLOR;
+        depths[l.x][l.y] = CLEAR_DEPTH;
+    } else {
+        colors[l.x][l.y] = framebuffer[fb_id];
+        depths[l.x][l.y] = colors[l.x][l.y].w;
+    }
     
     locks[l.x][l.y] = 1;
 
