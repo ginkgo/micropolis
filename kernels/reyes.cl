@@ -208,6 +208,11 @@ __kernel void shade(const global float4* pos_grid,
     barrier(CLK_LOCAL_MEM_FENCE);
 
     if (get_local_id(0) == 0 &&  get_local_id(1) == 0) {
+        x_min = max(VIEWPORT_MIN.x, x_min);
+        y_min = max(VIEWPORT_MIN.y, y_min);
+        x_max = min(VIEWPORT_MAX.x, x_max);
+        y_max = min(VIEWPORT_MAX.y, y_max);
+
         int i = calc_block_pos(get_group_id(0), get_group_id(1), get_group_id(2));
         block_index[i] = (int4){x_min, y_min, x_max, y_max};
     }
@@ -453,7 +458,9 @@ __kernel void sample(global const int* heads,
     } else {
         float4 c = colors[l.x][l.y];
         float  d = depths[l.x][l.y];
-        framebuffer[fb_id] = (float4){c.y, c.z, c.x, d};
+
+        framebuffer[fb_id] = (float4){c.x, c.y, c.z, d};
+        //framebuffer[fb_id] = (float4){c.y, c.z, c.x, d};
     }
 }
 
