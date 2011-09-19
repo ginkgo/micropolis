@@ -18,6 +18,9 @@ void read_patches(const char* filename, vector<BezierPatch>& patches);
 void transform_patch(const BezierPatch& patch, const mat4x3& mat,
                      BezierPatch& out);
 
+void transform_patch(const BezierPatch& patch, const mat4& mat,
+                     BezierPatch& out);
+
 void eval_spline(const vec3& p0, const vec3& p1, const vec3& p2, const vec3& p3,
                  float t, vec3& dst);
 void eval_patch(const BezierPatch& patch, float t, float s, vec3& dst);
@@ -28,6 +31,7 @@ void eval_patch_n(const BezierPatch& patch,
 void vsplit_patch(const BezierPatch& patch, BezierPatch& o0, BezierPatch& o1);
 void hsplit_patch(const BezierPatch& patch, BezierPatch& o0, BezierPatch& o1);
 void isplit_patch(const BezierPatch& patch, BezierPatch& o0, BezierPatch& o1);
+void pisplit_patch(const BezierPatch& patch, BezierPatch& o0, BezierPatch& o1, const mat4& proj);
 void qsplit_patch(const BezierPatch& patch, 
                   BezierPatch& o0, BezierPatch& o1, 
                   BezierPatch& o2, BezierPatch& o3);

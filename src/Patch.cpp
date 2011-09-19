@@ -13,6 +13,19 @@ void transform_patch(const BezierPatch& patch,
     }
 }
 
+void transform_patch(const BezierPatch& patch, 
+                     const mat4& mat, 
+                     BezierPatch& out)
+{
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+             vec4 pp = mat * vec4(patch.P[i][j],1.0f);
+
+             out.P[i][j] = pp.xyz / pp.w;
+        }
+    }
+}
+
 void read_patches(const char* filename, vector<BezierPatch>& patches)
 {
     vector<int> indices;
@@ -35,12 +48,21 @@ void read_patches(const char* filename, vector<BezierPatch>& patches)
         fscanf(file, "%i, %i, %i, %i\n", p+12, p+13, p+14, p+15);
     }
 
+    BBox bbox;
+
     fscanf(file, "%i\n", &nv);
     points.resize(nv);
     for (int i = 0; i < nv; ++i) {
         float x,y,z;
         fscanf(file, "%f, %f, %f\n", &x, &y, &z);
         points[i] = vec3(x,y,z);
+        bbox.add_point(vec3(x,y,z));
+    }
+
+    vec3 center = bbox.center();
+
+    for (int i = 0; i < nv; ++i) {
+        points[i] -= center;
     }
 
     patches.resize(np);
@@ -183,10 +205,35 @@ void hsplit_patch(const BezierPatch& patch,
 
 
 
+void pisplit_patch(const BezierPatch& patch,
+                   BezierPatch& o0, BezierPatch& o1,
+                   const mat4& proj)
+{
+    float a = 0, b = 0;
+
+    BezierPatch ppatch;
+    
+    transform_patch(patch, proj, ppatch);
+
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            a += glm::distance(ppatch.P[j][i].xy, ppatch.P[j+1][i].xy);
+            b += glm::distance(ppatch.P[i][j].xy, ppatch.P[i][j+1].xy);
+        }
+    }
+
+    if (a > b) {
+        vsplit_patch(patch, o0, o1);
+    } else {
+        hsplit_patch(patch, o0, o1);
+    }
+}
+
+
 void isplit_patch(const BezierPatch& patch,
                   BezierPatch& o0, BezierPatch& o1)
 {
-    float a,b;
+    float a = 0, b = 0;
 
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 3; ++j) {

@@ -32,7 +32,7 @@ void mainloop()
     Reyes::OGLSharedFramebuffer framebuffer(device, config.window_size(), 
                                             config.framebuffer_tile_size());
     mat4 view;
-    view *= glm::translate<float>(0,-2,-8);
+    view *= glm::translate<float>(0,0,-9);
     view *= glm::rotate<float>(-90, 1,0,0);
 
     CL::CommandQueue queue(device);

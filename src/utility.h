@@ -82,8 +82,12 @@ class BBox
         max.z = maximum(p.z, max.z);
     }     
 
-    vec3 size() {
+    vec3 size() const {
         return vec3(max.x-min.x, max.y-min.y, max.z-min.z);
+    }
+
+    vec3 center() const {
+        return (max + min) * 0.5f;
     }
 };
 
