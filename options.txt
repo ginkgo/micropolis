@@ -59,3 +59,7 @@ trace_file = reyes.trace
 // Controls backface-culling.
 backface_culling = true
 
+// Flip surface order of patches while loading.
+// This may be necessary for inverted models.
+flip_surface = false
+

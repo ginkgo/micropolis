@@ -13,7 +13,7 @@ namespace Reyes
     class Projection;
 }
 
-void read_patches(const char* filename, vector<BezierPatch>& patches);
+void read_patches(const char* filename, vector<BezierPatch>& patches, bool flip_surface);
 
 void transform_patch(const BezierPatch& patch, const mat4x3& mat,
                      BezierPatch& out);

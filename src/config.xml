@@ -85,6 +85,11 @@
       Controls backface-culling.
     </value>
 
+    <value name="flip_surface" type="bool" default="false">
+      Flip surface order of patches while loading.
+      This may be necessary for inverted models.
+    </value>
+
   </values>
 
   <global name="config"/>

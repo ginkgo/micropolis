@@ -6,6 +6,8 @@
 #include "Renderer.h"
 #include "Patch.h"
 
+#include "Config.h"
+
 namespace Reyes {
     Scene::Scene (Projection* projection) :
         _projection(projection), 
@@ -27,7 +29,7 @@ namespace Reyes {
 
     void Scene::add_patches(const string& filename)
     {
-        read_patches(filename.c_str(), _patches);
+        read_patches(filename.c_str(), _patches, config.flip_surface());
     }
 
     const Projection* Scene::get_projection() const
