@@ -92,6 +92,7 @@ namespace Reyes
     void Renderer::prepare()
     {
         CL::Event e = _framebuffer.acquire(_queue, CL::Event());
+        _framebuffer_cleared = _framebuffer.clear(_queue, e);
 
         statistics.start_render();
 

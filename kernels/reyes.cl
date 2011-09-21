@@ -86,7 +86,7 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_patch(patch, uv);
 
-    pos.y += sin(pos.x*15) * 0.05f;
+    pos.y += native_sin(pos.x*15) * 0.05f;
     
     float4 p = mul_m44v4(proj, pos);
 
@@ -283,9 +283,50 @@ inline void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
     *v = bu * 8 + ly;
 }
 
+inline int4 idot4 (int4 Ax, int4 Ay, int4 Bx, int4 By)
+{
+    return mad24(Ax, Bx, mul24(Ay,  By));
+}
+
+
 inline int idot (int2 a, int2 b)
 {
-    return a.x * b.x + a.y * b.y;
+    return mad24(a.x, b.x, mul24(a.y,  b.y));
+}
+
+int inside_quad2(int4 Px, int4 Py, int2 tp, float4* weights)
+{
+
+    //   2z     TT      3w
+    //    +<-----------+
+    //    |          ++A
+    //    |        ++  |
+    //  RR|     MM     |LL
+    //    |  ++        |
+    //    V++          |
+    //    +----------->+
+    //   0x     BB      1y
+    //
+    // (M goes 0 -> 3)
+
+    int4 Tx = tp.xxxx;
+    int4 Ty = tp.yyyy;
+
+    int4 Dy = Px - Px.ywxz;
+    int4 Dx = Py.ywxz - Py;
+
+    int2 dm = {Py.w - Py.x, Px.x - Px.w};
+    int2 om = idot(dm, (int2){Px.x, Py.x});
+
+    int4 Ox = idot4(Dx, Dy, Px, Py);
+
+    int4 V = (idot4(Dx, Dy, Tx, Ty) - Ox >= 0);
+
+    int4 M = (idot(dm, tp) - om  > 0).xxxx ? (int4){1,1,0,0} : (int4){0,0,1,1};
+
+    *weights = (float4){0.25f,0.25f,0.25f,0.25f};
+
+    return all( V || M );
 }
 
 int inside_quad(const int2* ps, int2 tp, float4* weights)
@@ -351,6 +392,17 @@ int inside_quad(const int2* ps, int2 tp, float4* weights)
     }
 }
 
+typedef int lock_t;
+
+#define LOCK(lock)  \
+    while (1) {  \
+    if (atomic_cmpxchg(&(lock), 1, 0)) continue;
+
+#define UNLOCK(lock) \
+    atomic_xchg(&(lock), 1);                    \
+    break;                                  \
+    }
+
 __kernel void sample(global const int* heads,
                      global const int2* node_heap,
                      global const int2* pxlpos_grid,
@@ -367,21 +419,19 @@ __kernel void sample(global const int* heads,
     int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1));
     int next = heads[tile_id];
 
+    if (next < 0) return;
+
     const int2 o = (int2){get_group_id(0), get_group_id(1)} << (3 + PXLCOORD_SHIFT);
     const int2 g = {get_global_id(0), get_global_id(1)};
     const int2 l = {get_local_id(0), get_local_id(1)};
 
     int fb_id = calc_framebuffer_pos(g);
 
-    if (first_sample) {
-        colors[l.x][l.y] = CLEAR_COLOR;
-        depths[l.x][l.y] = CLEAR_DEPTH;
-    } else {
-        colors[l.x][l.y] = framebuffer[fb_id];
-        depths[l.x][l.y] = colors[l.x][l.y].w;
-    }
-    
-    locks[l.x][l.y] = 1;
+    locks[l.y][l.x] = 1;
+
+    float4 c = framebuffer[fb_id];
+    colors[l.y][l.x] = c;
+    depths[l.y][l.x] = c.w;
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -395,30 +445,26 @@ __kernel void sample(global const int* heads,
         // 2 - 3
         // | / |
         // 0 - 1 - U
-        int2 ps[4];
-        float4 ds;
+        int Px[4], Py[4];
+        float ds[4];
 
         int2 min_p = (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT};
         int2 max_p = (int2) {0,0};
 
         size_t patch_id, u, v;
-
         recover_patch_pos(block_id, l.x, l.y,  &u, &v, &patch_id);
 
-        for (int j = 0; j < 2; ++j) {
-            for (int i = 0; i < 2; ++i) {
-                size_t p = calc_grid_pos(u+i, v+j, patch_id);
-                int2 pxlpos = pxlpos_grid[p] - o;
-                float depth = depth_grid[p];
-                
-                ds = ds.yzwx;
-                ds.w = depth;
+        for (size_t idx = 0; idx < 4; ++idx) {
+            size_t p = calc_grid_pos(u+(idx&1), v+(idx>>1), patch_id);
+            int2 pxlpos = pxlpos_grid[p] - o;
+            Px[idx] = pxlpos.x;
+            Py[idx] = pxlpos.y;
 
-                int idx = i + j * 2;
-                ps[idx] = pxlpos;
-                min_p = min(min_p, pxlpos);
-                max_p = max(max_p, pxlpos);
-            }
+            min_p = min(min_p, pxlpos);
+            max_p = max(max_p, pxlpos);
+
+            float depth = depth_grid[p];
+            ds[idx] = depth;
         }
 
         float4 c = color_grid[calc_color_grid_pos(u, v, patch_id)];
@@ -426,32 +472,33 @@ __kernel void sample(global const int* heads,
         min_p = max(min_p, (int2) {0,0});
         max_p = min(max_p, (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT});
 
-        if (is_empty(min_p, max_p) || !is_front_facing(ps)) {
-            continue;
-        }
+        /* if (is_empty(min_p, max_p) || !is_front_facing(ps)) { */
+        /*     continue; */
+        /* } */
 
         min_p = min_p >> PXLCOORD_SHIFT;
         max_p = max_p >> PXLCOORD_SHIFT;
 
         float4 weights;
-
+        float4 dsv = vload4(0, &ds[0]);
+        int4 Pxv = vload4(0, &Px[0]), Pyv = vload4(0, &Py[0]);
         for (int y = min_p.y; y < max_p.y; ++y) {
             for (int x = min_p.x; x < max_p.x; ++x) {
 
                 int2 tp = ((int2){x,y} << PXLCOORD_SHIFT) + (1 << (PXLCOORD_SHIFT));
 
-                if (inside_quad(ps, tp, &weights)) {
+                if (inside_quad2(Pxv, Pyv, tp, &weights)) {
 
-                    while (atomic_cmpxchg(&locks[x][y], 1, 0)) {};
+                    LOCK(locks[y][x]);
                     
-                    float depth = dot(ds, weights);
-                    
-                    if (depths[x][y] > depth) {
-                        colors[x][y] = c;
-                        depths[x][y] = depth;
+                    float depth = dot(dsv, weights);
+                        
+                    if (depths[y][x] > depth) {
+                        colors[y][x] = c;
+                        depths[y][x] = depth;
                     }
 
-                    atomic_xchg(&locks[x][y], 1);
+                    UNLOCK(locks[y][x]);
                 }
             }
         }
@@ -462,8 +509,8 @@ __kernel void sample(global const int* heads,
     if (next == -2) {
         framebuffer[fb_id] = (float4){1,0,0,1};
     } else {
-        float4 c = colors[l.x][l.y];
-        float  d = depths[l.x][l.y];
+        float4 c = colors[l.y][l.x];
+        float  d = depths[l.y][l.x];
 
         framebuffer[fb_id] = (float4){c.x, c.y, c.z, d};
         //framebuffer[fb_id] = (float4){c.y, c.z, c.x, d};
