@@ -294,40 +294,26 @@ inline int idot (int2 a, int2 b)
     return mad24(a.x, b.x, mul24(a.y,  b.y));
 }
 
-int inside_quad2(int4 Px, int4 Py, int2 tp, float4* weights)
-{
+/* int inside_quad2(int4 Px, int4 Py, int2 tp, float4* weights) */
+/* { */
 
-    //   2z     TT      3w
-    //    +<-----------+
-    //    |          ++A
-    //    |        ++  |
-    //  RR|     MM     |LL
-    //    |  ++        |
-    //    V++          |
-    //    +----------->+
-    //   0x     BB      1y
-    //
-    // (M goes 0 -> 3)
+/*     //   2z     TT      3w */
+/*     //    +<-----------+ */
+/*     //    |          ++A */
+/*     //    |        ++  | */
+/*     //  RR|     MM     |LL */
+/*     //    |  ++        | */
+/*     //    V++          | */
+/*     //    +----------->+ */
+/*     //   0x     BB      1y */
+/*     // */
+/*     // (M goes 0 -> 3) */
 
-    int4 Tx = tp.xxxx;
-    int4 Ty = tp.yyyy;
 
-    int4 Dy = Px - Px.ywxz;
-    int4 Dx = Py.ywxz - Py;
+/*     *weights = (float4){0.25f,0.25f,0.25f,0.25f}; */
 
-    int2 dm = {Py.w - Py.x, Px.x - Px.w};
-    int2 om = idot(dm, (int2){Px.x, Py.x});
-
-    int4 Ox = idot4(Dx, Dy, Px, Py);
-
-    int4 V = (idot4(Dx, Dy, Tx, Ty) - Ox >= 0);
-
-    int4 M = (idot(dm, tp) - om  > 0).xxxx ? (int4){1,1,0,0} : (int4){0,0,1,1};
-
-    *weights = (float4){0.25f,0.25f,0.25f,0.25f};
-
-    return all( V || M );
-}
+/*     return ; */
+/* } */
 
 int inside_quad(const int2* ps, int2 tp, float4* weights)
 {
@@ -445,7 +431,7 @@ __kernel void sample(global const int* heads,
         // 2 - 3
         // | / |
         // 0 - 1 - U
-        int Px[4], Py[4];
+        int Pxa[4], Pya[4];
         float ds[4];
 
         int2 min_p = (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT};
@@ -457,8 +443,8 @@ __kernel void sample(global const int* heads,
         for (size_t idx = 0; idx < 4; ++idx) {
             size_t p = calc_grid_pos(u+(idx&1), v+(idx>>1), patch_id);
             int2 pxlpos = pxlpos_grid[p] - o;
-            Px[idx] = pxlpos.x;
-            Py[idx] = pxlpos.y;
+            Pxa[idx] = pxlpos.x;
+            Pya[idx] = pxlpos.y;
 
             min_p = min(min_p, pxlpos);
             max_p = max(max_p, pxlpos);
@@ -479,15 +465,31 @@ __kernel void sample(global const int* heads,
         min_p = min_p >> PXLCOORD_SHIFT;
         max_p = max_p >> PXLCOORD_SHIFT;
 
-        float4 weights;
+        float4 weights = {0.25f, 0.25f, 0.25f, 0.25f};
         float4 dsv = vload4(0, &ds[0]);
-        int4 Pxv = vload4(0, &Px[0]), Pyv = vload4(0, &Py[0]);
+        int4 Px = vload4(0, &Pxa[0]), Py = vload4(0, &Pya[0]);
+
+        int4 Dy = Px - Px.ywxz;
+        int4 Dx = Py.ywxz - Py;
+
+        int2 dm = {Py.w - Py.x, Px.x - Px.w};
+        int2 om = idot(dm, (int2){Px.x, Py.x});
+
+        int4 Ox = idot4(Dx, Dy, Px, Py);
+
         for (int y = min_p.y; y < max_p.y; ++y) {
             for (int x = min_p.x; x < max_p.x; ++x) {
 
                 int2 tp = ((int2){x,y} << PXLCOORD_SHIFT) + (1 << (PXLCOORD_SHIFT));
 
-                if (inside_quad2(Pxv, Pyv, tp, &weights)) {
+                int4 Tx = tp.xxxx;
+                int4 Ty = tp.yyyy;
+
+                int4 V = (idot4(Dx, Dy, Tx, Ty) - Ox >= 0);
+                
+                int4 M = (idot(dm, tp) - om  > 0).xxxx ? (int4){1,1,0,0} : (int4){0,0,1,1};
+
+                if (all( V || M )) {
 
                     LOCK(locks[y][x]);
                     
