@@ -100,10 +100,17 @@ mm = inch/25.4
 
 length = math.ceil(10*milliseconds(max_time(items) - min_time(items)))/10
 
+f = math.log10(length)
+
+UNIT = 10.0**(math.floor(f))
+
+if (f - math.floor(f) < 0.5):
+    UNIT /= 5
+
 BORDER = 5*mm
 AXIS = 0*mm
 HEIGHT_PER_BAR = 2.5*mm
-LEN_PER_MS = 20*mm
+LEN_PER_MS = 20*mm/UNIT
 
 BAR_CNT = len(items)
 
@@ -116,16 +123,15 @@ surface = cairo.PDFSurface (sys.argv[2], WIDTH, HEIGHT)
 ctx = cairo.Context(surface)
 pctx = pangocairo.CairoContext(ctx)
 
-ctx.set_line_width(0.005)
+ctx.set_line_width(0.005*UNIT)
 
 ctx.translate(BORDER, BORDER+AXIS)
 ctx.scale(LEN_PER_MS, LEN_PER_MS)
 
-ctx.set_font_size(0.05)
+ctx.set_font_size(0.05*UNIT)
 ctx.select_font_face('FreeSans')
 
-for t in range(0, int(length*10)):
-
+for t in range(0, int((length*10)/UNIT)):
 
     ctx.stroke()
     if t == 166:
@@ -136,7 +142,7 @@ for t in range(0, int(length*10)):
         ctx.set_source_rgb(0.87,0.87,0.87)
     else:
         ctx.set_source_rgb(0.95,0.95,0.95)
-    ctx.move_to(t * 0.1, -0)
+    ctx.move_to(t * 0.1 * UNIT, -0)
     ctx.rel_line_to(0, VHEIGHT/LEN_PER_MS)
     ctx.stroke()
     ctx.set_source_rgb(0.3,0.3,0.3)
@@ -147,17 +153,17 @@ for t in range(0, int(length*10)):
     elif t % 5 == 0:
         l = 0.025
 
-    ctx.move_to(t * 0.1, -0)
+    ctx.move_to(t * 0.1 * UNIT, -0)
     ctx.rel_line_to(0, -l)
 
-    ctx.move_to(t * 0.1, VHEIGHT/LEN_PER_MS)
+    ctx.move_to(t * 0.1 * UNIT, VHEIGHT/LEN_PER_MS)
     ctx.rel_line_to(0,  l)
 
     if t % 10 == 0:
-        txt = '%d ms' % (t/10)
-        ctx.move_to(t * 0.1, -0.1)
+        txt = '%d ms' % (t*UNIT/10)
+        ctx.move_to(t * 0.1 * UNIT, -0.1)
         aligned_text(ctx, txt, 0.5, 0)
-        ctx.move_to(t * 0.1, VHEIGHT/LEN_PER_MS+0.1)
+        ctx.move_to(t * 0.1 * UNIT, VHEIGHT/LEN_PER_MS+0.1)
         aligned_text(ctx, txt, 0.5, 1)
 
 ctx.set_source_rgb(0.3,0.3,0.3)
