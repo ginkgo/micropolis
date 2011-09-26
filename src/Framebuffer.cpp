@@ -34,7 +34,9 @@ namespace Reyes
     {
         _clear_kernel.set_arg(0, _cl_buffer->get());
         vec4 color = config.clear_color();
-        _clear_kernel.set_arg(1, vec4(color.x, color.y, color.z, 1000));
+        _clear_kernel.set_arg(1, vec4(powf(color.x, 2.2), 
+                                      powf(color.y, 2.2),
+                                      powf(color.z, 2.2), 1000));
         return queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256,
                                 "clear framebuffer", e);
     }

@@ -102,10 +102,10 @@ length = math.ceil(10*milliseconds(max_time(items) - min_time(items)))/10
 
 f = math.log10(length)
 
-UNIT = 10.0**(math.floor(f))
+UNIT = 10.0**(math.floor(f) - 1)
 
-if (f - math.floor(f) < 0.5):
-    UNIT /= 5
+if (f - math.floor(f) > 0.5):
+    UNIT /= 2
 
 BORDER = 5*mm
 AXIS = 0*mm

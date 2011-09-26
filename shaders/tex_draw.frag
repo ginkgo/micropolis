@@ -16,5 +16,10 @@ void main (void)
 
     int pos = grid_id * bsize * bsize + locl_id;
 
-    gl_FragColor = vec4(texelFetch(framebuffer, pos).xyz, 1);
+    vec4 c = vec4(texelFetch(framebuffer, pos).xyz, 1);
+
+    // Do gamma correction
+    c = vec4(pow(c.r, 0.454545), pow(c.g, 0.4545), pow(c.b, 0.4545), c.a);
+
+    gl_FragColor = c;
 }

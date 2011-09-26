@@ -175,9 +175,9 @@ namespace Reyes
 
         e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, _patch_count),  ivec3(8, 8, 1),
                               "shade", e);
-        f = _queue.enq_kernel(*_clear_heads_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64,
+        f = _queue.enq_kernel(*_clear_heads_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 16,
                               "clear heads", CL::Event());
-        e = _queue.enq_kernel(*_assign_kernel, _patch_count * square(patch_size/8), 64,
+        e = _queue.enq_kernel(*_assign_kernel, _patch_count * square(patch_size/8), 16,
                               "assign blocks", e | f);
         e = _queue.enq_kernel(*_sample_kernel, _framebuffer.size(), ivec2(8, 8),
                               "sample", _framebuffer_cleared | e);

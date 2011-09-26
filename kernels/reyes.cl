@@ -12,7 +12,7 @@
 #define BLOCKS_PER_LINE (PATCH_SIZE/8)
 #define BLOCKS_PER_PATCH (BLOCKS_PER_LINE*BLOCKS_PER_LINE)
 
-#define PXLCOORD_SHIFT 10
+#define PXLCOORD_SHIFT 12
 
 #define VIEWPORT_MIN  (VIEWPORT_MIN_PIXEL  << PXLCOORD_SHIFT)
 #define VIEWPORT_MAX  (VIEWPORT_MAX_PIXEL  << PXLCOORD_SHIFT)
@@ -86,7 +86,7 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_patch(patch, uv);
 
-    pos.y += native_sin(pos.x*15) * 0.05f;
+    pos.y += fabs(native_sin(pos.x*15) * 0.04f);
     
     float4 p = mul_m44v4(proj, pos);
 
@@ -193,12 +193,12 @@ __kernel void shade(const global float4* pos_grid,
 
         float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
 
-        float4 dc = {0.1f, 0.2f, 1, 1};
-        float4 sc = {1, 1, 1, 1};
+        float4 dc = {0.8f, 0.05f, 0.01f, 1};
+        float4 sc = (float4){1, 1, 1, 1};
         
         float3 h = normalize(l+v);
         
-        float sh = 60.0f;
+        float sh = 30.0f;
 
         float4 c = max(dot(n,l),0) * dc + pow(max(dot(n,h), 0), sh) * sc;
 
@@ -283,39 +283,50 @@ inline void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
     *v = bu * 8 + ly;
 }
 
+inline int3 idot3 (int3 Ax, int3 Ay, int3 Bx, int3 By)
+{
+    // return mad24(Ax, Bx, mul24(Ay,  By));
+    return Ax * Bx + Ay * By;
+}
+
+
 inline int4 idot4 (int4 Ax, int4 Ay, int4 Bx, int4 By)
 {
-    return mad24(Ax, Bx, mul24(Ay,  By));
+    // return mad24(Ax, Bx, mul24(Ay,  By));
+    return Ax * Bx + Ay * By;
 }
 
 
 inline int idot (int2 a, int2 b)
 {
-    return mad24(a.x, b.x, mul24(a.y,  b.y));
+    //return mad24(a.x, b.x, mul24(a.y,  b.y));
+    return a.x * b.x + a.y * b.y;
 }
 
-/* int inside_quad2(int4 Px, int4 Py, int2 tp, float4* weights) */
-/* { */
+inline int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
+{
+    int3 Dx = Py.yzx - Py;
+    int3 Dy = Px - Px.yzx;
 
-/*     //   2z     TT      3w */
-/*     //    +<-----------+ */
-/*     //    |          ++A */
-/*     //    |        ++  | */
-/*     //  RR|     MM     |LL */
-/*     //    |  ++        | */
-/*     //    V++          | */
-/*     //    +----------->+ */
-/*     //   0x     BB      1y */
-/*     // */
-/*     // (M goes 0 -> 3) */
+    int3 O = idot3(Dx, Dy, Px, Py);
+    
+    O -= (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3){1,1,1} : (int3){0,0,0};
+    //O -= 1;
 
+    int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O;
 
-/*     *weights = (float4){0.25f,0.25f,0.25f,0.25f}; */
+    int success = all(V > 0);
 
-/*     return ; */
-/* } */
+    float3 weights = convert_float3(V.yzx) / convert_float3(idot3(Dx.yzx, Dy.yzx, Px, Py) - O.yzx);
 
-int inside_quad(const int2* ps, int2 tp, float4* weights)
+    float d = dot(dv, weights);
+
+    *depth = success && d < *depth ? d : *depth;
+
+    return success;
+}
+
+inline int inside_quad(const int2* ps, int2 tp, float4* weights)
 {
     // TODO: Vectorize
 
@@ -405,8 +416,6 @@ __kernel void sample(global const int* heads,
     int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1));
     int next = heads[tile_id];
 
-    if (next < 0) return;
-
     const int2 o = (int2){get_group_id(0), get_group_id(1)} << (3 + PXLCOORD_SHIFT);
     const int2 g = {get_global_id(0), get_global_id(1)};
     const int2 l = {get_local_id(0), get_local_id(1)};
@@ -442,6 +451,7 @@ __kernel void sample(global const int* heads,
 
         for (size_t idx = 0; idx < 4; ++idx) {
             size_t p = calc_grid_pos(u+(idx&1), v+(idx>>1), patch_id);
+
             int2 pxlpos = pxlpos_grid[p] - o;
             Pxa[idx] = pxlpos.x;
             Pya[idx] = pxlpos.y;
@@ -458,43 +468,28 @@ __kernel void sample(global const int* heads,
         min_p = max(min_p, (int2) {0,0});
         max_p = min(max_p, (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT});
 
-        /* if (is_empty(min_p, max_p) || !is_front_facing(ps)) { */
-        /*     continue; */
-        /* } */
-
         min_p = min_p >> PXLCOORD_SHIFT;
         max_p = max_p >> PXLCOORD_SHIFT;
 
-        float4 weights = {0.25f, 0.25f, 0.25f, 0.25f};
-        float4 dsv = vload4(0, &ds[0]);
-        int4 Px = vload4(0, &Pxa[0]), Py = vload4(0, &Pya[0]);
-
-        int4 Dy = Px - Px.ywxz;
-        int4 Dx = Py.ywxz - Py;
-
-        int2 dm = {Py.w - Py.x, Px.x - Px.w};
-        int2 om = idot(dm, (int2){Px.x, Py.x});
-
-        int4 Ox = idot4(Dx, Dy, Px, Py);
+        int4 Px   = vload4(0, &Pxa[0]);
+        int4 Py   = vload4(0, &Pya[0]);
+        float4 dv = vload4(0, &ds[0]);
 
         for (int y = min_p.y; y < max_p.y; ++y) {
             for (int x = min_p.x; x < max_p.x; ++x) {
 
                 int2 tp = ((int2){x,y} << PXLCOORD_SHIFT) + (1 << (PXLCOORD_SHIFT));
 
-                int4 Tx = tp.xxxx;
-                int4 Ty = tp.yyyy;
-
-                int4 V = (idot4(Dx, Dy, Tx, Ty) - Ox >= 0);
+                float depth = 1000000;
+                int inside1 = inside_triangle(Px.xyw, Py.xyw, tp, dv.xyw, &depth);
+                int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth);
                 
-                int4 M = (idot(dm, tp) - om  > 0).xxxx ? (int4){1,1,0,0} : (int4){0,0,1,1};
+                if (inside1 || inside2) {
 
-                if (all( V || M )) {
+                    /* colors[y][x] += 0.2f; */
 
                     LOCK(locks[y][x]);
                     
-                    float depth = dot(dsv, weights);
-                        
                     if (depths[y][x] > depth) {
                         colors[y][x] = c;
                         depths[y][x] = depth;
@@ -508,14 +503,10 @@ __kernel void sample(global const int* heads,
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    if (next == -2) {
-        framebuffer[fb_id] = (float4){1,0,0,1};
-    } else {
-        float4 c = colors[l.y][l.x];
-        float  d = depths[l.y][l.x];
+    float4 C = colors[l.y][l.x];
+    C.w = depths[l.y][l.x];
 
-        framebuffer[fb_id] = (float4){c.x, c.y, c.z, d};
-        //framebuffer[fb_id] = (float4){c.y, c.z, c.x, d};
-    }
+    framebuffer[fb_id] = (next == -2) ? (float4){1,0,0,1} : C;
+    
 }
 
