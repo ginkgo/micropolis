@@ -218,7 +218,7 @@ __kernel void shade(const global float4* pos_grid,
         
     float sh = 30.0f;
 
-    float4 c = max(dot(n,l),0) * dc + pow(max(dot(n,h), 0), sh) * sc;
+    float4 c = max(dot(n,l),0.0f) * dc + pow(max(dot(n,h), 0.0f), sh) * sc;
 
     color_grid[calc_color_grid_pos(nu, nv, patch_id)] = c;
 
@@ -338,68 +338,6 @@ inline int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
     return success;
 }
 
-inline int inside_quad(const int2* ps, int2 tp, float4* weights)
-{
-    // TODO: Vectorize
-
-
-    //   2      TT      3
-    //    +<-----------+
-    //    |          ++A
-    //    |        ++  |
-    //  RR|     MM     |LL
-    //    |  ++        |
-    //    V++          |
-    //    +----------->+
-    //   0      BB      1
-    //
-    // (M goes 0 -> 3)
-
-
-    int2 dm = ps[3] - ps[0];
-    int2 db = ps[1] - ps[0];
-    int2 dl = ps[3] - ps[1];
-    int2 dr = ps[0] - ps[2];
-    int2 dt = ps[2] - ps[3];
-
-    dm = (int2){dm.y, -dm.x};
-    db = (int2){db.y, -db.x};
-    dl = (int2){dl.y, -dl.x};
-    dr = (int2){dr.y, -dr.x};
-    dt = (int2){dt.y, -dt.x};
-
-    int om = idot(dm, ps[3]);
-    int ob = idot(db, ps[1]);
-    int ol = idot(dl, ps[3]);    
-    int or = idot(dr, ps[0]);
-    int ot = idot(dt, ps[2]);    
-
-    int vm = idot(tp, dm) - om;
-
-    if (vm > 0) {
-        int vr = idot(tp, dr) - or;
-        int vt = idot(tp, dt) - ot;
-
-        *weights = (float4){(float)vt/(idot(ps[0], dt) - ot),
-                            0,
-                            (float)vm/(idot(ps[2], dm) - om),
-                            (float)vr/(idot(ps[3], dr) - or)};                           
-                            
-
-        return  vr >= 0 && vt >= 0;
-    } else {
-        int vl = idot(tp, dl) - ol;
-        int vb = idot(tp, db) - ob;
-
-        *weights = (float4){(float)vl/(idot(ps[0], dl) - ol),
-                            (float)vm/(idot(ps[1], dm) - om),
-                            0,
-                            (float)vb/(idot(ps[3], db) - ob)};                           
-                            
-
-        return  vl >= 0 && vb >= 0;
-    }
-}
 
 typedef int lock_t;
 
