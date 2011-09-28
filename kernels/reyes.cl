@@ -312,26 +312,27 @@ inline int idot (int2 a, int2 b)
 
 inline int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
 {
-    int3 Dx = Py.yzx - Py;
-    int3 Dy = Px - Px.yzx;
+    *depth = dv.x;
+
+    int4 Dx = Py.yzxx - Py.xyzz;
+    int4 Dy = Px.xyzz - Px.yzxx;
 
     /* int CCW = (Dy.x*Dx.z-Dx.x*Dy.z) < 0; */
 
     /* Dx = CCW ? Dx : -Dx; */
     /* Dy = CCW ? Dy : -Dy; */
 
-    int3 O = idot3(Dx, Dy, Px, Py);
+    int4 O = idot4(Dx, Dy, Px.xyzz, Py.xyzz);
     
-    int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3){-1,-1,-1} : (int3){0,0,0};
+    int4 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int4){-1,-1,-1,-1} : (int4){0,0,0,0};
 
-    int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O;
+    int4 V = idot4(Dx, Dy, tp.xxxx, tp.yyyy) - O;
 
     int success = all(V > C);
 
-    float3 weights = convert_float3(V.yzx) / convert_float3(idot3(Dx.yzx, Dy.yzx, Px, Py) - O.yzx);
+    float4 weights = convert_float4(V.yzxx) / convert_float4(idot4(Dx.yzxx, Dy.yzxx, Px.xyzz, Py.xyzz) - O.yzxx);
 
-
-    float d = dot(dv, weights);
+    float d = dot((float4){dv.x, dv.y, dv.z, 0}, weights);
 
     *depth = success && d < *depth ? d : *depth;
 
@@ -417,6 +418,10 @@ __kernel void sample(global const int* heads,
 
         float4 c = color_grid[calc_color_grid_pos(u, v, patch_id)];
 
+        /* colors[l.y][l.x] = c; */
+
+        /* continue; */
+
         min_p = max(min_p, (int2) {0,0});
         max_p = min(max_p, (int2) {MAX_LOCAL_COORD, MAX_LOCAL_COORD});
 
@@ -436,18 +441,18 @@ __kernel void sample(global const int* heads,
                 int inside1 = inside_triangle(Px.xyw, Py.xyw, tp, dv.xyw, &depth);
                 int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth);
                 
-                while (inside1 || inside2) {
-                    if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
+                if (inside1 || inside2) {
+                    // if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
 
-                    //colors[y][x] += 0.2f;
+                    /* colors[y][x] += 0.2f; */
 
                     if (depths[y][x] > depth) {
                         colors[y][x] = c;
                         depths[y][x] = depth;
                     }
                         
-                    atomic_xchg(&(locks[y][x]), 1);
-                    break;
+                    /* atomic_xchg(&(locks[y][x]), 1); */
+                    /* break; */
                 }                    
             }
         }

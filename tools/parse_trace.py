@@ -26,7 +26,9 @@ def parse(file):
                 int(match.group(3)), 
                 int(match.group(4)), 
                 int(match.group(5)))
-        items.append(item)
+        
+        if item[1:] != (0,0,0,0):
+            items.append(item)
     
     return items
     
