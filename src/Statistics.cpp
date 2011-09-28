@@ -71,10 +71,14 @@ void Statistics::reset_timer()
 void Statistics::print()
 {
     if (config.verbose()) {
+
+        long quad_count = square(config.reyes_patch_size()) * patches_per_frame;
+
         cout << endl
              << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl
              << ms_per_render_pass << " ms/render pass" << endl
-             << patches_per_frame  << " bounded patches/frame" << endl
+             << patches_per_frame  << " bounded patches" << endl
+             << with_commas(quad_count) << " polygons" << endl
              << (opencl_memory >> MEBI_SHIFT) << " MiB allocated on OpenCL device" << endl;
     } else {
         cout  << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl;

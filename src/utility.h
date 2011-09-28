@@ -24,7 +24,7 @@
 
 long nanotime();
 
-// void calc_fps(float* fps = NULL, float* mspf = NULL);
+string with_commas(long n);
 
 /**
  * Test if a file exists on the filesystem.
@@ -46,6 +46,8 @@ string read_file(const string &filename);
  * Prints a message to STDERR if an error has been found.
  */
 void get_errors(void);
+
+string reverse (const string& s);
 
 template <typename T> T minimum (T a, T b)
 {

@@ -36,13 +36,13 @@ reyes_patch_size = 128
 reyes_patches_per_pass = 256
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 100
+bound_n_split_limit = 128
 
 // Width of the work-group for the dicing kernel.
 dice_group_width = 8
 
 // Maximum number of framebuffer tiles, a block can be assigned to.
-max_block_assignments = 9
+max_block_assignments = 16
 
 // Clear color for framebuffer.
 clear_color = 0.025 0.05 0.2 0

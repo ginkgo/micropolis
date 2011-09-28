@@ -16,39 +16,32 @@ long nanotime()
     return nano;
 }
 
-// void calc_fps(float* fps, float* mspf)
-// {
-//     static double last = -1.0;
-//     static int frames = 0;
-//     static float current_fps = .0f;
-//     static float current_ms_per_frame = .0f;
+string with_commas(long n)
+{
+    std::stringstream ss;
 
-//     double now = glfwGetTime();
-  
-//     if (last < 0.0) {
-//         last = now;
-//     }
+    int i = 0;
+    do {
+        
+        int d = n % 10;
+        n = n / 10;
 
-//     frames += 1;
+        ss << d;
 
-//     if (now - last >= 5.0) {
-//         printf("%.2f ms/frame (= %d fps)\n", 
-//               ((now-last)*1000.0/frames),
-//               (int)(frames/(now-last)));
-//         current_fps = float( frames/(now - last) );
-//         current_ms_per_frame = float( (now-last)*5000.0/frames );
-//         last = now;
-//         frames = 0;
-//     }
+        ++i;
+        if (n > 0 && i == 3) {
+            i = 0;
+            ss << ',';
+        }
+    } while (n > 0);
 
-//     if (fps != NULL) {
-//         *fps = current_fps;
-//     }
+    return reverse(ss.str());
+}
 
-//     if (mspf != NULL) {
-//         *mspf = current_ms_per_frame;
-//     }
-// }
+string reverse (const string& s)
+{
+    return string(s.rbegin(), s.rend());
+}
 
 bool file_exists(const string &filename)
 {

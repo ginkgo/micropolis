@@ -12,10 +12,10 @@
 #define BLOCKS_PER_LINE (PATCH_SIZE/8)
 #define BLOCKS_PER_PATCH (BLOCKS_PER_LINE*BLOCKS_PER_LINE)
 
-#define PXLCOORD_SHIFT 12
+#define PXLCOORD_SHIFT  12
 
 #define VIEWPORT_MIN  (VIEWPORT_MIN_PIXEL  << PXLCOORD_SHIFT)
-#define VIEWPORT_MAX  (VIEWPORT_MAX_PIXEL  << PXLCOORD_SHIFT)
+#define VIEWPORT_MAX  ((VIEWPORT_MAX_PIXEL << PXLCOORD_SHIFT) - 1)
 #define VIEWPORT_SIZE (VIEWPORT_SIZE_PIXEL << PXLCOORD_SHIFT)
 
 inline int calc_framebuffer_pos(int2 pxlpos)
@@ -86,7 +86,7 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_patch(patch, uv);
 
-    pos.y += fabs(native_sin(pos.x*15) * 0.04f);
+    pos.y += native_sin(pos.x*15) * 0.04f;
     
     float4 p = mul_m44v4(proj, pos);
 
@@ -181,29 +181,8 @@ __kernel void shade(const global float4* pos_grid,
         atomic_min(&y_min, pmin.y);
         atomic_max(&x_max, pmax.x);
         atomic_max(&y_max, pmax.y);
-
-        float3 du = (pos[1] - pos[0] +
-                     pos[3] - pos[2]).xyz * 0.5f;
-        float3 dv = (pos[2] - pos[0] +
-                     pos[3] - pos[1]).xyz * 0.5f;
-
-        float3 n = normalize(cross(dv,du));
-
-        float3 l = normalize((float3){4,3,8});
-
-        float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
-
-        float4 dc = {0.8f, 0.05f, 0.01f, 1};
-        float4 sc = (float4){1, 1, 1, 1};
-        
-        float3 h = normalize(l+v);
-        
-        float sh = 30.0f;
-
-        float4 c = max(dot(n,l),0) * dc + pow(max(dot(n,h), 0), sh) * sc;
-
-        color_grid[calc_color_grid_pos(nu, nv, patch_id)] = c;
     }
+
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -216,6 +195,34 @@ __kernel void shade(const global float4* pos_grid,
         int i = calc_block_pos(get_group_id(0), get_group_id(1), get_group_id(2));
         block_index[i] = (int4){x_min, y_min, x_max, y_max};
     }
+
+    if (is_empty((int2){x_min, y_min}, (int2){x_max, y_max})) {
+        return;
+    }
+
+    float3 du = (pos[1] - pos[0] +
+                 pos[3] - pos[2]).xyz * 0.5f;
+    float3 dv = (pos[2] - pos[0] +
+                 pos[3] - pos[1]).xyz * 0.5f;
+
+    float3 n = normalize(cross(dv,du));
+
+    float3 l = normalize((float3){4,3,8});
+
+    float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
+
+    float4 dc = {0.8f, 0.05f, 0.01f, 1};
+    float4 sc = (float4){1, 1, 1, 1};
+        
+    float3 h = normalize(l+v);
+        
+    float sh = 30.0f;
+
+    float4 c = max(dot(n,l),0) * dc + pow(max(dot(n,h), 0), sh) * sc;
+
+    color_grid[calc_color_grid_pos(nu, nv, patch_id)] = c;
+
+
 }
 
 __kernel void clear_heads(global int* heads)
@@ -308,16 +315,21 @@ inline int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
     int3 Dx = Py.yzx - Py;
     int3 Dy = Px - Px.yzx;
 
+    /* int CCW = (Dy.x*Dx.z-Dx.x*Dy.z) < 0; */
+
+    /* Dx = CCW ? Dx : -Dx; */
+    /* Dy = CCW ? Dy : -Dy; */
+
     int3 O = idot3(Dx, Dy, Px, Py);
     
-    O -= (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3){1,1,1} : (int3){0,0,0};
-    //O -= 1;
+    int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3){-1,-1,-1} : (int3){0,0,0};
 
     int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O;
 
-    int success = all(V > 0);
+    int success = all(V > C);
 
     float3 weights = convert_float3(V.yzx) / convert_float3(idot3(Dx.yzx, Dy.yzx, Px, Py) - O.yzx);
+
 
     float d = dot(dv, weights);
 
@@ -443,8 +455,10 @@ __kernel void sample(global const int* heads,
         int Pxa[4], Pya[4];
         float ds[4];
 
-        int2 min_p = (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT};
-        int2 max_p = (int2) {0,0};
+        const int MAX_LOCAL_COORD = (8<<PXLCOORD_SHIFT) - 1;
+
+        int2 min_p = (int2) {MAX_LOCAL_COORD+1, MAX_LOCAL_COORD+1};
+        int2 max_p = (int2) {-1,-1};
 
         size_t patch_id, u, v;
         recover_patch_pos(block_id, l.x, l.y,  &u, &v, &patch_id);
@@ -466,7 +480,7 @@ __kernel void sample(global const int* heads,
         float4 c = color_grid[calc_color_grid_pos(u, v, patch_id)];
 
         min_p = max(min_p, (int2) {0,0});
-        max_p = min(max_p, (int2) {8<<PXLCOORD_SHIFT, 8<<PXLCOORD_SHIFT});
+        max_p = min(max_p, (int2) {MAX_LOCAL_COORD, MAX_LOCAL_COORD});
 
         min_p = min_p >> PXLCOORD_SHIFT;
         max_p = max_p >> PXLCOORD_SHIFT;
@@ -475,28 +489,28 @@ __kernel void sample(global const int* heads,
         int4 Py   = vload4(0, &Pya[0]);
         float4 dv = vload4(0, &ds[0]);
 
-        for (int y = min_p.y; y < max_p.y; ++y) {
-            for (int x = min_p.x; x < max_p.x; ++x) {
+        for (int y = min_p.y; y <= max_p.y; ++y) {
+            for (int x = min_p.x; x <= max_p.x; ++x) {
 
-                int2 tp = ((int2){x,y} << PXLCOORD_SHIFT) + (1 << (PXLCOORD_SHIFT));
+                int2 tp = ((int2){x,y} << PXLCOORD_SHIFT);
 
-                float depth = 1000000;
+                float depth = 1;
                 int inside1 = inside_triangle(Px.xyw, Py.xyw, tp, dv.xyw, &depth);
                 int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth);
                 
-                if (inside1 || inside2) {
+                while (inside1 || inside2) {
+                    if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
 
-                    /* colors[y][x] += 0.2f; */
+                    //colors[y][x] += 0.2f;
 
-                    LOCK(locks[y][x]);
-                    
                     if (depths[y][x] > depth) {
                         colors[y][x] = c;
                         depths[y][x] = depth;
                     }
-
-                    UNLOCK(locks[y][x]);
-                }
+                        
+                    atomic_xchg(&(locks[y][x]), 1);
+                    break;
+                }                    
             }
         }
     }
