@@ -12,7 +12,7 @@
 #define BLOCKS_PER_LINE (PATCH_SIZE/8)
 #define BLOCKS_PER_PATCH (BLOCKS_PER_LINE*BLOCKS_PER_LINE)
 
-#define PXLCOORD_SHIFT  12
+#define PXLCOORD_SHIFT  8
 
 #define VIEWPORT_MIN  (VIEWPORT_MIN_PIXEL  << PXLCOORD_SHIFT)
 #define VIEWPORT_MAX  ((VIEWPORT_MAX_PIXEL << PXLCOORD_SHIFT) - 1)
@@ -312,27 +312,25 @@ inline int idot (int2 a, int2 b)
 
 inline int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
 {
-    *depth = dv.x;
-
-    int4 Dx = Py.yzxx - Py.xyzz;
-    int4 Dy = Px.xyzz - Px.yzxx;
+    int3 Dx = Py.yzx - Py;
+    int3 Dy = Px - Px.yzx;
 
     /* int CCW = (Dy.x*Dx.z-Dx.x*Dy.z) < 0; */
 
     /* Dx = CCW ? Dx : -Dx; */
     /* Dy = CCW ? Dy : -Dy; */
 
-    int4 O = idot4(Dx, Dy, Px.xyzz, Py.xyzz);
+    int3 O = idot3(Dx, Dy, Px, Py);
     
-    int4 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int4){-1,-1,-1,-1} : (int4){0,0,0,0};
+    int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3){-1,-1,-1} : (int3){0,0,0};
 
-    int4 V = idot4(Dx, Dy, tp.xxxx, tp.yyyy) - O;
+    int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O;
 
     int success = all(V > C);
 
-    float4 weights = convert_float4(V.yzxx) / convert_float4(idot4(Dx.yzxx, Dy.yzxx, Px.xyzz, Py.xyzz) - O.yzxx);
+    float3 weights = convert_float3(V.yzx) / convert_float3(idot3(Dx.yzx, Dy.yzx, Px, Py) - O.yzx);
 
-    float d = dot((float4){dv.x, dv.y, dv.z, 0}, weights);
+    float d = dot(dv, weights);
 
     *depth = success && d < *depth ? d : *depth;
 
