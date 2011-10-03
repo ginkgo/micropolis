@@ -50,6 +50,7 @@ namespace Reyes
         _reyes_program.set_constant("BACKFACE_CULLING", config.backface_culling());
         _reyes_program.set_constant("CLEAR_COLOR", config.clear_color());
         _reyes_program.set_constant("CLEAR_DEPTH", 1.0f);
+        _reyes_program.set_constant("PXLCOORD_SHIFT", config.subpixel_bits());
                 
         _reyes_program.compile(device, "reyes.cl");
 

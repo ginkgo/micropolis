@@ -1,0 +1,31 @@
+
+--- * Configurable Precision
+* Configurable Camera
+* Add and check hash of config file to avoid unnecessary safe
+* Calculate B&S time
+* Rework Bound & Split dataflow
+* Calculate normal in dice kernel?
+* Load Killeroo
+* Stitch holes
+  * Find adjacent patches
+  * Create adjacency data-structure
+  * Update adjacency while splitting
+  * Create stitch kernel
+* Hierarchical config
+* Parallelize Bound & Split
+
+* Optimize rasterizer
+  * Linear pixel loop in sample kernel
+  * Early block culling in sample
+
+* Freecam
+
+* Implement shader system
+  * Implement noise functions
+
+* Implement multisampling
+* Implement stochastic rasterizer
+
+* Implement more complex scene format
+
+* Implement Catmull-Clark SDS

@@ -44,6 +44,9 @@ dice_group_width = 8
 // Maximum number of framebuffer tiles, a block can be assigned to.
 max_block_assignments = 16
 
+// Number of sub-one bits for fixed precision pixel coordinates.
+subpixel_bits = 8
+
 // Clear color for framebuffer.
 clear_color = 0.025 0.05 0.2 0
 

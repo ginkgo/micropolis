@@ -65,6 +65,10 @@
       Maximum number of framebuffer tiles, a block can be assigned to.
     </value>
 
+    <value name="subpixel_bits" type="size_t" default="8">
+      Number of sub-one bits for fixed precision pixel coordinates.
+    </value>
+
     <value name="clear_color" type="vec4" default="0.1 0.2 1.0 0.0">
       Clear color for framebuffer.
     </value>
