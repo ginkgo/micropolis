@@ -652,6 +652,11 @@ namespace CL
         _source_buffer(new std::stringstream())
     {        
         *_source_buffer << std::setiosflags(std::ios::fixed) << std::setprecision(22);
+
+        // This is a hack to keep the NVidia OpenCL driver from (wrongly) 
+        // caching the program.
+        *_source_buffer << "constant const long __DUMMY" 
+                        << nanotime() << " = " << nanotime << ";" << endl;
     }
     
 
