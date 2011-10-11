@@ -84,7 +84,7 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_patch(patch, uv);
 
-    pos.y += native_sin(pos.x*15) * 0.04f;
+    pos.y += fabs(native_sin(pos.x*15)) * 0.04f;
     
     float4 p = mul_m44v4(proj, pos);
 

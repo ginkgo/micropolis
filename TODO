@@ -1,11 +1,20 @@
 
---- * Configurable Precision
-* Configurable Camera
-* Add and check hash of config file to avoid unnecessary safe
-* Calculate B&S time
+TODO:
+
+* Find out how hardware-tesselation works
+  * Read 'Fast GPU-based Adaptive Tessellation with CUDA'
+
+* Add windows build
+
+* Freecam
+
+* Make flextgl support an external template
+
 * Rework Bound & Split dataflow
-* Calculate normal in dice kernel?
+
 * Load Killeroo
+  * Or some other high-patch-count mesh
+
 * Stitch holes
   * Find adjacent patches
   * Create adjacency data-structure
@@ -15,17 +24,37 @@
 * Parallelize Bound & Split
 
 * Optimize rasterizer
+  * Do tighter block->tile fitting
   * Linear pixel loop in sample kernel
   * Early block culling in sample
+  * Whole quad testing
 
-* Freecam
 
-* Implement shader system
-  * Implement noise functions
+* Shader system
+  * Noise functions
 
 * Implement multisampling
-* Implement stochastic rasterizer
+* Stochastic rasterizer
 
-* Implement more complex scene format
+* More complex scene format
+  * Configurable Camera
 
-* Implement Catmull-Clark SDS
+* Catmull-Clark SDS
+  * Read "Exact evaluation of catmull-clark subdivision surfaces at arbitrary parameter values"
+  * Read "Exact Evaluation of Catmull-Clark Subdivision Surfaces Near B-spline Boundaries"
+  * Read "Rapid Evaluation of Catmull-Clark Subdivision Surfaces"
+  * Read "Approximating Catmull-clark Subdivision Surfaces with Bicubic Patches"
+    Loop & Schaefer
+
+MAYBE:
+
+* Add to github?
+* Calculate normal in dice kernel?
+
+DONE:
+
+* Configurable Precision
+* Calculate B&S time
+* Add and check hash of config file to avoid unnecessary safe
+* Read DiagSplit paper
+* Make SCons react to changes in tools dir

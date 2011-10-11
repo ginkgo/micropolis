@@ -655,7 +655,7 @@ namespace CL
 
         // This is a hack to keep the NVidia OpenCL driver from (wrongly) 
         // caching the program.
-        *_source_buffer << "constant const long __DUMMY" 
+        *_source_buffer << "constant long __DUMMY" 
                         << nanotime() << " = " << nanotime << ";" << endl;
     }
     

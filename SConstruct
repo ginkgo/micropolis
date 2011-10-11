@@ -8,11 +8,12 @@ env['LINKFLAGS'] = ['-ggdb']
 python = 'python2.7'
 
 env.Command(['#/generated/flextGL.c', '#/generated/flextGL.h'],
-            ['#/src/extensions.txt'],
+            ['#/src/extensions.txt', '#/tools/flextGL/flextGLgen.py', 
+             Glob('#/tools/flextGL/templates/glfw/*template')],
             python+' tools/flextGL/flextGLgen.py src/extensions.txt -Dgenerated -Tglfw')
              
 env.Command(['#/generated/Config.cpp', '#/generated/Config.h'],
-            ['#/src/config.xml'],
+            ['#/src/config.xml', Glob('#/tools/configGen/*')],
             python+' tools/configGen/configGen.py src/config.xml -Dgenerated -Hh -Ccpp')
              
 env.Command(['#/generated/format_map.cpp', '#/generated/format_map.h'],

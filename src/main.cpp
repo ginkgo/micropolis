@@ -89,12 +89,21 @@ void mainloop()
 
 void handle_arguments(int argc, char** argv)
 {
-    if (!Config::load_file("options.txt", config)) {
+    bool needs_resave;
+
+    if (!Config::load_file("options.txt", config, needs_resave)) {
         cout << "Failed to load options.txt" << endl;
     }
 
-    if (!Config::save_file("options.txt", config)) {
-        cout << "Failed to save options.txt" << endl;
+    if (needs_resave) {
+        if (config.verbose()) {
+            cout << "Config file out of date. Resaving." << endl;
+        }
+
+
+        if (!Config::save_file("options.txt", config)) {
+            cout << "Failed to save options.txt" << endl;
+        }
     }
 
     argc = config.parse_args(argc, argv);

@@ -7,6 +7,7 @@
 #include "Patch.h"
 
 #include "Config.h"
+#include "Statistics.h"
 
 namespace Reyes {
     Scene::Scene (Projection* projection) :
@@ -57,6 +58,7 @@ namespace Reyes {
         renderer.prepare();
         renderer.set_projection(*_projection);
 
+        statistics.start_bound_n_split();
         BezierPatch patch;
         mat4x3 matrix(_view);
         for (size_t i = 0; i < _patches.size(); ++i) {
@@ -66,6 +68,7 @@ namespace Reyes {
             bound_n_split(patch, *_projection, renderer);
 
         }
+        statistics.stop_bound_n_split();
 
         renderer.finish();
     }

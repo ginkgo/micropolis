@@ -141,8 +141,12 @@ namespace Reyes
         _patch_count++;
         
         if (_patch_count >= config.reyes_patches_per_pass()) {
+            statistics.stop_bound_n_split();
+
             flush();
             _queue.wait_for_events(_previous_to_last_patch_write);
+
+            statistics.start_bound_n_split();
         }
     
         statistics.inc_patch_count();
