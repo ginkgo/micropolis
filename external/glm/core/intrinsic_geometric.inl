@@ -1,17 +1,36 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2009-05-08
-// Updated : 2009-05-08
-// Licence : This source is under MIT License
-// File    : glm/core/intrinsic_geometric.inl
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2012 G-Truc Creation (www.g-truc.net)
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref core
+/// @file glm/core/intrinsic_geometric.inl
+/// @date 2009-05-08 / 2011-06-15
+/// @author Christophe Riccio
+///////////////////////////////////////////////////////////////////////////////////
 
 namespace glm{
 namespace detail{
 
 //length
-inline __m128 sse_len_ps(__m128 x)
+GLM_FUNC_QUALIFIER __m128 sse_len_ps(__m128 x)
 {
     __m128 dot0 = sse_dot_ps(x, x);
 	__m128 sqt0 = _mm_sqrt_ps(dot0);
@@ -19,7 +38,7 @@ inline __m128 sse_len_ps(__m128 x)
 }
 
 //distance
-inline __m128 sse_dst_ps(__m128 p0, __m128 p1)
+GLM_FUNC_QUALIFIER __m128 sse_dst_ps(__m128 p0, __m128 p1)
 {
 	__m128 sub0 = _mm_sub_ps(p0, p1);
     __m128 len0 = sse_len_ps(sub0);
@@ -27,7 +46,7 @@ inline __m128 sse_dst_ps(__m128 p0, __m128 p1)
 }
 
 //dot
-inline __m128 sse_dot_ps(__m128 v1, __m128 v2)
+GLM_FUNC_QUALIFIER __m128 sse_dot_ps(__m128 v1, __m128 v2)
 {
 	__m128 mul0 = _mm_mul_ps(v1, v2);
 	__m128 swp0 = _mm_shuffle_ps(mul0, mul0, _MM_SHUFFLE(2, 3, 0, 1));
@@ -38,7 +57,7 @@ inline __m128 sse_dot_ps(__m128 v1, __m128 v2)
 }
 
 // SSE1
-inline __m128 sse_dot_ss(__m128 v1, __m128 v2)
+GLM_FUNC_QUALIFIER __m128 sse_dot_ss(__m128 v1, __m128 v2)
 {
 	__m128 mul0 = _mm_mul_ps(v1, v2);
 	__m128 mov0 = _mm_movehl_ps(mul0, mul0);
@@ -49,7 +68,7 @@ inline __m128 sse_dot_ss(__m128 v1, __m128 v2)
 }
 
 //cross
-inline __m128 sse_xpd_ps(__m128 v1, __m128 v2)
+GLM_FUNC_QUALIFIER __m128 sse_xpd_ps(__m128 v1, __m128 v2)
 {
 	__m128 swp0 = _mm_shuffle_ps(v1, v1, _MM_SHUFFLE(3, 0, 2, 1));
 	__m128 swp1 = _mm_shuffle_ps(v1, v1, _MM_SHUFFLE(3, 1, 0, 2));
@@ -62,7 +81,7 @@ inline __m128 sse_xpd_ps(__m128 v1, __m128 v2)
 }
 
 //normalize
-inline __m128 sse_nrm_ps(__m128 v)
+GLM_FUNC_QUALIFIER __m128 sse_nrm_ps(__m128 v)
 {
 	__m128 dot0 = sse_dot_ps(v, v);
 	__m128 isr0 = _mm_rsqrt_ps(dot0);
@@ -71,7 +90,7 @@ inline __m128 sse_nrm_ps(__m128 v)
 }
 
 //faceforward
-inline __m128 sse_ffd_ps(__m128 N, __m128 I, __m128 Nref)
+GLM_FUNC_QUALIFIER __m128 sse_ffd_ps(__m128 N, __m128 I, __m128 Nref)
 {
 	//__m128 dot0 = _mm_dot_ps(v, v);
 	//__m128 neg0 = _mm_neg_ps(N);
@@ -87,7 +106,7 @@ inline __m128 sse_ffd_ps(__m128 N, __m128 I, __m128 Nref)
 }
 
 //reflect
-inline __m128 sse_rfe_ps(__m128 I, __m128 N)
+GLM_FUNC_QUALIFIER __m128 sse_rfe_ps(__m128 I, __m128 N)
 {
 	__m128 dot0 = sse_dot_ps(N, I);
 	__m128 mul0 = _mm_mul_ps(N, dot0);
@@ -97,7 +116,7 @@ inline __m128 sse_rfe_ps(__m128 I, __m128 N)
 }
 
 //refract
-inline __m128 sse_rfa_ps(__m128 I, __m128 N, __m128 eta)
+GLM_FUNC_QUALIFIER __m128 sse_rfa_ps(__m128 I, __m128 N, __m128 eta)
 {
 	__m128 dot0 = sse_dot_ps(N, I);
 	__m128 mul0 = _mm_mul_ps(eta, eta);

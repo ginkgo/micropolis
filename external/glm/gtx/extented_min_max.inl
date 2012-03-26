@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2012 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-03-14
 // Updated : 2010-02-19
@@ -7,12 +7,10 @@
 // File    : gtx_extented_min_max.inl
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-namespace glm{
-namespace gtx{
-namespace extented_min_max
+namespace glm
 {
 	template <typename T>
-	inline T min(
+	GLM_FUNC_QUALIFIER T min(
 		T const & x, 
 		T const & y, 
 		T const & z)
@@ -25,7 +23,7 @@ namespace extented_min_max
 		typename T, 
 		template <typename> class C
 	>
-	inline C<T> min
+	GLM_FUNC_QUALIFIER C<T> min
 	(
 		C<T> const & x, 
 		typename C<T>::value_type const & y, 
@@ -40,7 +38,7 @@ namespace extented_min_max
 		typename T, 
 		template <typename> class C
 	>
-	inline C<T> min
+	GLM_FUNC_QUALIFIER C<T> min
 	(
 		C<T> const & x, 
 		C<T> const & y, 
@@ -51,7 +49,7 @@ namespace extented_min_max
 	}
 
 	template <typename T>
-	inline T min
+	GLM_FUNC_QUALIFIER T min
 	(
 		T const & x, 
 		T const & y, 
@@ -67,7 +65,7 @@ namespace extented_min_max
 		typename T, 
 		template <typename> class C
 	>
-	inline C<T> min
+	GLM_FUNC_QUALIFIER C<T> min
 	(
 		C<T> const & x, 
 		typename C<T>::value_type const & y, 
@@ -83,7 +81,7 @@ namespace extented_min_max
 		typename T, 
 		template <typename> class C
 	>
-	inline C<T> min
+	GLM_FUNC_QUALIFIER C<T> min
 	(
 		C<T> const & x, 
 		C<T> const & y, 
@@ -95,7 +93,7 @@ namespace extented_min_max
 	}
 
 	template <typename T>
-	inline T max(
+	GLM_FUNC_QUALIFIER T max(
 		T const & x, 
 		T const & y, 
 		T const & z)
@@ -108,7 +106,7 @@ namespace extented_min_max
 		typename T, 
 		template <typename> class C
 	>
-	inline C<T> max
+	GLM_FUNC_QUALIFIER C<T> max
 	(
 		C<T> const & x, 
 		typename C<T>::value_type const & y, 
@@ -123,7 +121,7 @@ namespace extented_min_max
 		typename T, 
 		template <typename> class C
 	>
-	inline C<T> max
+	GLM_FUNC_QUALIFIER C<T> max
 	(
 		C<T> const & x, 
 		C<T> const & y, 
@@ -134,7 +132,7 @@ namespace extented_min_max
 	}
 
 	template <typename T>
-	inline T max
+	GLM_FUNC_QUALIFIER T max
 	(
 		T const & x, 
 		T const & y, 
@@ -150,7 +148,7 @@ namespace extented_min_max
 		typename T, 
 		template <typename> class C
 	>
-	inline C<T> max
+	GLM_FUNC_QUALIFIER C<T> max
 	(
 		C<T> const & x, 
 		typename C<T>::value_type const & y, 
@@ -166,7 +164,7 @@ namespace extented_min_max
 		typename T, 
 		template <typename> class C
 	>
-	inline C<T> max
+	GLM_FUNC_QUALIFIER C<T> max
 	(
 		C<T> const & x, 
 		C<T> const & y, 
@@ -177,6 +175,4 @@ namespace extented_min_max
 		return glm::max(glm::max(x, y), glm::max(z, w));
 	}
 
-}//namespace extented_min_max
-}//namespace gtx
 }//namespace glm

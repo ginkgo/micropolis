@@ -1,15 +1,34 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2009-06-09
-// Updated : 2009-06-09
-// Licence : This source is under MIT License
-// File    : glm/core/intrinsic_vector_relational.inl
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2012 G-Truc Creation (www.g-truc.net)
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref core
+/// @file glm/core/intrinsic_vector_relational.inl
+/// @date 2009-06-09 / 2011-06-15
+/// @author Christophe Riccio
+///////////////////////////////////////////////////////////////////////////////////
 //
 //// lessThan
 //template <typename valType>
-//inline typename detail::tvec2<valType>::bool_type lessThan
+//GLM_FUNC_QUALIFIER typename detail::tvec2<valType>::bool_type lessThan
 //(
 //	detail::tvec2<valType> const & x, 
 //	detail::tvec2<valType> const & y
@@ -24,7 +43,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec3<valType>::bool_type lessThan
+//GLM_FUNC_QUALIFIER typename detail::tvec3<valType>::bool_type lessThan
 //(
 //	detail::tvec3<valType> const & x, 
 //	detail::tvec3<valType> const & y
@@ -39,7 +58,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec4<valType>::bool_type lessThan
+//GLM_FUNC_QUALIFIER typename detail::tvec4<valType>::bool_type lessThan
 //(
 //	detail::tvec4<valType> const & x, 
 //	detail::tvec4<valType> const & y
@@ -55,7 +74,7 @@
 //
 //// lessThanEqual
 //template <typename valType>
-//inline typename detail::tvec2<valType>::bool_type lessThanEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec2<valType>::bool_type lessThanEqual
 //(
 //	detail::tvec2<valType> const & x, 
 //	detail::tvec2<valType> const & y
@@ -70,7 +89,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec3<valType>::bool_type lessThanEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec3<valType>::bool_type lessThanEqual
 //(
 //	detail::tvec3<valType> const & x, 
 //	detail::tvec3<valType> const & y
@@ -85,7 +104,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec4<valType>::bool_type lessThanEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec4<valType>::bool_type lessThanEqual
 //(
 //	detail::tvec4<valType> const & x, 
 //	detail::tvec4<valType> const & y
@@ -101,7 +120,7 @@
 //
 //// greaterThan
 //template <typename valType>
-//inline typename detail::tvec2<valType>::bool_type greaterThan
+//GLM_FUNC_QUALIFIER typename detail::tvec2<valType>::bool_type greaterThan
 //(
 //	detail::tvec2<valType> const & x, 
 //	detail::tvec2<valType> const & y
@@ -116,7 +135,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec3<valType>::bool_type greaterThan
+//GLM_FUNC_QUALIFIER typename detail::tvec3<valType>::bool_type greaterThan
 //(
 //	detail::tvec3<valType> const & x, 
 //	detail::tvec3<valType> const & y
@@ -131,7 +150,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec4<valType>::bool_type greaterThan
+//GLM_FUNC_QUALIFIER typename detail::tvec4<valType>::bool_type greaterThan
 //(
 //	detail::tvec4<valType> const & x, 
 //	detail::tvec4<valType> const & y
@@ -147,7 +166,7 @@
 //
 //// greaterThanEqual
 //template <typename valType>
-//inline typename detail::tvec2<valType>::bool_type greaterThanEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec2<valType>::bool_type greaterThanEqual
 //(
 //	detail::tvec2<valType> const & x, 
 //	detail::tvec2<valType> const & y
@@ -162,7 +181,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec3<valType>::bool_type greaterThanEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec3<valType>::bool_type greaterThanEqual
 //(
 //	detail::tvec3<valType> const & x, 
 //	detail::tvec3<valType> const & y
@@ -177,7 +196,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec4<valType>::bool_type greaterThanEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec4<valType>::bool_type greaterThanEqual
 //(
 //	detail::tvec4<valType> const & x, 
 //	detail::tvec4<valType> const & y
@@ -193,7 +212,7 @@
 //
 //// equal
 //template <typename valType>
-//inline typename detail::tvec2<valType>::bool_type equal
+//GLM_FUNC_QUALIFIER typename detail::tvec2<valType>::bool_type equal
 //(
 //	detail::tvec2<valType> const & x, 
 //	detail::tvec2<valType> const & y
@@ -209,7 +228,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec3<valType>::bool_type equal
+//GLM_FUNC_QUALIFIER typename detail::tvec3<valType>::bool_type equal
 //(
 //	detail::tvec3<valType> const & x, 
 //	detail::tvec3<valType> const & y
@@ -225,7 +244,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec4<valType>::bool_type equal
+//GLM_FUNC_QUALIFIER typename detail::tvec4<valType>::bool_type equal
 //(
 //	detail::tvec4<valType> const & x, 
 //	detail::tvec4<valType> const & y
@@ -242,7 +261,7 @@
 //
 //// notEqual
 //template <typename valType>
-//inline typename detail::tvec2<valType>::bool_type notEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec2<valType>::bool_type notEqual
 //(
 //	detail::tvec2<valType> const & x, 
 //	detail::tvec2<valType> const & y
@@ -258,7 +277,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec3<valType>::bool_type notEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec3<valType>::bool_type notEqual
 //(
 //	detail::tvec3<valType> const & x, 
 //	detail::tvec3<valType> const & y
@@ -274,7 +293,7 @@
 //}
 //
 //template <typename valType>
-//inline typename detail::tvec4<valType>::bool_type notEqual
+//GLM_FUNC_QUALIFIER typename detail::tvec4<valType>::bool_type notEqual
 //(
 //	detail::tvec4<valType> const & x, 
 //	detail::tvec4<valType> const & y
@@ -290,39 +309,39 @@
 //}
 //
 //// any
-//inline bool any(detail::tvec2<bool> const & x)
+//GLM_FUNC_QUALIFIER bool any(detail::tvec2<bool> const & x)
 //{
 //	return x.x || x.y;
 //}
 //
-//inline bool any(detail::tvec3<bool> const & x)
+//GLM_FUNC_QUALIFIER bool any(detail::tvec3<bool> const & x)
 //{
 //    return x.x || x.y || x.z;
 //}
 //
-//inline bool any(detail::tvec4<bool> const & x)
+//GLM_FUNC_QUALIFIER bool any(detail::tvec4<bool> const & x)
 //{
 //    return x.x || x.y || x.z || x.w;
 //}
 //
 //// all
-//inline bool all(const detail::tvec2<bool>& x)
+//GLM_FUNC_QUALIFIER bool all(const detail::tvec2<bool>& x)
 //{
 //    return x.x && x.y;
 //}
 //
-//inline bool all(const detail::tvec3<bool>& x)
+//GLM_FUNC_QUALIFIER bool all(const detail::tvec3<bool>& x)
 //{
 //    return x.x && x.y && x.z;
 //}
 //
-//inline bool all(const detail::tvec4<bool>& x)
+//GLM_FUNC_QUALIFIER bool all(const detail::tvec4<bool>& x)
 //{
 //    return x.x && x.y && x.z && x.w;
 //}
 //
 //// not
-//inline detail::tvec2<bool>::bool_type not_
+//GLM_FUNC_QUALIFIER detail::tvec2<bool>::bool_type not_
 //(
 //	detail::tvec2<bool> const & v
 //)
@@ -330,7 +349,7 @@
 //    return detail::tvec2<bool>::bool_type(!v.x, !v.y);
 //}
 //
-//inline detail::tvec3<bool>::bool_type not_
+//GLM_FUNC_QUALIFIER detail::tvec3<bool>::bool_type not_
 //(
 //	detail::tvec3<bool> const & v
 //)
@@ -338,7 +357,7 @@
 //    return detail::tvec3<bool>::bool_type(!v.x, !v.y, !v.z);
 //}
 //
-//inline detail::tvec4<bool>::bool_type not_
+//GLM_FUNC_QUALIFIER detail::tvec4<bool>::bool_type not_
 //(
 //	detail::tvec4<bool> const & v
 //)

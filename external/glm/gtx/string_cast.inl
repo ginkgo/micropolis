@@ -13,9 +13,9 @@
 namespace glm{
 namespace detail
 {
-	inline std::string format(const char* msg, ...)
+	GLM_FUNC_QUALIFIER std::string format(const char* msg, ...)
 	{
-		const int STRING_BUFFER = 4096;
+		std::size_t const STRING_BUFFER(4096);
 		char text[STRING_BUFFER];
 		va_list list;
 
@@ -23,7 +23,12 @@ namespace detail
 			return std::string();
 
 		va_start(list, msg);
+// Ticket #123
+#if((GLM_COMPILER & GLM_COMPILER_VC) && (GLM_COMPILER_VC >= GLM_COMPILER_VC2005))
+			vsprintf_s(text, STRING_BUFFER, msg, list);
+#else//
 			vsprintf(text, msg, list);
+#endif//
 		va_end(list);
 
 		return std::string(text);
@@ -33,33 +38,30 @@ namespace detail
 	static const char* False = "false";
 }//namespace detail
 
-namespace gtx{
-namespace string_cast
-{
 	////////////////////////////////
 	// Scalars
 
-	inline std::string to_string(detail::thalf const & x)
+	GLM_FUNC_QUALIFIER std::string to_string(detail::half const & x)
 	{
-		return detail::format("half(%f)", float(x));
+		return detail::format("half(%2.4f)", float(x));
 	}
 
-	inline std::string to_string(float x)
+	GLM_FUNC_QUALIFIER std::string to_string(float x)
 	{
 		return detail::format("float(%f)", x);
 	}
 
-	inline std::string to_string(double x)
+	GLM_FUNC_QUALIFIER std::string to_string(double x)
 	{
 		return detail::format("double(%f)", x);
 	}
 
-	inline std::string to_string(int x)
+	GLM_FUNC_QUALIFIER std::string to_string(int x)
 	{
 		return detail::format("int(%d)", x);
 	}
 
-	inline std::string to_string(unsigned int x)
+	GLM_FUNC_QUALIFIER std::string to_string(unsigned int x)
 	{
 		return detail::format("uint(%d)", x);
 	}
@@ -67,7 +69,7 @@ namespace string_cast
 	////////////////////////////////
 	// Bool vectors
 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec2<bool> const & v
 	)
@@ -77,7 +79,7 @@ namespace string_cast
 			v.y ? detail::True : detail::False);
 	}
 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec3<bool> const & v
 	)
@@ -88,7 +90,7 @@ namespace string_cast
 			v.z ? detail::True : detail::False);
 	}
 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec4<bool> const & v
 	)
@@ -104,37 +106,37 @@ namespace string_cast
 	// Half vectors
 
 	template <>
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tvec2<detail::thalf> const & v
+		detail::tvec2<detail::half> const & v
 	)
 	{
-		return detail::format("hvec2(%f, %f)", float(v.x), float(v.y));
+		return detail::format("hvec2(%2.4f, %2.4f)", v.x.toFloat(), v.y.toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tvec3<detail::thalf> const & v
+		detail::tvec3<detail::half> const & v
 	)
 	{
-		return detail::format("hvec3(%f, %f, %f)", float(v.x), float(v.y), float(v.z));
+		return detail::format("hvec3(%2.4f, %2.4f, %2.4f)", v.x.toFloat(), v.y.toFloat(), v.z.toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tvec4<detail::thalf> const & v
+		detail::tvec4<detail::half> const & v
 	)
 	{
-		return detail::format("hvec4(%f, %f, %f, %f)", float(v.x), float(v.y), float(v.z), float(v.w));
+		return detail::format("hvec4(%2.4f, %2.4f, %2.4f, %2.4f)", v.x.toFloat(), v.y.toFloat(), v.z.toFloat(), v.w.toFloat());
 	}
 
 	////////////////////////////////
 	// Float vectors
 
 	template <>
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec2<float> const & v
 	)
@@ -143,7 +145,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec3<float> const & v
 	)
@@ -152,7 +154,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec4<float> const & v
 	)
@@ -164,7 +166,7 @@ namespace string_cast
 	// Double vectors
 
 	template <>
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec2<double> const & v
 	)
@@ -173,7 +175,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec3<double> const & v
 	)
@@ -182,7 +184,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec4<double> const & v
 	)
@@ -194,7 +196,7 @@ namespace string_cast
 	// Int vectors
 
 	template <>
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec2<int> const & v
 	)
@@ -203,7 +205,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec3<int> const & v
 	)
@@ -212,7 +214,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec4<int> const & v
 	)
@@ -224,7 +226,7 @@ namespace string_cast
 	// Unsigned int vectors
 
 	template <>
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec2<unsigned int> const & v
 	)
@@ -233,7 +235,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec3<unsigned int> const & v
 	)
@@ -242,7 +244,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tvec4<unsigned int> const & v
 	)
@@ -254,127 +256,118 @@ namespace string_cast
 	// Half matrices
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat2x2<detail::thalf> const & m
+		detail::tmat2x2<detail::half> const & m
 	)
 	{
-		detail::tmat2x2<float> x(m);
 		return detail::format("hmat2x2((%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1]);
+			m[0][0].toFloat(), m[0][1].toFloat(), 
+			m[1][0].toFloat(), m[1][1].toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat2x3<detail::thalf> const & m
+		detail::tmat2x3<detail::half> const & x
 	)
 	{
-		detail::tmat2x3<float> x(m);
 		return detail::format("hmat2x3((%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2]);
+			x[0][0].toFloat(), x[0][1].toFloat(), x[0][2].toFloat(), 
+			x[1][0].toFloat(), x[1][1].toFloat(), x[1][2].toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat2x4<detail::thalf> const & m
+		detail::tmat2x4<detail::half> const & x
 	)
 	{
-		detail::tmat2x4<float> x(m);
 		return detail::format("hmat2x4((%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3], 
-			x[1][0], x[1][1], x[1][2], x[1][3]);
+			x[0][0].toFloat(), x[0][1].toFloat(), x[0][2].toFloat(), x[0][3].toFloat(), 
+			x[1][0].toFloat(), x[1][1].toFloat(), x[1][2].toFloat(), x[1][3].toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat3x2<detail::thalf> const & m
+		detail::tmat3x2<detail::half> const & x
 	)
 	{
-		detail::tmat3x2<float> x(m);
 		return detail::format("hmat3x2((%f, %f), (%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1], 
-			x[2][0], x[2][1]);
+			x[0][0].toFloat(), x[0][1].toFloat(), 
+			x[1][0].toFloat(), x[1][1].toFloat(), 
+			x[2][0].toFloat(), x[2][1].toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat3x3<detail::thalf> const & m
+		detail::tmat3x3<detail::half> const & x
 	)
 	{
-		detail::tmat3x3<float> x(m);
 		return detail::format("hmat3x3((%f, %f, %f), (%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], 
-			x[1][0], x[1][1], x[1][2],
-			x[2][0], x[2][1], x[2][2]);
+			x[0][0].toFloat(), x[0][1].toFloat(), x[0][2].toFloat(), 
+			x[1][0].toFloat(), x[1][1].toFloat(), x[1][2].toFloat(),
+			x[2][0].toFloat(), x[2][1].toFloat(), x[2][2].toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat3x4<detail::thalf> const & m
+		detail::tmat3x4<detail::half> const & x
 	)
 	{
-		detail::tmat3x4<float> x(m);
 		return detail::format("hmat3x4((%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3], 
-			x[1][0], x[1][1], x[1][2], x[1][3], 
-			x[2][0], x[2][1], x[2][2], x[2][3]);
+			x[0][0].toFloat(), x[0][1].toFloat(), x[0][2].toFloat(), x[0][3].toFloat(), 
+			x[1][0].toFloat(), x[1][1].toFloat(), x[1][2].toFloat(), x[1][3].toFloat(), 
+			x[2][0].toFloat(), x[2][1].toFloat(), x[2][2].toFloat(), x[2][3].toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat4x2<detail::thalf> const & m
+		detail::tmat4x2<detail::half> const & x
 	)
 	{
-		detail::tmat4x2<float> x(m);
 		return detail::format("hmat4x2((%f, %f), (%f, %f), (%f, %f), (%f, %f))", 
-			x[0][0], x[0][1], 
-			x[1][0], x[1][1], 
-			x[2][0], x[2][1], 
-			x[3][0], x[3][1]);
+			x[0][0].toFloat(), x[0][1].toFloat(), 
+			x[1][0].toFloat(), x[1][1].toFloat(), 
+			x[2][0].toFloat(), x[2][1].toFloat(), 
+			x[3][0].toFloat(), x[3][1].toFloat());
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat4x3<detail::thalf> const & m
+		detail::tmat4x3<detail::half> const & x
 	)
 	{
-		detail::tmat4x3<float> x(m);
 		return detail::format("hmat4x3((%f, %f, %f), (%f, %f, %f), (%f, %f, %f), (%f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2],
-			x[1][0], x[1][1], x[1][2], 
-			x[2][0], x[2][1], x[2][2],
-			x[3][0], x[3][1], x[3][2]);
+			x[0][0].toFloat(), x[0][1].toFloat(), x[0][2].toFloat(),
+			x[1][0].toFloat(), x[1][1].toFloat(), x[1][2].toFloat(), 
+			x[2][0].toFloat(), x[2][1].toFloat(), x[2][2].toFloat(),
+			x[3][0].toFloat(), x[3][1].toFloat(), x[3][2].toFloat());
 	}
 
 	template <>
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
-		detail::tmat4x4<detail::thalf> const & m
+		detail::tmat4x4<detail::half> const & x
 	)
 	{
-		detail::tmat4x4<float> x(m);
 		return detail::format("hmat4x4((%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f), (%f, %f, %f, %f))", 
-			x[0][0], x[0][1], x[0][2], x[0][3],
-			x[1][0], x[1][1], x[1][2], x[1][3],
-			x[2][0], x[2][1], x[2][2], x[2][3],
-			x[3][0], x[3][1], x[3][2], x[3][3]);
+			x[0][0].toFloat(), x[0][1].toFloat(), x[0][2].toFloat(), x[0][3].toFloat(),
+			x[1][0].toFloat(), x[1][1].toFloat(), x[1][2].toFloat(), x[1][3].toFloat(),
+			x[2][0].toFloat(), x[2][1].toFloat(), x[2][2].toFloat(), x[2][3].toFloat(),
+			x[3][0].toFloat(), x[3][1].toFloat(), x[3][2].toFloat(), x[3][3].toFloat());
 	}
 
 	////////////////////////////////
 	// Float matrices
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat2x2<float> const & x
 	)
@@ -385,7 +378,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat2x3<float> const & x
 	)
@@ -396,7 +389,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat2x4<float> const & x
 	)
@@ -407,7 +400,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat3x2<float> const & x
 	)
@@ -419,7 +412,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat3x3<float> const & x
 	)
@@ -431,7 +424,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat3x4<float> const & x
 	)
@@ -443,7 +436,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat4x2<float> const & x
 	)
@@ -456,7 +449,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat4x3<float> const & x
 	)
@@ -469,7 +462,7 @@ namespace string_cast
 	}
 
 	template <>
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat4x4<float> const & x
 	)
@@ -485,7 +478,7 @@ namespace string_cast
 	// Double matrices
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat2x2<double> const & x
 	)
@@ -496,7 +489,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat2x3<double> const & x
 	)
@@ -507,7 +500,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat2x4<double> const & x
 	)
@@ -518,7 +511,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat3x2<double> const & x
 	)
@@ -530,7 +523,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat3x3<double> const & x
 	)
@@ -542,7 +535,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat3x4<double> const & x
 	)
@@ -554,7 +547,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat4x2<double> const & x
 	)
@@ -567,7 +560,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat4x3<double> const & x
 	)
@@ -580,7 +573,7 @@ namespace string_cast
 	}
 
 	template <>
-	inline std::string to_string
+	GLM_FUNC_QUALIFIER std::string to_string
 	(
 		detail::tmat4x4<double> const & x
 	)
@@ -592,6 +585,4 @@ namespace string_cast
 			x[3][0], x[3][1], x[3][2], x[3][3]);
 	}
 
-	}//namespace string_cast
-	}//namespace gtx
 }//namespace glm

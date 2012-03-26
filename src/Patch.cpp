@@ -21,7 +21,7 @@ void transform_patch(const BezierPatch& patch,
         for (int j = 0; j < 4; ++j) {
              vec4 pp = mat * vec4(patch.P[i][j],1.0f);
 
-             out.P[i][j] = pp.xyz / pp.w;
+             out.P[i][j] = vec3(pp.x,pp.y,pp.z) / pp.w;
         }
     }
 }
@@ -224,8 +224,8 @@ void pisplit_patch(const BezierPatch& patch,
 
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 3; ++j) {
-            a += glm::distance(ppatch.P[j][i].xy, ppatch.P[j+1][i].xy);
-            b += glm::distance(ppatch.P[i][j].xy, ppatch.P[i][j+1].xy);
+            a += glm::distance(vec2(ppatch.P[j][i]), vec2(ppatch.P[j+1][i]));
+            b += glm::distance(vec2(ppatch.P[i][j]), vec2(ppatch.P[i][j+1]));
         }
     }
 
@@ -244,8 +244,8 @@ void isplit_patch(const BezierPatch& patch,
 
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 3; ++j) {
-            a += glm::distance(patch.P[j][i].xy, patch.P[j+1][i].xy);
-            b += glm::distance(patch.P[i][j].xy, patch.P[i][j+1].xy);
+            a += glm::distance(vec2(patch.P[j][i]), vec2(patch.P[j+1][i]));
+			b += glm::distance(vec2(patch.P[i][j]), vec2(patch.P[i][j+1]));
         }
     }
 

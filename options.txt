@@ -26,7 +26,7 @@ device_id = 0
 verbose = true
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
-disable_buffer_sharing = false
+disable_buffer_sharing = true
 
 // Size used for bounding and dicing.
 reyes_patch_size = 128

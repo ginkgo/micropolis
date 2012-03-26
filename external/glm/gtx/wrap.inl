@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2012 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2009-11-25
 // Updated : 2010-02-13
@@ -10,15 +10,10 @@
 // - GLM core
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-namespace glm{
-namespace gtx{
-namespace wrap
+namespace glm
 {
-	////////////////////////
-	// clamp
-
 	template <typename genType> 
-	inline genType clamp
+	GLM_FUNC_QUALIFIER genType clamp
 	(
 		genType const & Texcoord
 	)
@@ -27,7 +22,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec2<T> clamp
+	GLM_FUNC_QUALIFIER detail::tvec2<T> clamp
 	(
 		detail::tvec2<T> const & Texcoord
 	)
@@ -39,7 +34,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec3<T> clamp
+	GLM_FUNC_QUALIFIER detail::tvec3<T> clamp
 	(
 		detail::tvec3<T> const & Texcoord
 	)
@@ -51,7 +46,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec4<T> clamp
+	GLM_FUNC_QUALIFIER detail::tvec4<T> clamp
 	(
 		detail::tvec4<T> const & Texcoord
 	)
@@ -66,7 +61,7 @@ namespace wrap
 	// repeat
 
 	template <typename genType> 
-	inline genType repeat
+	GLM_FUNC_QUALIFIER genType repeat
 	(
 		genType const & Texcoord
 	)
@@ -75,7 +70,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec2<T> repeat
+	GLM_FUNC_QUALIFIER detail::tvec2<T> repeat
 	(
 		detail::tvec2<T> const & Texcoord
 	)
@@ -87,7 +82,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec3<T> repeat
+	GLM_FUNC_QUALIFIER detail::tvec3<T> repeat
 	(
 		detail::tvec3<T> const & Texcoord
 	)
@@ -99,7 +94,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec4<T> repeat
+	GLM_FUNC_QUALIFIER detail::tvec4<T> repeat
 	(
 		detail::tvec4<T> const & Texcoord
 	)
@@ -114,7 +109,7 @@ namespace wrap
 	// mirrorRepeat
 
 	template <typename genType> 
-	inline genType mirrorRepeat
+	GLM_FUNC_QUALIFIER genType mirrorRepeat
 	(
 		genType const & Texcoord
 	)
@@ -133,7 +128,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec2<T> mirrorRepeat
+	GLM_FUNC_QUALIFIER detail::tvec2<T> mirrorRepeat
 	(
 		detail::tvec2<T> const & Texcoord
 	)
@@ -145,7 +140,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec3<T> mirrorRepeat
+	GLM_FUNC_QUALIFIER detail::tvec3<T> mirrorRepeat
 	(
 		detail::tvec3<T> const & Texcoord
 	)
@@ -157,7 +152,7 @@ namespace wrap
 	}
 
 	template <typename T> 
-	inline detail::tvec4<T> mirrorRepeat
+	GLM_FUNC_QUALIFIER detail::tvec4<T> mirrorRepeat
 	(
 		detail::tvec4<T> const & Texcoord
 	)
@@ -167,7 +162,4 @@ namespace wrap
 			Result[i] = mirrorRepeat(Texcoord[i]);
 		return Result;
 	}
-
-}//namespace wrap
-}//namespace gtx
 }//namespace glm

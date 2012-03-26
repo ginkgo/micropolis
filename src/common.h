@@ -4,8 +4,6 @@
 
 typedef unsigned char byte;
 
-#define GLM_SWIZZLE_XYZW
-
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
@@ -22,10 +20,10 @@ using glm::mat3;
 using glm::mat4;
 using glm::mat4x3;
 
-namespace glm {
-    using namespace glm::gtc::matrix_transform;
-    using namespace glm::gtx::transform;
-}
+// namespace glm {
+//     using namespace matrix_transform;
+//     using namespace transform;
+// }
 
 #include <vector>
 
