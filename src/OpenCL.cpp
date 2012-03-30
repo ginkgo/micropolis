@@ -511,9 +511,24 @@ namespace CL
 
         if (num_events == 0) return;
 
-        cl_int status = clWaitForEvents(num_events, _event_pad_ptr);
+		if (config.do_event_polling()) {
+			// Do polling
+			clFlush(_queue);
+			for (size_t i = 0; i < num_events; ++i) {
+				cl_int eventstatus;
+				do {
+					cl_int status = clGetEventInfo(_event_pad_ptr[i], 
+												   CL_EVENT_COMMAND_EXECUTION_STATUS,
+												   sizeof(cl_int), &eventstatus, NULL);
+				
+					OPENCL_ASSERT(status);				
+				} while (eventstatus != CL_COMPLETE);
+			}
+		} else {
+			cl_int status = clWaitForEvents(num_events, _event_pad_ptr);
+			OPENCL_ASSERT(status);
+		}
 
-        OPENCL_ASSERT(status);
     }
 
     // void CommandQueue::enq_GL_acquire(ImageBuffer& buffer,
@@ -688,16 +703,16 @@ namespace CL
     void Program::set_constant(const string& name, ivec2 value)
     {
         assert(_source_buffer);
-        *_source_buffer << "#define " << name << " ((int2){" 
-                        << value.x << ", " << value.y << "})" << endl;
+        *_source_buffer << "#define " << name << " ((int2)(" 
+                        << value.x << ", " << value.y << "))" << endl;
     }
 
     void Program::set_constant(const string& name, vec4 value)
     {
         assert(_source_buffer);
-        *_source_buffer << "#define " << name << " ((float4){" 
+        *_source_buffer << "#define " << name << " ((float4)(" 
                         << value.x << "f, " << value.y << "f, " 
-                        << value.z << "f, " << value.w <<  "f})" << endl;
+                        << value.z << "f, " << value.w <<  "f))" << endl;
     }
 
     void Program::compile(Device& device,  const string& filename)

@@ -3,7 +3,7 @@ env = Environment()
 env['CPPPATH'] = ['#/external', '#/generated', '#src']
 env['LIBS'] = ['GL', 'glfw', 'boost_regex', 'IL', 'OpenCL', 'Xrandr', 'rt']
 env['CCFLAGS'] = ['-O3', '-std=c++98']
-env['LINKFLAGS'] = ['-ggdb']
+env['LINKFLAGS'] = ['-O3']
 
 python = 'python2.7'
 

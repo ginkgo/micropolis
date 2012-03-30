@@ -33,7 +33,7 @@ reyes_patch_size = 64
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 1024
+reyes_patches_per_pass = 512
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 64
@@ -66,6 +66,9 @@ backface_culling = true
 // This may be necessary for inverted models.
 flip_surface = false
 
+// Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
+do_event_polling = true
 
 
-#hash:-2437073536082887481
+
+#hash:-2405090733086550910

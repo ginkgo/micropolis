@@ -4,16 +4,12 @@
 
 #include <time.h>
 
-long nanotime()
+uint64_t nanotime()
 {
-    timespec ts;
+	struct timespec tp;
+	clock_gettime(CLOCK_MONOTONIC, &tp);
+	return (unsigned long long) tp.tv_sec * BILLION + (unsigned long long) tp.tv_nsec;
 
-    clock_gettime(CLOCK_REALTIME, &ts);
-
-    long nano = ts.tv_nsec;
-    nano += (long)ts.tv_sec * BILLION;
-
-    return nano;
 }
 
 string with_commas(long n)

@@ -16,7 +16,7 @@
 #define VIEWPORT_MAX  ((VIEWPORT_MAX_PIXEL << PXLCOORD_SHIFT) - 1)
 #define VIEWPORT_SIZE (VIEWPORT_SIZE_PIXEL << PXLCOORD_SHIFT)
 
-inline int calc_framebuffer_pos(int2 pxlpos)
+int calc_framebuffer_pos(int2 pxlpos)
 {
     int2 gridpos = pxlpos / TILE_SIZE;
     int  grid_id = gridpos.x + GRID_SIZE.x * gridpos.y;
@@ -48,14 +48,14 @@ float4 eval_patch(private float4* patch, float2 st)
 
 float4 mul_m44v4(float16 mat, float4 vec)
 {
-    return (float4) {dot(mat.s048C, vec),
+    return (float4) (dot(mat.s048C, vec),
                      dot(mat.s159D, vec),
                      dot(mat.s26AE, vec),
-                     dot(mat.s37BF, vec)};
+                     dot(mat.s37BF, vec));
 
 }
 
-inline size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
+size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
 {
     return nu + nv * (PATCH_SIZE+1) + patch * (PATCH_SIZE+1)*(PATCH_SIZE+1);
 }
@@ -80,16 +80,16 @@ __kernel void dice (const global float4* patch_buffer,
         patch[i] = patch_buffer[patch_id * 16 + i];
     }
 
-    float2 uv = (float2) {nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE};
+    float2 uv = (float2) (nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE);
 
     float4 pos = eval_patch(patch, uv);
 
-    pos.y += fabs(native_sin(pos.x*15)) * 0.04f;
+    pos.y += native_sin(pos.x*15) * 0.08f;
     
     float4 p = mul_m44v4(proj, pos);
 
-    int2 coord = {(int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
-                  (int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2)};
+    int2 coord = (int2)((int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
+						(int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2));
 
 
     int grid_index = calc_grid_pos(nu, nv, patch_id);
@@ -99,7 +99,7 @@ __kernel void dice (const global float4* patch_buffer,
 }
 
 
-inline int is_front_facing(const int2 *ps)
+int is_front_facing(const int2 *ps)
 {
     if (BACKFACE_CULLING) {
         int2 d1 = ps[1] - ps[0];
@@ -112,17 +112,17 @@ inline int is_front_facing(const int2 *ps)
     }
 }
 
-inline int is_empty(int2 min, int2 max)
+int is_empty(int2 min, int2 max)
 {
     return min.x >= max.x && min.y >= max.y;
 }
 
-inline int calc_block_pos(int u, int v, int patch_id)
+int calc_block_pos(int u, int v, int patch_id)
 {
     return u + v * BLOCKS_PER_LINE + patch_id * BLOCKS_PER_PATCH;
 }
 
-inline int calc_color_grid_pos(int u, int v, int patch_id)
+int calc_color_grid_pos(int u, int v, int patch_id)
 {
     return u + v * PATCH_SIZE + patch_id * (PATCH_SIZE*PATCH_SIZE);
 }
@@ -191,10 +191,10 @@ __kernel void shade(const global float4* pos_grid,
         y_max = min(VIEWPORT_MAX.y, y_max);
 
         int i = calc_block_pos(get_group_id(0), get_group_id(1), get_group_id(2));
-        block_index[i] = (int4){x_min, y_min, x_max, y_max};
+        block_index[i] = (int4)(x_min, y_min, x_max, y_max);
     }
 
-    if (is_empty((int2){x_min, y_min}, (int2){x_max, y_max})) {
+    if (is_empty((int2)(x_min, y_min), (int2)(x_max, y_max))) {
         return;
     }
 
@@ -205,12 +205,12 @@ __kernel void shade(const global float4* pos_grid,
 
     float3 n = normalize(cross(dv,du));
 
-    float3 l = normalize((float3){4,3,8});
+    float3 l = normalize((float3)(4,3,8));
 
     float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
 
-    float4 dc = {0.8f, 0.05f, 0.01f, 1};
-    float4 sc = (float4){1, 1, 1, 1};
+    float4 dc = (float4)(0.8f, 0.05f, 0.01f, 1);
+    float4 sc = (float4)(1, 1, 1, 1);
         
     float3 h = normalize(l+v);
         
@@ -228,7 +228,7 @@ __kernel void clear_heads(global int* heads)
     heads[get_global_id(0)] = -1;
 }
 
-inline int calc_node_pos(int block_id, int assign_cnt)
+int calc_node_pos(int block_id, int assign_cnt)
 {
     if (assign_cnt >= MAX_BLOCK_ASSIGNMENTS) {
         return -2;
@@ -237,7 +237,7 @@ inline int calc_node_pos(int block_id, int assign_cnt)
     return block_id + assign_cnt * MAX_BLOCK_COUNT;
 }
 
-inline int calc_tile_id(int tx, int ty)
+int calc_tile_id(int tx, int ty)
 {
     return tx + FRAMEBUFFER_SIZE.x/8 * ty;
 }
@@ -269,14 +269,14 @@ __kernel void assign(global const int4* block_index,
             int old_head = atomic_xchg(heads + tile_id, heap_pos);
 
             if (heap_pos >= 0) {
-                node_heap[heap_pos] = (int2){block_id, old_head};
+                node_heap[heap_pos] = (int2)(block_id, old_head);
             }
         }
     }
 
 }
 
-inline void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
+void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
                               private size_t* u, private size_t* v, private size_t* patch)
 {
     *patch = block_id / BLOCKS_PER_PATCH;
@@ -288,27 +288,27 @@ inline void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
     *v = bu * 8 + ly;
 }
 
-inline int3 idot3 (int3 Ax, int3 Ay, int3 Bx, int3 By)
+int3 idot3 (int3 Ax, int3 Ay, int3 Bx, int3 By)
 {
     // return mad24(Ax, Bx, mul24(Ay,  By));
     return Ax * Bx + Ay * By;
 }
 
 
-inline int4 idot4 (int4 Ax, int4 Ay, int4 Bx, int4 By)
+int4 idot4 (int4 Ax, int4 Ay, int4 Bx, int4 By)
 {
     // return mad24(Ax, Bx, mul24(Ay,  By));
     return Ax * Bx + Ay * By;
 }
 
 
-inline int idot (int2 a, int2 b)
+int idot (int2 a, int2 b)
 {
     //return mad24(a.x, b.x, mul24(a.y,  b.y));
     return a.x * b.x + a.y * b.y;
 }
 
-inline int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
+int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
 {
     int3 Dx = Py.yzx - Py;
     int3 Dy = Px - Px.yzx;
@@ -320,7 +320,7 @@ inline int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
 
     int3 O = idot3(Dx, Dy, Px, Py);
     
-    int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3){-1,-1,-1} : (int3){0,0,0};
+    int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3)(-1,-1,-1) : (int3)(0,0,0);
 
     int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O;
 
@@ -363,9 +363,9 @@ __kernel void sample(global const int* heads,
     int tile_id  = calc_tile_id(get_group_id(0), get_group_id(1));
     int next = heads[tile_id];
 
-    const int2 o = (int2){get_group_id(0), get_group_id(1)} << (3 + PXLCOORD_SHIFT);
-    const int2 g = {get_global_id(0), get_global_id(1)};
-    const int2 l = {get_local_id(0), get_local_id(1)};
+    const int2 o = (int2)(get_group_id(0), get_group_id(1)) << (3 + PXLCOORD_SHIFT);
+    const int2 g = (int2)(get_global_id(0), get_global_id(1));
+    const int2 l = (int2)(get_local_id(0), get_local_id(1));
 
     int fb_id = calc_framebuffer_pos(g);
 
@@ -392,8 +392,8 @@ __kernel void sample(global const int* heads,
 
         const int MAX_LOCAL_COORD = (8<<PXLCOORD_SHIFT) - 1;
 
-        int2 min_p = (int2) {MAX_LOCAL_COORD+1, MAX_LOCAL_COORD+1};
-        int2 max_p = (int2) {-1,-1};
+        int2 min_p = (int2) (MAX_LOCAL_COORD+1, MAX_LOCAL_COORD+1);
+        int2 max_p = (int2) (-1,-1);
 
         size_t patch_id, u, v;
         recover_patch_pos(block_id, l.x, l.y,  &u, &v, &patch_id);
@@ -418,8 +418,8 @@ __kernel void sample(global const int* heads,
 
         /* continue; */
 
-        min_p = max(min_p, (int2) {0,0});
-        max_p = min(max_p, (int2) {MAX_LOCAL_COORD, MAX_LOCAL_COORD});
+        min_p = max(min_p, (int2) (0,0));
+        max_p = min(max_p, (int2) (MAX_LOCAL_COORD, MAX_LOCAL_COORD));
 
         min_p = min_p >> PXLCOORD_SHIFT;
         max_p = max_p >> PXLCOORD_SHIFT;
@@ -431,7 +431,7 @@ __kernel void sample(global const int* heads,
         for (int y = min_p.y; y <= max_p.y; ++y) {
             for (int x = min_p.x; x <= max_p.x; ++x) {
 
-                int2 tp = ((int2){x,y} << PXLCOORD_SHIFT);
+                int2 tp = ((int2)(x,y) << PXLCOORD_SHIFT);
 
                 float depth = 1;
                 int inside1 = inside_triangle(Px.xyw, Py.xyw, tp, dv.xyw, &depth);
@@ -459,7 +459,7 @@ __kernel void sample(global const int* heads,
     float4 C = colors[l.y][l.x];
     C.w = depths[l.y][l.x];
 
-    framebuffer[fb_id] = (next == -2) ? (float4){1,0,0,1} : C;
+    framebuffer[fb_id] = (next == -2) ? (float4)(1,0,0,1) : C;
     
 }
 

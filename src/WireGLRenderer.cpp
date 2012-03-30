@@ -19,10 +19,14 @@ namespace Reyes
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
         glClear(GL_COLOR_BUFFER_BIT);
+
+		_shader.bind();
     }
 
     void WireGLRenderer::finish()
     {
+
+		_shader.unbind();
         glfwSwapBuffers();
     }
 
@@ -33,12 +37,6 @@ namespace Reyes
                    
 		_shader.bind();
 		_shader.set_uniform("projection", proj);
-		_shader.unbind();
-
-        // glMatrixMode(GL_PROJECTION);
-        // glLoadMatrixf(glm::value_ptr(proj));
-        // glMatrixMode(GL_MODELVIEW);
-        // glLoadIdentity();
     }
 
     void WireGLRenderer::draw_patch(const BezierPatch& patch)
@@ -79,10 +77,8 @@ namespace Reyes
 
         _vbo.send_data();
 		
-		_shader.bind();
 		
 		_vbo.draw(GL_LINE_LOOP, _shader);
 		
-		_shader.unbind();
     }
 }

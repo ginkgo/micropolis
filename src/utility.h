@@ -6,9 +6,9 @@
 #include <iostream>
 #include <iomanip>
 
-#define THOUSAND 1000L
-#define MILLION  1000000L
-#define BILLION  1000000000L
+#define THOUSAND 1000ULL
+#define MILLION  1000000ULL
+#define BILLION  1000000000ULL
 
 #define KILO THOUSAND
 #define MEGA MILLION
@@ -22,7 +22,7 @@
 #define MEBI (1L << MEBI_SHIFT)
 #define GIBI (1L << GIBI_SHIFT)
 
-long nanotime();
+uint64_t nanotime();
 
 string with_commas(long n);
 
