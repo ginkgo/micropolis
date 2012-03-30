@@ -38,30 +38,30 @@ void read_patches(const char* filename, vector<BezierPatch>& patches, bool flip_
     }
 
     int np, nv;
-    fscanf(file, "%i\n", &np);
+    int r = fscanf(file, "%i\n", &np);
     indices.resize(np * 16);
     for (int i = 0; i < np; ++i) {
         int *p = &(indices[i*16]);
         if (!flip_surface) {
-            fscanf(file, "%i, %i, %i, %i,",  p+ 0, p+ 1, p+ 2, p+ 3);
-            fscanf(file, "%i, %i, %i, %i,",  p+ 4, p+ 5, p+ 6, p+ 7);
-            fscanf(file, "%i, %i, %i, %i,",  p+ 8, p+ 9, p+10, p+11);
-            fscanf(file, "%i, %i, %i, %i\n", p+12, p+13, p+14, p+15);
+            r = fscanf(file, "%i, %i, %i, %i,",  p+ 0, p+ 1, p+ 2, p+ 3);
+            r = fscanf(file, "%i, %i, %i, %i,",  p+ 4, p+ 5, p+ 6, p+ 7);
+            r = fscanf(file, "%i, %i, %i, %i,",  p+ 8, p+ 9, p+10, p+11);
+            r = fscanf(file, "%i, %i, %i, %i\n", p+12, p+13, p+14, p+15);
         } else {
-            fscanf(file, "%i, %i, %i, %i,",  p+ 0, p+ 4, p+ 8, p+12);
-            fscanf(file, "%i, %i, %i, %i,",  p+ 1, p+ 5, p+ 9, p+13);
-            fscanf(file, "%i, %i, %i, %i,",  p+ 2, p+ 6, p+10, p+14);
-            fscanf(file, "%i, %i, %i, %i\n", p+ 3, p+ 7, p+11, p+15);
+            r = fscanf(file, "%i, %i, %i, %i,",  p+ 0, p+ 4, p+ 8, p+12);
+            r = fscanf(file, "%i, %i, %i, %i,",  p+ 1, p+ 5, p+ 9, p+13);
+            r = fscanf(file, "%i, %i, %i, %i,",  p+ 2, p+ 6, p+10, p+14);
+            r = fscanf(file, "%i, %i, %i, %i\n", p+ 3, p+ 7, p+11, p+15);
         }
     }
 
     BBox bbox;
 
-    fscanf(file, "%i\n", &nv);
+    r= fscanf(file, "%i\n", &nv);
     points.resize(nv);
     for (int i = 0; i < nv; ++i) {
         float x,y,z;
-        fscanf(file, "%f, %f, %f\n", &x, &y, &z);
+        r= fscanf(file, "%f, %f, %f\n", &x, &y, &z);
         points[i] = vec3(x,y,z);
         bbox.add_point(vec3(x,y,z));
     }

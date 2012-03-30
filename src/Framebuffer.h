@@ -6,6 +6,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "OpenCL.h"
+#include "VBO.h"
 
 namespace Reyes
 {
@@ -26,6 +27,7 @@ namespace Reyes
 
         CL::Buffer* _cl_buffer;
        
+		GL::VBO _screen_quad;
 
         Framebuffer(CL::Device& device, const ivec2& size, int tile_size);
 

@@ -20,14 +20,11 @@ using glm::mat3;
 using glm::mat4;
 using glm::mat4x3;
 
-// namespace glm {
-//     using namespace matrix_transform;
-//     using namespace transform;
-// }
-
 #include <vector>
+#include <map>
 
 using std::vector;
+using std::map;
 
 #include <string>
 #include <iostream>

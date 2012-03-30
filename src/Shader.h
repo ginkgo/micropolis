@@ -9,143 +9,143 @@
 
 namespace GL
 {
-/**
- * Represents a compiled GLSL shader.
- */
-class Shader
-{
-    bool _valid; /**< State variable for testing compilation success */
+	/**
+	 * Represents a compiled GLSL shader.
+	 */
+	class Shader
+	{
+		bool _valid; /**< State variable for testing compilation success */
 
-    GLuint _program; /**< Shader program handle. */
+		GLuint _program; /**< Shader program handle. */
 
-    GLuint _vertex_shader; /**< Vertex shader handle. */
-    GLuint _geometry_shader; /**< Geometry shader handle */
-    GLuint _fragment_shader; /**< Fragment shader handle */
-    GLuint _tess_ctrl_shader; /**< Tessellation control shader handle */
-    GLuint _tess_eval_shader; /**< Tessellation evaluation shader handle */
+		GLuint _vertex_shader; /**< Vertex shader handle. */
+		GLuint _geometry_shader; /**< Geometry shader handle */
+		GLuint _fragment_shader; /**< Fragment shader handle */
+		GLuint _tess_ctrl_shader; /**< Tessellation control shader handle */
+		GLuint _tess_eval_shader; /**< Tessellation evaluation shader handle */
 
-    string _name;
+		string _name;
 
-    typedef boost::unordered_map<string, GLint> UniformMap;
-    UniformMap _uniform_map;
+		typedef boost::unordered_map<string, GLint> UniformMap;
+		UniformMap _uniform_map;
 
-    typedef boost::unordered_map<string, GLuint> UniformBlockMap;
-    UniformBlockMap _uniform_block_map;
+		typedef boost::unordered_map<string, GLuint> UniformBlockMap;
+		UniformBlockMap _uniform_block_map;
 
     public:
     
-    /**
-     * Load and compile a shader.
-     * @param shader Name of the shader. Don't add a file-extension or dir.
-     * @param material Name of the material. Optional.
-     */
-    Shader(const string& shader, const string& material="");
-    ~Shader();
+		/**
+		 * Load and compile a shader.
+		 * @param shader Name of the shader. Don't add a file-extension or dir.
+		 * @param material Name of the material. Optional.
+		 */
+		Shader(const string& shader, const string& material="");
+		~Shader();
 
-    /**
-     * Bind the shader object
-     */
-    void bind() const
-    {
-        glUseProgram(_program);
-    }
+		/**
+		 * Bind the shader object
+		 */
+		void bind() const
+		{
+			glUseProgram(_program);
+		}
 
-    /**
-     * Unbind the shader object
-     */
-    void unbind() const
-    {
-        glUseProgram(0);
-    }
+		/**
+		 * Unbind the shader object
+		 */
+		void unbind() const
+		{
+			glUseProgram(0);
+		}
 
-    /**
-     * Set a uniform.
-     * @param uniform_name Name of uniform.
-     * @param value The value to set the uniform to.
-     */
-    template<typename T>
-    void set_uniform(const string& uniform_name, const T& value)
-    {
-        UniformMap::iterator it = _uniform_map.find(uniform_name);
+		/**
+		 * Set a uniform.
+		 * @param uniform_name Name of uniform.
+		 * @param value The value to set the uniform to.
+		 */
+		template<typename T>
+		void set_uniform(const string& uniform_name, const T& value)
+		{
+			UniformMap::iterator it = _uniform_map.find(uniform_name);
         
-        if (it == _uniform_map.end())
-            return;
+			if (it == _uniform_map.end())
+				return;
 
-        gltype_info<T>::set_uniform(it->second, value);
-    }
+			gltype_info<T>::set_uniform(it->second, value);
+		}
 
-    void set_uniform(const string& uniform_name, const Tex& texture)
-    {
-        UniformMap::iterator it = _uniform_map.find(uniform_name);
+		void set_uniform(const string& uniform_name, const Tex& texture)
+		{
+			UniformMap::iterator it = _uniform_map.find(uniform_name);
         
-        if (it == _uniform_map.end())
-            return;
+			if (it == _uniform_map.end())
+				return;
 
-        gltype_info<GLint>::set_uniform(it->second, texture.get_unit_number());
-    }
+			gltype_info<GLint>::set_uniform(it->second, texture.get_unit_number());
+		}
 
-    void set_uniform(const string& uniform_name, const TextureBuffer& texture)
-    {
-        set_uniform(uniform_name, (Tex&) texture);
-    }
+		void set_uniform(const string& uniform_name, const TextureBuffer& texture)
+		{
+			set_uniform(uniform_name, (Tex&) texture);
+		}
 
-    bool has_uniform(const string& uniform_name) const {
-        return (_uniform_map.count(uniform_name) > 0);
-    }
+		bool has_uniform(const string& uniform_name) const {
+			return (_uniform_map.count(uniform_name) > 0);
+		}
 
-    // void set_uniform(const string& uniform_name, const TextureArray& texture)
-    // {
-    //     UniformMap::iterator it = _uniform_map.find(uniform_name);
+		// void set_uniform(const string& uniform_name, const TextureArray& texture)
+		// {
+		//     UniformMap::iterator it = _uniform_map.find(uniform_name);
         
-    //     if (it == _uniform_map.end())
-    //         return;
+		//     if (it == _uniform_map.end())
+		//         return;
 
-    //     gltype_info<GLint>::set_uniform(it->second, texture.get_unit_number());
-    // }
+		//     gltype_info<GLint>::set_uniform(it->second, texture.get_unit_number());
+		// }
 
-    // void set_uniform_block(const string& block_name, 
-    //                        const UniformBuffer& UBO) 
-    // {
-    //     UniformBlockMap::iterator it = _uniform_block_map.find(block_name);
+		// void set_uniform_block(const string& block_name, 
+		//                        const UniformBuffer& UBO) 
+		// {
+		//     UniformBlockMap::iterator it = _uniform_block_map.find(block_name);
         
-    //     if (it == _uniform_block_map.end())
-    //         return;
+		//     if (it == _uniform_block_map.end())
+		//         return;
 
-    //     glUniformBlockBinding(_program, it->second, UBO.get_binding());
-    // };
+		//     glUniformBlockBinding(_program, it->second, UBO.get_binding());
+		// };
 
-    /**
-     * Return the location of an attrib.
-     */
-    GLint get_attrib_location(const string& attrib_name) const
-    {
-        return glGetAttribLocation(_program, attrib_name.c_str());
-    }
+		/**
+		 * Return the location of an attrib.
+		 */
+		GLint get_attrib_location(const string& attrib_name) const
+		{
+			return glGetAttribLocation(_program, attrib_name.c_str());
+		}
 
-    /**
-     * Return the shader program handle.
-     */
-    GLuint get_program_ID() const
-    {
-        return _program;
-    }
+		/**
+		 * Return the shader program handle.
+		 */
+		GLuint get_program_ID() const
+		{
+			return _program;
+		}
 
-    GLint get_attrib_count() const;
+		GLint get_attrib_count() const;
 
-    string get_attrib_name(GLint index) const;
+		string get_attrib_name(GLint index) const;
 
-    /**
-     * Used for checking if a shader has compiled correctly.
-     */
-    bool is_valid() const
-    {
-        return _valid;
-    }
+		/**
+		 * Used for checking if a shader has compiled correctly.
+		 */
+		bool is_valid() const
+		{
+			return _valid;
+		}
     
     private:
 
-    void clean_up();
-};
+		void clean_up();
+	};
 
 }
 #endif

@@ -16,9 +16,18 @@ namespace Reyes
         _act_size(_grid_size * tile_size), 
         _shader("tex_draw"),
         _clear_kernel(device, "framebuffer.cl", "clear"),
-        _cl_buffer(0)
+        _cl_buffer(0),
+		_screen_quad(6)
     {
-        
+        _screen_quad.vertex(-1,-1);
+        _screen_quad.vertex( 1,-1);
+        _screen_quad.vertex( 1, 1);
+
+        _screen_quad.vertex(-1,-1);
+        _screen_quad.vertex( 1, 1);
+        _screen_quad.vertex(-1, 1);
+
+		_screen_quad.send_data(false);
     }
 
     Framebuffer::~Framebuffer()
@@ -104,12 +113,7 @@ namespace Reyes
         _shader.set_uniform("bsize", _tile_size);
         _shader.set_uniform("gridsize", _grid_size);
 
-        glBegin(GL_QUADS);
-        glVertex2f(-1,-1);
-        glVertex2f( 1,-1);
-        glVertex2f( 1, 1);
-        glVertex2f(-1, 1);
-        glEnd();
+		_screen_quad.draw(GL_TRIANGLES, _shader);
 
         _shader.unbind();
         
