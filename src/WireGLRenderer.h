@@ -4,15 +4,20 @@
 #include "Patch.h"
 #include "PatchDrawer.h"
 
+#include "Shader.h"
+#include "VBO.h"
+
 namespace Reyes
 {
 
     class WireGLRenderer : public PatchDrawer
     {
-
+		GL::Shader _shader;
+		GL::VBO _vbo;
+		
         public:
 
-        WireGLRenderer() {};
+        WireGLRenderer();
         ~WireGLRenderer() {};
 
         virtual void prepare();

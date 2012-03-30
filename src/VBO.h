@@ -1,4 +1,5 @@
 #ifndef VBO_H
+#define VBO_H
 
 #include "common.h"
 
