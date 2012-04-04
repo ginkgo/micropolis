@@ -84,7 +84,9 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_patch(patch, uv);
 
-    pos.y += native_sin(pos.x*15) * 0.08f;
+    pos.x += native_sin(pos.y*15) * 0.04f;
+    pos.y += native_sin(pos.x*15) * 0.04f;
+    pos.z += native_sin(pos.x*15) * native_sin(pos.y*15) * 0.04f;
     
     float4 p = mul_m44v4(proj, pos);
 
@@ -438,7 +440,8 @@ __kernel void sample(global const int* heads,
                 int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth);
                 
                 if (inside1 || inside2) {
-                    // if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
+		  while (1) {
+                    if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
 
                     /* colors[y][x] += 0.2f; */
 
@@ -447,8 +450,9 @@ __kernel void sample(global const int* heads,
                         depths[y][x] = depth;
                     }
                         
-                    /* atomic_xchg(&(locks[y][x]), 1); */
-                    /* break; */
+                    atomic_xchg(&(locks[y][x]), 1);
+                    break;
+		  }
                 }                    
             }
         }
