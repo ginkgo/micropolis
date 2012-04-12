@@ -35,8 +35,7 @@ void mainloop()
     view *= glm::translate<float>(0,0,-4.5);
     view *= glm::rotate<float>(-90, 1,0,0);
 
-    CL::CommandQueue queue(device);
-    Reyes::Renderer renderer(device, queue, framebuffer);
+    Reyes::Renderer renderer(device, framebuffer);
     Reyes::WireGLRenderer wire_renderer;
 
 

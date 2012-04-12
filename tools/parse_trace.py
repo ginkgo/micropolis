@@ -86,7 +86,7 @@ def aligned_text(ctx, txt, fx, fy):
     
 if (len(sys.argv) != 3):
     print('Usage: %s <tracefile> <outfile>' % sys.argv[0])
-    exit(0)
+    exit(1)
 
 tracefile = open(sys.argv[1], 'r')
 
@@ -112,6 +112,7 @@ VHEIGHT, VWIDTH = BAR_CNT * HEIGHT_PER_BAR,  LEN_PER_MS * length
 
 HEIGHT, WIDTH = VHEIGHT + 2*BORDER + AXIS, VWIDTH + 2*BORDER
 
+print (sys.argv)
 surface = cairo.PDFSurface (sys.argv[2], WIDTH, HEIGHT)
 ctx = cairo.Context(surface)
 pctx = pangocairo.CairoContext(ctx)

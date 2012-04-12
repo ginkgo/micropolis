@@ -3,6 +3,13 @@
     #include "common.h"
   </include>
 
+  <enums>
+    <enum name="PatchBufferMode">
+      <element name="UNPINNED"/>
+      <element name="PINNED"/>
+    </enum>
+  </enums>
+
   <values>
     <value name="window_size" type="ivec2" default="800 600">
       Size of the window in pixels.
@@ -94,9 +101,18 @@
       This may be necessary for inverted models.
     </value>
 
-	<value name="do_event_polling" type="bool" default="true">
-	  Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-	</value>
+    <value name="do_event_polling" type="bool" default="true">
+      Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
+    </value>
+
+    <value name="patch_buffer_count" type="int" default="3">
+      Number of patch buffers used for transferring patch data to device.
+    </value>
+
+    <value name="patch_buffer_mode" type="PatchBufferMode" default="PINNED">
+      Allocation method of patch buffers. Either PINNED or UNPINNED.
+      PINNED should be a lot faster.
+    </value>
 
   </values>
 

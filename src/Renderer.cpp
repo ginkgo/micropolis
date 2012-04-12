@@ -11,15 +11,14 @@ namespace Reyes
 {
 
     Renderer::Renderer(CL::Device& device,
-                       CL::CommandQueue& queue,
                        Framebuffer& framebuffer) :
-        _queue(queue),
+        _queue(device),
         _framebuffer(framebuffer),
-        _control_points_back(16 * config.reyes_patches_per_pass()),
-        _control_points_front(16 * config.reyes_patches_per_pass()),
+	_active_patch_buffer(0),
+	_patch_buffers(config.patch_buffer_count()),
+	_back_buffer(0),
         _patch_count(0),
         _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass()),
-        _patch_buffer(device, _control_points_back.size() * sizeof(vec4), CL_MEM_READ_ONLY),
         _pos_grid(device, 
                   config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
                   CL_MEM_READ_WRITE),
@@ -60,7 +59,6 @@ namespace Reyes
         _assign_kernel.reset(_reyes_program.get_kernel("assign"));
         _sample_kernel.reset(_reyes_program.get_kernel("sample"));
 
-        _dice_kernel->set_arg_r(0, _patch_buffer);
         _dice_kernel->set_arg_r(1, _pos_grid);
         _dice_kernel->set_arg_r(2, _pxlpos_grid);
         _dice_kernel->set_arg_r(4, _depth_grid);
@@ -82,12 +80,40 @@ namespace Reyes
         _sample_kernel->set_arg_r(3, _framebuffer.get_buffer());
         _sample_kernel->set_arg_r(4, _color_grid);
         _sample_kernel->set_arg_r(5, _depth_grid);
-        
+
+	_patch_buffers.resize(config.patch_buffer_count());
+
+	for (int i = 0; i < config.patch_buffer_count(); ++i) {
+	    PatchBuffer& buffer = _patch_buffers.at(i);
+
+	    if (config.patch_buffer_mode() == Config::PINNED) {
+		buffer.host = NULL;
+		buffer.buffer = new CL::Buffer(device, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
+					       CL_MEM_READ_ONLY, &(buffer.host));
+	    } else {
+		buffer.host = malloc(config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2);
+		buffer.buffer = new CL::Buffer(device, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
+					       CL_MEM_READ_ONLY, buffer.host);
+	    }
+
+	    assert (buffer.host != NULL);
+	    buffer.write_complete = CL::Event();
+	}
+
+	_back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
+	    
     }
 
     Renderer::~Renderer()
     {
 
+	for (int i = 0; i < config.patch_buffer_count(); ++i) {
+	    delete _patch_buffers.at(i).buffer;
+
+	    if (config.patch_buffer_mode() == Config::UNPINNED) {
+		free(_patch_buffers.at(i).host);
+	    }
+	}
     }
 
     void Renderer::prepare()
@@ -110,8 +136,10 @@ namespace Reyes
 
         _framebuffer.show();
 
-        _previous_to_last_patch_write = CL::Event();
-        _last_patch_write = CL::Event();
+	for (int i = 0; i < config.patch_buffer_count(); ++i) {
+	    _patch_buffers.at(i).write_complete = CL::Event();
+	}
+
         _last_dice = CL::Event();
         _last_sample = CL::Event();
         _framebuffer_cleared = CL::Event();
@@ -133,7 +161,8 @@ namespace Reyes
 
         for     (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
-                _control_points_back[cp_index] = vec4(patch.P[i][j], 1);
+		assert(cp_index < config.reyes_patches_per_pass()  * 16);
+                _back_buffer[cp_index] = vec4(patch.P[i][j], 1);
                 ++cp_index;
             }
         }
@@ -144,7 +173,7 @@ namespace Reyes
             statistics.stop_bound_n_split();
 
             flush();
-            _queue.wait_for_events(_previous_to_last_patch_write);
+	    _queue.wait_for_events(_patch_buffers.at(_active_patch_buffer).write_complete);
 
             statistics.start_bound_n_split();
         }
@@ -157,20 +186,20 @@ namespace Reyes
         if (_patch_count == 0) {
             return;
         }
-        
+
+	PatchBuffer& active  = _patch_buffers.at(_active_patch_buffer);
+	_active_patch_buffer = (_active_patch_buffer+1) % config.patch_buffer_count();
+	_back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
 
         CL::Event e, f;
-        e = _queue.enq_write_buffer(_patch_buffer, 
-                                    _control_points_back.data(), 
-                                    sizeof(vec4) * _patch_count * 16,
-                                    "write patches", _last_dice);
-
-        _previous_to_last_patch_write = _last_patch_write;
-        _last_patch_write = e;
+        e = _queue.enq_write_buffer(*(active.buffer), active.host, _patch_count * sizeof(vec4) * 16,
+                                    "write patches", CL::Event());
+	active.write_complete = e;
 
         int patch_size  = config.reyes_patch_size();
         int group_width = config.dice_group_width();
 
+        _dice_kernel->set_arg_r(0, *(active.buffer));
         e = _queue.enq_kernel(*_dice_kernel,
                               ivec3(patch_size + group_width, patch_size + group_width, _patch_count),
                               ivec3(group_width, group_width, 1),
@@ -181,7 +210,7 @@ namespace Reyes
         e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, _patch_count),  ivec3(8, 8, 1),
                               "shade", e);
         f = _queue.enq_kernel(*_clear_heads_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 16,
-                              "clear heads", CL::Event());
+                              "clear heads", _last_sample);
         e = _queue.enq_kernel(*_assign_kernel, _patch_count * square(patch_size/8), 16,
                               "assign blocks", e | f);
         e = _queue.enq_kernel(*_sample_kernel, _framebuffer.size(), ivec2(8, 8),
@@ -191,8 +220,6 @@ namespace Reyes
         _patch_count = 0;
 
         _sample_kernel->set_arg(6, (cl_int)0);
-
-        _control_points_back.swap(_control_points_front);
         
     }
 

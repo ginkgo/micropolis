@@ -17,16 +17,23 @@ namespace Reyes
     class Renderer : public PatchDrawer
     {
 
-        CL::CommandQueue& _queue;
+	struct PatchBuffer
+	{
+	    CL::Buffer* buffer;
+	    void* host;
+	    CL::Event write_complete;
+	};
+
+        CL::CommandQueue _queue;
         Framebuffer& _framebuffer;
 
-        vector<vec4> _control_points_front;
-        vector<vec4> _control_points_back;
+	size_t _active_patch_buffer;
+	vector<PatchBuffer> _patch_buffers;
+	vec4* _back_buffer;
 
         size_t _patch_count;
         size_t _max_block_count;
 
-        CL::Buffer _patch_buffer;
         CL::Buffer _pos_grid;
         CL::Buffer _pxlpos_grid;
         CL::Buffer _color_grid;
@@ -43,8 +50,6 @@ namespace Reyes
         scoped_ptr<CL::Kernel> _assign_kernel;
         scoped_ptr<CL::Kernel> _sample_kernel;
 
-        CL::Event _last_patch_write;
-        CL::Event _previous_to_last_patch_write;
         CL::Event _last_dice;
         CL::Event _last_sample;
         CL::Event _framebuffer_cleared;
@@ -52,7 +57,6 @@ namespace Reyes
         public:
 
         Renderer(CL::Device& device, 
-                 CL::CommandQueue& queue, 
                  Framebuffer& framebuffer);
 
         ~Renderer();

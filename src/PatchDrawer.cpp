@@ -21,8 +21,9 @@ namespace Reyes
 
         int s = config.bound_n_split_limit();
 
-        if (box.min.z < 0 && size.x < s && size.y < s) patch_drawer.draw_patch(patch);
-        else {
+        if (box.min.z < 0 && size.x < s && size.y < s) {
+	    patch_drawer.draw_patch(patch);
+        } else {
             BezierPatch p0, p1;
             mat4 proj;
             projection.calc_projection(proj);

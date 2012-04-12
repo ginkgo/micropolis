@@ -207,8 +207,20 @@ namespace CL
 
         OPENCL_ASSERT(status);
 
-        status = clGetMemObjectInfo(_buffer, CL_MEM_HOST_PTR, 
-                                    sizeof(void*), host_ptr, NULL);
+	*host_ptr = NULL;
+        status = clGetMemObjectInfo(_buffer, CL_MEM_HOST_PTR, sizeof(void*), host_ptr, NULL);
+	assert(*host_ptr != NULL);
+        OPENCL_ASSERT(status);
+
+        statistics.alloc_opencl_memory(get_size());
+    }
+
+    Buffer::Buffer(Device& device, size_t size, cl_mem_flags flags, void* host_ptr)
+    {
+        cl_int status;
+        _buffer = clCreateBuffer(device.get_context(), 
+                                 flags | CL_MEM_USE_HOST_PTR, 
+                                 size, host_ptr, &status);
 
         OPENCL_ASSERT(status);
 

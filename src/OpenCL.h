@@ -50,6 +50,7 @@ namespace CL
         public:
 
         Buffer(Device& device, size_t size, cl_mem_flags flags);
+        Buffer(Device& device, size_t size, cl_mem_flags flags, void* host_ptr);
         Buffer(Device& device, size_t size, cl_mem_flags flags, void** host_ptr);
         Buffer(Device& device, GLuint GL_buffer);
         ~Buffer();
@@ -220,6 +221,13 @@ namespace CL
 
     template<>
     inline void Kernel::set_arg_r<ImageBuffer>(cl_uint arg_index, ImageBuffer& value)
+    {
+        cl_mem mem = value.get();
+        set_arg(arg_index, mem);
+    }
+
+    template<>
+    inline void Kernel::set_arg_r<Buffer>(cl_uint arg_index, Buffer& value)
     {
         cl_mem mem = value.get();
         set_arg(arg_index, mem);

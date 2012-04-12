@@ -33,7 +33,7 @@ reyes_patch_size = 32
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 4096
+reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 32
@@ -67,8 +67,14 @@ backface_culling = true
 flip_surface = false
 
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = true
+do_event_polling = false
+
+// Number of patch buffers used for transferring patch data to device.
+patch_buffer_count = 16
+
+// Allocation method of patch buffers.
+patch_buffer_mode = UNPINNED
 
 
 
-#hash:-2405090733086550910
+#hash:-404557104561469965

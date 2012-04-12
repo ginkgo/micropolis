@@ -2,10 +2,10 @@
 env = Environment()
 env['CPPPATH'] = ['#/external', '#/generated', '#src']
 env['LIBS'] = ['GL', 'glfw', 'boost_regex', 'IL', 'OpenCL', 'Xrandr', 'rt']
-env['CCFLAGS'] = ['-O3']
+env['CCFLAGS'] = ['-O2', '-ggdb']
 env['CXXFLAGS'] = ['-std=c++98']
 env['CFLAGS'] = ['-std=c99']
-env['LINKFLAGS'] = ['-O3']
+env['LINKFLAGS'] = []
 
 python = 'python2.7'
 
