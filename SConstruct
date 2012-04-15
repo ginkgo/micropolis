@@ -7,12 +7,14 @@ env['CXXFLAGS'] = ['-std=c++98']
 env['CFLAGS'] = ['-std=c99']
 env['LINKFLAGS'] = []
 
+env['CPPDEFINES'] = ['linux']
+
 python = 'python2.7'
 
 env.Command(['#/generated/flextGL.c', '#/generated/flextGL.h'],
-            ['#/src/extensions.txt', '#/tools/flextGL/flextGLgen.py', 
+            ['#/src/extensions.glprofile', '#/tools/flextGL/flextGLgen.py', 
              Glob('#/tools/flextGL/templates/glfw/*template')],
-            python+' tools/flextGL/flextGLgen.py src/extensions.txt -Dgenerated -Tglfw')
+            python+' tools/flextGL/flextGLgen.py src/extensions.glprofile -Dgenerated -Tglfw')
              
 env.Command(['#/generated/Config.cpp', '#/generated/Config.h'],
             ['#/src/config.xml', Glob('#/tools/configGen/*')],

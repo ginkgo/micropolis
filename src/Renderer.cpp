@@ -144,6 +144,9 @@ namespace Reyes
         _last_sample = CL::Event();
         _framebuffer_cleared = CL::Event();
 
+	_active_patch_buffer = 0;
+	_back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
+
         statistics.end_render();
     }
 
