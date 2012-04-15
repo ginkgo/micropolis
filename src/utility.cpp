@@ -6,10 +6,17 @@
 
 uint64_t nanotime()
 {
+#ifdef linux
 	struct timespec tp;
 	clock_gettime(CLOCK_MONOTONIC, &tp);
 	return (unsigned long long) tp.tv_sec * BILLION + (unsigned long long) tp.tv_nsec;
-
+#else
+	LARGE_INTEGER current;
+	LARGE_INTEGER m_ticksPerSec;
+	QueryPerformanceFrequency(&m_ticksPerSec);
+	QueryPerformanceCounter(&current);
+	return (unsigned long long)((double)current.QuadPart / m_ticksPerSec.QuadPart * BILLION);
+#endif
 }
 
 string with_commas(long n)

@@ -18,7 +18,9 @@ namespace Reyes {
 
     class PerspectiveProjection : public Projection
     {
-        float _near, _fovy, _aspect;
+		float _fovy;
+        float _near;
+		float _aspect;
         ivec2 _viewport;
 
         float fy,fx;
@@ -26,19 +28,7 @@ namespace Reyes {
 
         public:
 
-        PerspectiveProjection(float fovy, float near, ivec2 viewport):
-            _near(near), _fovy(fovy), 
-            _aspect(float(viewport.x)/viewport.y),
-            _viewport(viewport) 
-        {
-            fy = 1/tan(_fovy * M_PI / 360);
-            fx = fy / _aspect;
-
-            vp = vec2(_viewport.x/2.0, _viewport.y/2.0);
-
-            fx *= vp.x;
-            fy *= vp.y;
-        };
+        PerspectiveProjection(float fovy, float hither, ivec2 viewport);
 
         virtual ~PerspectiveProjection() {};
 

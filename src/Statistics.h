@@ -1,15 +1,17 @@
 #ifndef STATISTICS_H
 #define STATISTICS_H
 
+#include "common.h"
+
 class Statistics
 {
-    long _last_fps_calculation;
-    long _render_start_time;
+    uint64_t _last_fps_calculation;
+    uint64_t _render_start_time;
     int _frames;
     int _patches_per_frame;
 
-    long _last_bound_n_split;
-    long _total_bound_n_split;
+    uint64_t _last_bound_n_split;
+    uint64_t _total_bound_n_split;
 
     public:
 
@@ -18,7 +20,7 @@ class Statistics
     float  ms_per_render_pass;
     float  ms_bound_n_split;
     int    patches_per_frame;
-    long   opencl_memory;
+    uint64_t   opencl_memory;
     
     public:
         

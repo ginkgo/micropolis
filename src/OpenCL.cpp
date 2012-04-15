@@ -1,7 +1,9 @@
 #include "OpenCL.h"
 #include "Config.h"
 
+#ifdef linux
 #include "GL/glx.h"
+#endif
 
 #include "utility.h"
 
@@ -61,11 +63,19 @@ namespace
     {
         cl_int status;
 
+#ifdef linux
         cl_context_properties props[] = 
             {CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 
              CL_GL_CONTEXT_KHR,   (cl_context_properties)glXGetCurrentContext(),
              CL_GLX_DISPLAY_KHR,  (cl_context_properties)glXGetCurrentDisplay(),
              0};
+#else
+        cl_context_properties props[] = 
+            {CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 
+             CL_GL_CONTEXT_KHR,   (intptr_t)wglGetCurrentContext(),
+             CL_WGL_HDC_KHR,  (cl_context_properties)wglGetCurrentDC(),
+             0};
+#endif
         cl_context context = clCreateContext(props, 
                                              1, &device,
                                              NULL, NULL, &status);
@@ -683,7 +693,7 @@ namespace CL
         // This is a hack to keep the NVidia OpenCL driver from (wrongly) 
         // caching the program.
         *_source_buffer << "constant long __DUMMY" 
-                        << nanotime() << " = " << nanotime << ";" << endl;
+                        << nanotime() << " = " << nanotime() << ";" << endl;
     }
     
 
@@ -835,7 +845,7 @@ namespace CL
 
         cout << indent << "  CL_DEVICE_MAX_WORK_ITEM_SIZES:";
 
-        for (uint i = 0; i < max_dim; ++i) {
+        for (int i = 0; i < max_dim; ++i) {
             cout << " " << sizes[i];
         }
 

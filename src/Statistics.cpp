@@ -25,7 +25,7 @@ void Statistics::start_render()
 
 void Statistics::end_render()
 {
-    long dur = nanotime() - _render_start_time;
+    uint64_t dur = nanotime() - _render_start_time;
 
     ms_per_render_pass = dur * 0.000001f;
     ms_bound_n_split = _total_bound_n_split * 0.000001f;
@@ -44,8 +44,8 @@ void Statistics::start_bound_n_split()
 
 void Statistics::stop_bound_n_split()
 {
-    long now = nanotime();
-    long duration = now - _last_bound_n_split;
+    uint64_t now = nanotime();
+    uint64_t duration = now - _last_bound_n_split;
 
     _total_bound_n_split += duration;    
 }
@@ -63,8 +63,8 @@ void Statistics::free_opencl_memory(long mem_size)
 void Statistics::update()
 {
     ++_frames;
-    long now = nanotime();
-    long dur = now - _last_fps_calculation;
+    uint64_t now = nanotime();
+    uint64_t dur = now - _last_fps_calculation;
 
     if (dur > 5 * BILLION) {
         frames_per_second = (float)_frames * BILLION / dur;
@@ -87,7 +87,7 @@ void Statistics::print()
 {
     if (config.verbose()) {
 
-        long quad_count = square(config.reyes_patch_size()) * patches_per_frame;
+        uint64_t quad_count = square(config.reyes_patch_size()) * patches_per_frame;
 
         cout << endl
              << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl

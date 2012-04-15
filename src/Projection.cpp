@@ -1,6 +1,20 @@
 #include "Projection.h"
 
 
+Reyes::PerspectiveProjection::PerspectiveProjection(float fovy, float hither, ivec2 viewport):
+    _fovy(fovy), _near(hither), 
+    _aspect(float(viewport.x)/viewport.y),
+    _viewport(viewport) 
+{
+    fy = 1/tan(_fovy * M_PI / 360);
+    fx = fy / _aspect;
+
+    vp = vec2(_viewport.x/2.0, _viewport.y/2.0);
+
+    fx *= vp.x;
+    fy *= vp.y;
+};
+
 void Reyes::PerspectiveProjection::calc_projection(mat4& proj) const
 {
     proj = glm::perspective<float>(_fovy, _aspect, _near, 1000);

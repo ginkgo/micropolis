@@ -33,7 +33,7 @@ reyes_patch_size = 32
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 1024
+reyes_patches_per_pass = 4096
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 32
@@ -72,9 +72,10 @@ do_event_polling = false
 // Number of patch buffers used for transferring patch data to device.
 patch_buffer_count = 16
 
-// Allocation method of patch buffers.
-patch_buffer_mode = UNPINNED
+// Allocation method of patch buffers. Either PINNED or UNPINNED.
+// PINNED should be a lot faster.
+patch_buffer_mode = PINNED
 
 
 
-#hash:-404557104561469965
+#hash:2107259063

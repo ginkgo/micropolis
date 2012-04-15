@@ -2,6 +2,9 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#define NOMINMAX
+#define _USE_MATH_DEFINES
+
 typedef unsigned char byte;
 
 #include <glm/glm.hpp>

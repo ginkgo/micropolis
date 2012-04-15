@@ -49,7 +49,7 @@ Image::Image(const string& filename) :
     ilGenImages(1, &il_image);
     ilBindImage(il_image);
 
-    ILboolean success = ilLoadImage(filename.c_str());
+    ILboolean success = ilLoadImage((const ILstring)filename.c_str());
 
     if (!success) {
         cerr << "Image::Image "
@@ -94,7 +94,7 @@ void Image::save_to_file(const string& filename)
     ilGenImages(1, &il_image);
 
     ilTexImage(_width, _height, 0, _bpp, _format, _type, _data);
-    ILboolean success = ilSaveImage(filename.c_str());
+    ILboolean success = ilSaveImage((const ILstring)filename.c_str());
 
     if (!success) {
         cerr << "Image::Image "
