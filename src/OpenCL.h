@@ -11,6 +11,8 @@
 namespace CL
 {
 
+    class CommandQueue;
+
     class Device : public noncopyable
     {
         cl_context   _context;
@@ -51,7 +53,7 @@ namespace CL
 
         Buffer(Device& device, size_t size, cl_mem_flags flags);
         Buffer(Device& device, size_t size, cl_mem_flags flags, void* host_ptr);
-        Buffer(Device& device, size_t size, cl_mem_flags flags, void** host_ptr);
+        Buffer(Device& device, CommandQueue& queue, size_t size, cl_mem_flags flags, void** host_ptr);
         Buffer(Device& device, GLuint GL_buffer);
         ~Buffer();
 
@@ -160,8 +162,8 @@ namespace CL
         Event enq_GL_release(cl_mem buffer,
                              const string& name, const Event& events);
 
-        // void* map_buffer  (Buffer& buffer);
-        // void  unmap_buffer(Buffer& buffer, void* mapped);
+        void* map_buffer  (Buffer& buffer);
+        void  unmap_buffer(Buffer& buffer, void* mapped);
 
         Event enq_write_buffer(Buffer& buffer, void* src, size_t length, size_t offset,
                                const string& name, const Event& events);

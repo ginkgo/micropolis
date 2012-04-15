@@ -208,7 +208,7 @@ namespace CL
         statistics.alloc_opencl_memory(get_size());
     }
 
-    Buffer::Buffer(Device& device, size_t size, cl_mem_flags flags, void** host_ptr)
+    Buffer::Buffer(Device& device, CommandQueue& queue, size_t size, cl_mem_flags flags, void** host_ptr)
     {
         cl_int status;
         _buffer = clCreateBuffer(device.get_context(), 
@@ -217,10 +217,10 @@ namespace CL
 
         OPENCL_ASSERT(status);
 
-	*host_ptr = NULL;
-        status = clGetMemObjectInfo(_buffer, CL_MEM_HOST_PTR, sizeof(void*), host_ptr, NULL);
-	assert(*host_ptr != NULL);
-        OPENCL_ASSERT(status);
+        *host_ptr = queue.map_buffer(*this);
+        queue.unmap_buffer(*this, *host_ptr);
+
+        assert(*host_ptr != NULL);
 
         statistics.alloc_opencl_memory(get_size());
     }
@@ -617,24 +617,24 @@ namespace CL
         return insert_event(name, e);
     }
 
-    // void* CommandQueue::map_buffer(Buffer& buffer)
-    // {
-    //     cl_int status;
+     void* CommandQueue::map_buffer(Buffer& buffer)
+     {
+         cl_int status;
 
-    //     void* mapped = clEnqueueMapBuffer(_queue, buffer.get(), CL_TRUE, CL_MAP_READ,
-    //                                       0, buffer.get_size(), 0, 0, 0,
-    //                                       &status);
-    //     OPENCL_ASSERT(status);
+         void* mapped = clEnqueueMapBuffer(_queue, buffer.get(), CL_TRUE, CL_MAP_READ,
+                                           0, buffer.get_size(), 0, 0, 0,
+                                           &status);
+         OPENCL_ASSERT(status);
 
-    //     return mapped;
-    // }
+         return mapped;
+     }
 
-    // void CommandQueue::unmap_buffer(Buffer& buffer, void* mapped)
-    // {
-    //     cl_int status = clEnqueueUnmapMemObject(_queue, buffer.get(), mapped, 
-    //                                             0, NULL, NULL);
-    //     OPENCL_ASSERT(status);
-    // }
+     void CommandQueue::unmap_buffer(Buffer& buffer, void* mapped)
+     {
+         cl_int status = clEnqueueUnmapMemObject(_queue, buffer.get(), mapped, 
+                                                 0, NULL, NULL);
+         OPENCL_ASSERT(status);
+     }
 
     ImageBuffer::ImageBuffer(Device& device, GL::Texture& texture, cl_mem_flags flags)
     {

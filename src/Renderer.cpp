@@ -14,26 +14,26 @@ namespace Reyes
                        Framebuffer& framebuffer) :
         _queue(device),
         _framebuffer(framebuffer),
-	_active_patch_buffer(0),
-	_patch_buffers(config.patch_buffer_count()),
-	_back_buffer(0),
+        _active_patch_buffer(0),
+        _patch_buffers(config.patch_buffer_count()),
+        _back_buffer(0),
         _patch_count(0),
         _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass()),
         _pos_grid(device, 
-                  config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
-                  CL_MEM_READ_WRITE),
+                    config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
+                    CL_MEM_READ_WRITE),
         _pxlpos_grid(device, 
-                     config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(ivec2),
-                     CL_MEM_READ_WRITE),
+                        config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(ivec2),
+                        CL_MEM_READ_WRITE),
         _color_grid(device, 
                     config.reyes_patches_per_pass() * square(config.reyes_patch_size()) * sizeof(vec4),
                     CL_MEM_READ_WRITE),
         _depth_grid(device, 
-                  config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(float),
-                  CL_MEM_READ_WRITE),
+                    config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(float),
+                    CL_MEM_READ_WRITE),
         _block_index(device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE),
         _head_buffer(device,
-                     framebuffer.size().x/8 * framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
+                        framebuffer.size().x/8 * framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
         _node_heap(device, _max_block_count * config.max_block_assignments() * sizeof(ivec2), CL_MEM_READ_WRITE),
         _reyes_program()
     {
@@ -88,7 +88,7 @@ namespace Reyes
 
 	    if (config.patch_buffer_mode() == Config::PINNED) {
 		buffer.host = NULL;
-		buffer.buffer = new CL::Buffer(device, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
+		buffer.buffer = new CL::Buffer(device, _queue, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
 					       CL_MEM_READ_ONLY, &(buffer.host));
 	    } else {
 		buffer.host = malloc(config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2);
@@ -161,7 +161,7 @@ namespace Reyes
 
         for     (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
-		assert(cp_index < config.reyes_patches_per_pass()  * 16);
+		        assert(cp_index < config.reyes_patches_per_pass()  * 16);
                 _back_buffer[cp_index] = vec4(patch.P[i][j], 1);
                 ++cp_index;
             }
