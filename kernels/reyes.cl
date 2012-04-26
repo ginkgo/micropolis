@@ -416,9 +416,6 @@ __kernel void sample(global const int* heads,
 
         float4 c = color_grid[calc_color_grid_pos(u, v, patch_id)];
 
-        /* colors[l.y][l.x] = c; */
-
-        /* continue; */
 
         min_p = max(min_p, (int2) (0,0));
         max_p = min(max_p, (int2) (MAX_LOCAL_COORD, MAX_LOCAL_COORD));
@@ -440,19 +437,19 @@ __kernel void sample(global const int* heads,
                 int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth);
                 
                 if (inside1 || inside2) {
-		  while (1) {
-                    if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
+					while (1) {
+						if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
 
-                    /* colors[y][x] += 0.2f; */
+						/* colors[y][x] += 0.2f; */
 
-                    if (depths[y][x] > depth) {
-                        colors[y][x] = c;
-                        depths[y][x] = depth;
-                    }
+						if (depths[y][x] > depth) {
+							colors[y][x] = c;
+							depths[y][x] = depth;
+						}
                         
-                    atomic_xchg(&(locks[y][x]), 1);
-                    break;
-		  }
+						atomic_xchg(&(locks[y][x]), 1);
+						break;
+					}
                 }                    
             }
         }

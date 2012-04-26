@@ -109,3 +109,15 @@ void GL::VBO::create_vao(const Shader& shader) const
 
 	_vaos[shader.get_program_ID()] = vao;
 }
+
+
+bool GL::VBO::full() const
+{
+    return _vertices.size() <= _vertex_count;
+}
+
+
+bool GL::VBO::empty() const
+{
+    return _vertex_count == 0;
+}

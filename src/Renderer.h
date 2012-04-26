@@ -7,6 +7,7 @@
 #include "OpenCL.h"
 
 #include "PatchDrawer.h"
+#include "Framebuffer.h"
 
 namespace Reyes
 {
@@ -17,19 +18,20 @@ namespace Reyes
     class Renderer : public PatchDrawer
     {
 
-	struct PatchBuffer
-	{
-	    CL::Buffer* buffer;
-	    void* host;
-	    CL::Event write_complete;
-	};
+        struct PatchBuffer
+        {
+            CL::Buffer* buffer;
+            void* host;
+            CL::Event write_complete;
+        };
 
+        CL::Device _device;
         CL::CommandQueue _queue;
-        Framebuffer& _framebuffer;
+        OGLSharedFramebuffer _framebuffer;
 
-	size_t _active_patch_buffer;
-	vector<PatchBuffer> _patch_buffers;
-	vec4* _back_buffer;
+        size_t _active_patch_buffer;
+        vector<PatchBuffer> _patch_buffers;
+        vec4* _back_buffer;
 
         size_t _patch_count;
         size_t _max_block_count;
@@ -56,9 +58,7 @@ namespace Reyes
 
         public:
 
-        Renderer(CL::Device& device, 
-                 Framebuffer& framebuffer);
-
+        Renderer();
         ~Renderer();
 
         virtual void prepare();
