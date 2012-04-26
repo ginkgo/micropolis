@@ -33,7 +33,7 @@ reyes_patch_size = 64
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 256
+reyes_patches_per_pass = 512
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 64
@@ -42,7 +42,7 @@ bound_n_split_limit = 64
 dice_group_width = 16
 
 // Maximum number of framebuffer tiles, a block can be assigned to.
-max_block_assignments = 24
+max_block_assignments = 12
 
 // Number of sub-one bits for fixed precision pixel coordinates.
 subpixel_bits = 8
@@ -78,12 +78,20 @@ patch_buffer_mode = PINNED
 
 // Defines which renderer implementation to use.
 // Either OPENCL or GLTESS.
+<<<<<<< HEAD
 renderer_type = GLTESS
+=======
+renderer_type = OPENCL
+>>>>>>> 769959448920ee9a51d59396cba17ca2c9a2fbfb
 
 // Defines how micropolygons are shaded.
 // Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
 shading_mode = FLAT
 
 
+<<<<<<< HEAD
 
 #hash:1979093423546032595
+=======
+#hash:1531490790
+>>>>>>> 769959448920ee9a51d59396cba17ca2c9a2fbfb
