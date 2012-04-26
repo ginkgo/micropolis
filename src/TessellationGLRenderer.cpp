@@ -24,12 +24,13 @@ void Reyes::TessellationGLRenderer::prepare()
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glPatchParameteri(GL_PATCH_VERTICES, 16);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	_shader.bind();
 
-    float patch_size = config.reyes_patch_size();
+    float patch_size = (float)config.reyes_patch_size();
     _shader.set_uniform("tess_level", patch_size);
 
     statistics.start_render();
@@ -67,8 +68,14 @@ void Reyes::TessellationGLRenderer::draw_patch(const BezierPatch& patch)
 
     if (_vbo.full())
     {
+        statistics.stop_bound_n_split();
+
         flush();
+
+        statistics.start_bound_n_split();
     }
+    
+    statistics.inc_patch_count();
 }
 
 void Reyes::TessellationGLRenderer::flush()

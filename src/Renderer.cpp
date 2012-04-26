@@ -10,31 +10,31 @@
 namespace Reyes
 {
 
-    Renderer::Renderer(CL::Device& device,
-                       Framebuffer& framebuffer) :
-        _queue(device),
-        _framebuffer(framebuffer),
+    Renderer::Renderer() :
+        _device(config.platform_id(), config.device_id()),
+        _queue(_device),
+        _framebuffer(_device, config.window_size(), config.framebuffer_tile_size()),
         _active_patch_buffer(0),
         _patch_buffers(config.patch_buffer_count()),
         _back_buffer(0),
         _patch_count(0),
         _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass()),
-        _pos_grid(device, 
-                    config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
-                    CL_MEM_READ_WRITE),
-        _pxlpos_grid(device, 
-                        config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(ivec2),
-                        CL_MEM_READ_WRITE),
-        _color_grid(device, 
+        _pos_grid(_device, 
+                  config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
+                  CL_MEM_READ_WRITE),
+        _pxlpos_grid(_device, 
+                     config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(ivec2),
+                     CL_MEM_READ_WRITE),
+        _color_grid(_device, 
                     config.reyes_patches_per_pass() * square(config.reyes_patch_size()) * sizeof(vec4),
                     CL_MEM_READ_WRITE),
-        _depth_grid(device, 
+        _depth_grid(_device, 
                     config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(float),
                     CL_MEM_READ_WRITE),
-        _block_index(device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE),
-        _head_buffer(device,
-                        framebuffer.size().x/8 * framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
-        _node_heap(device, _max_block_count * config.max_block_assignments() * sizeof(ivec2), CL_MEM_READ_WRITE),
+        _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE),
+        _head_buffer(_device,
+                     _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
+        _node_heap(_device, _max_block_count * config.max_block_assignments() * sizeof(ivec2), CL_MEM_READ_WRITE),
         _reyes_program()
     {
         _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
@@ -51,7 +51,7 @@ namespace Reyes
         _reyes_program.set_constant("CLEAR_DEPTH", 1.0f);
         _reyes_program.set_constant("PXLCOORD_SHIFT", config.subpixel_bits());
                 
-        _reyes_program.compile(device, "reyes.cl");
+        _reyes_program.compile(_device, "reyes.cl");
 
         _dice_kernel.reset(_reyes_program.get_kernel("dice"));
         _shade_kernel.reset(_reyes_program.get_kernel("shade"));
@@ -88,11 +88,11 @@ namespace Reyes
 
 	    if (config.patch_buffer_mode() == Config::PINNED) {
 		buffer.host = NULL;
-		buffer.buffer = new CL::Buffer(device, _queue, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
+		buffer.buffer = new CL::Buffer(_device, _queue, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
 					       CL_MEM_READ_ONLY, &(buffer.host));
 	    } else {
 		buffer.host = malloc(config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2);
-		buffer.buffer = new CL::Buffer(device, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
+		buffer.buffer = new CL::Buffer(_device, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
 					       CL_MEM_READ_ONLY, buffer.host);
 	    }
 
@@ -121,13 +121,14 @@ namespace Reyes
         CL::Event e = _framebuffer.acquire(_queue, CL::Event());
         _framebuffer_cleared = _framebuffer.clear(_queue, e);
 
-        statistics.start_render();
-
         _sample_kernel->set_arg(6, (cl_int)1);
+
+        statistics.start_render();
     }
 
     void Renderer::finish()
     {
+        
         flush();
 
         _framebuffer.release(_queue, _last_sample);
@@ -173,7 +174,7 @@ namespace Reyes
             statistics.stop_bound_n_split();
 
             flush();
-	    _queue.wait_for_events(_patch_buffers.at(_active_patch_buffer).write_complete);
+	        _queue.wait_for_events(_patch_buffers.at(_active_patch_buffer).write_complete);
 
             statistics.start_bound_n_split();
         }
@@ -187,14 +188,14 @@ namespace Reyes
             return;
         }
 
-	PatchBuffer& active  = _patch_buffers.at(_active_patch_buffer);
-	_active_patch_buffer = (_active_patch_buffer+1) % config.patch_buffer_count();
-	_back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
+	    PatchBuffer& active  = _patch_buffers.at(_active_patch_buffer);
+	    _active_patch_buffer = (_active_patch_buffer+1) % config.patch_buffer_count();
+	    _back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
 
         CL::Event e, f;
         e = _queue.enq_write_buffer(*(active.buffer), active.host, _patch_count * sizeof(vec4) * 16,
-                                    "write patches", CL::Event());
-	active.write_complete = e;
+                                        "write patches", CL::Event());
+	    active.write_complete = e;
 
         int patch_size  = config.reyes_patch_size();
         int group_width = config.dice_group_width();

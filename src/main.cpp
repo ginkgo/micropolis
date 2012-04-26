@@ -31,16 +31,24 @@ void mainloop()
     Reyes::Scene scene(new Reyes::PerspectiveProjection(75.0f, 0.01f, config.window_size()));
     scene.add_patches(config.input_file());
 
-    Reyes::OGLSharedFramebuffer framebuffer(device, config.window_size(), 
-                                            config.framebuffer_tile_size());
+    Reyes::OGLSharedFramebuffer framebuffer();
     mat4 view;
     view *= glm::translate<float>(0,0,-4.5);
     view *= glm::rotate<float>(-90, 1,0,0);
-
-    Reyes::Renderer renderer(device, framebuffer);
+    
     Reyes::WireGLRenderer wire_renderer;
-    Reyes::TessellationGLRenderer tessellation_renderer;
-
+    Reyes::PatchDrawer* renderer;
+    
+    switch (config.renderer_type()) {
+    case Config::OPENCL:
+        renderer = new Reyes::Renderer();
+        break;
+    case Config::GLTESS:
+        renderer = new Reyes::TessellationGLRenderer();
+        break;
+    default:
+        assert(0);
+    }
 
     if(config.verbose() || !device.share_gl()) {
         cout << endl;
@@ -76,7 +84,7 @@ void mainloop()
             scene.draw(wire_renderer);
             statistics.reset_timer();
         } else {
-            scene.draw(tessellation_renderer);
+            scene.draw(*renderer);
         }
 
         statistics.update();
@@ -87,6 +95,8 @@ void mainloop()
         running = running && !glfwGetKey( 'Q' );
         running = running && !close_window;
     }
+
+    delete renderer;
 }
 
 void handle_arguments(int argc, char** argv)

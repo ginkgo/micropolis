@@ -14,8 +14,8 @@ void main()
 	//EmitVertex();
 	//EndPrimitive();
 
-	vec3 u = pos[1] - pos[0];
-	vec3 w = pos[2] - pos[0];
+	vec3 u = pos[2] - pos[0];
+	vec3 w = pos[1] - pos[0];
 
 	vec3 n = -normalize(cross(u,w));
 

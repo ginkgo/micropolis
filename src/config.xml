@@ -8,6 +8,11 @@
       <element name="UNPINNED"/>
       <element name="PINNED"/>
     </enum>
+    
+    <enum name="RendererType">
+      <element name="OPENCL"/>
+      <element name="GLTESS"/>
+    </enum>
   </enums>
 
   <values>
@@ -112,6 +117,11 @@
     <value name="patch_buffer_mode" type="PatchBufferMode" default="PINNED">
       Allocation method of patch buffers. Either PINNED or UNPINNED.
       PINNED should be a lot faster.
+    </value>
+
+    <value name="renderer_type" type="RendererType" default="OPENCL">
+      Defines which renderer implementation to use.
+      Either OPENCL or GLTESS.
     </value>
 
   </values>
