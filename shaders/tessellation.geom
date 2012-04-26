@@ -1,23 +1,18 @@
 #version 420 compatibility
 
 layout(triangles) in;
-layout(triangle_strip, max_vertices = 3) out;
+		  layout(triangle_strip, max_vertices = 3) out;
 
-in vec3 pos[3];
-out vec4 color;
+		  in vec3 pos[3];
+		  out vec4 color;
 
-void main()
+		  void main()
 {
-	//color = vec4(1,1,1,1);
-	//gl_Position = gl_in[0].gl_Position;
-//
-	//EmitVertex();
-	//EndPrimitive();
 
-	vec3 u = pos[2] - pos[0];
-	vec3 w = pos[1] - pos[0];
+    vec3 u = pos[2] - pos[0];
+    vec3 w = pos[1] - pos[0];
 
-	vec3 n = -normalize(cross(u,w));
+    vec3 n = -normalize(cross(u,w));
 
     vec3 l = normalize(vec3(4,3,8));
 
@@ -32,18 +27,18 @@ void main()
 
     vec4 c = max(dot(n,l),0.0) * dc + pow(max(dot(n,h), 0.0), sh) * sc;
 	
-	color = c;
-	gl_Position = gl_in[0].gl_Position;
-	EmitVertex();
+    color = c;
+    gl_Position = gl_in[0].gl_Position;
+    EmitVertex();
 
-	color = c;
-	gl_Position = gl_in[1].gl_Position;
-	EmitVertex();
+    color = c;
+    gl_Position = gl_in[1].gl_Position;
+    EmitVertex();
 
-	color = c;
-	gl_Position = gl_in[2].gl_Position;
-	EmitVertex();
+    color = c;
+    gl_Position = gl_in[2].gl_Position;
+    EmitVertex();
 
 
-	EndPrimitive();
+    EndPrimitive();
 }

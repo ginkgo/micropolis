@@ -1,0 +1,89 @@
+// Size of the window in pixels.
+window_size = 1024 768
+
+// Application window title.
+window_title = MICROPOLIS
+
+// Framebuffer tile size.
+framebuffer_tile_size = 8
+
+// Search directory for GLSL shader files.
+shader_dir = shaders
+
+// Search directory for OpenCL kernels.
+kernel_dir = kernels
+
+// Maximum anisotropy for texture filtering.
+max_anisotropy = 1
+
+// OpenCL platform ID.
+platform_id = 0
+
+// OpenCL device ID.
+device_id = 0
+
+// Print more information.
+verbose = true
+
+// Force slow path for OpenCL/OpenGL buffer sharing.
+disable_buffer_sharing = false
+
+// Size used for bounding and dicing.
+reyes_patch_size = 64
+
+// Number of patches that get cached and are submitted as a
+// single rendering pass together.
+reyes_patches_per_pass = 256
+
+// Maximum size for patches before they can be sent to the dicing stage.
+bound_n_split_limit = 64
+
+// Width of the work-group for the dicing kernel.
+dice_group_width = 16
+
+// Maximum number of framebuffer tiles, a block can be assigned to.
+max_block_assignments = 24
+
+// Number of sub-one bits for fixed precision pixel coordinates.
+subpixel_bits = 8
+
+// Clear color for framebuffer.
+clear_color = 0.025 0.05 0.2 0
+
+// Patch data input file.
+input_file = data/teapot
+
+// Create an OpenCL timing trace.
+create_trace = true
+
+// Target file for writing OpenCL trace to.
+trace_file = reyes.trace
+
+// Controls backface-culling.
+backface_culling = true
+
+// Flip surface order of patches while loading.
+// This may be necessary for inverted models.
+flip_surface = false
+
+// Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
+do_event_polling = false
+
+// Number of patch buffers used for transferring patch data to device.
+patch_buffer_count = 16
+
+// Allocation method of patch buffers. Either PINNED or UNPINNED.
+// PINNED should be a lot faster.
+patch_buffer_mode = PINNED
+
+// Defines which renderer implementation to use.
+// Either OPENCL or GLTESS.
+renderer_type = GLTESS
+
+// Defines how micropolygons are shaded.
+// Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
+shading_mode = FLAT
+
+
+
+#hash:1979093423546032595

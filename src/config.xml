@@ -13,6 +13,11 @@
       <element name="OPENCL"/>
       <element name="GLTESS"/>
     </enum>
+
+    <enum name="ShadingMode">
+      <element name="SMOOTH"/>
+      <element name="FLAT"/>
+    </enum>
   </enums>
 
   <values>
@@ -122,6 +127,11 @@
     <value name="renderer_type" type="RendererType" default="OPENCL">
       Defines which renderer implementation to use.
       Either OPENCL or GLTESS.
+    </value>
+
+    <value name="shading_mode" type="ShadingMode" default="FLAT">
+      Defines how micropolygons are shaded.
+      Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
     </value>
 
   </values>

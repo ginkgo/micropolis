@@ -5,7 +5,7 @@
 #include "Statistics.h"
 
 Reyes::TessellationGLRenderer::TessellationGLRenderer():
-    _shader("tessellation"),
+    _shader((config.shading_mode() == Config::FLAT) ? "tessellation" : "smooth_tessellation"),
     _vbo(16 * config.reyes_patches_per_pass())
 {
         
