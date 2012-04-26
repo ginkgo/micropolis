@@ -220,6 +220,8 @@ namespace Reyes
         _patch_count = 0;
 
         _sample_kernel->set_arg(6, (cl_int)0);
+
+        _queue.flush();
         
     }
 

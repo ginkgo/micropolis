@@ -33,6 +33,9 @@ namespace GL
 
 		void draw(GLenum mode, const Shader& shader) const;
 
+        bool full() const;
+        bool empty() const;
+
 	private:
 
 		void create_vao(const Shader& shader) const;

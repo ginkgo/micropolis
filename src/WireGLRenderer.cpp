@@ -18,6 +18,7 @@ namespace Reyes
     {
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT);
 
 		_shader.bind();

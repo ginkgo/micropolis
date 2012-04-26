@@ -17,19 +17,19 @@ namespace Reyes
     class Renderer : public PatchDrawer
     {
 
-	struct PatchBuffer
-	{
-	    CL::Buffer* buffer;
-	    void* host;
-	    CL::Event write_complete;
-	};
+        struct PatchBuffer
+        {
+            CL::Buffer* buffer;
+            void* host;
+            CL::Event write_complete;
+        };
 
         CL::CommandQueue _queue;
         Framebuffer& _framebuffer;
 
-	size_t _active_patch_buffer;
-	vector<PatchBuffer> _patch_buffers;
-	vec4* _back_buffer;
+        size_t _active_patch_buffer;
+        vector<PatchBuffer> _patch_buffers;
+        vec4* _back_buffer;
 
         size_t _patch_count;
         size_t _max_block_count;

@@ -527,6 +527,13 @@ namespace CL
         _events.clear();
     }
 
+    void CommandQueue::flush()
+    {
+        cl_int status = clFlush(_queue);
+
+        OPENCL_ASSERT(status);
+    }
+
     void CommandQueue::wait_for_events(const Event& events)
     {
         size_t num_events = init_event_pad(events);

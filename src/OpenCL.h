@@ -149,14 +149,7 @@ namespace CL
                          const string& name, const Event& events);
         Event enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size,
                          const string& name, const Event& events);
-        // Event enq_GL_acquire(ImageBuffer& buffer,
-        //                      const string& name, const Event& events);
-        // Event enq_GL_release(ImageBuffer& buffer,
-        //                      const string& name, const Event& events);
-        // Event enq_GL_acquire(Buffer& buffer,
-        //                      const string& name, const Event& events);
-        // Event enq_GL_release(Buffer& buffer,
-        //                      const string& name, const Event& events);
+
         Event enq_GL_acquire(cl_mem buffer,
                              const string& name, const Event& events);
         Event enq_GL_release(cl_mem buffer,
@@ -178,6 +171,7 @@ namespace CL
         void wait_for_events (const Event& events);
 
         void finish();
+        void flush();
     };
 
     class Exception

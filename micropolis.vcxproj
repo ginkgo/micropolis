@@ -26,6 +26,7 @@
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Statistics.h" />
+    <ClInclude Include="src\TessellationGLRenderer.h" />
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\type_info.h" />
     <ClInclude Include="src\utility.h" />
@@ -47,6 +48,7 @@
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Statistics.cpp" />
+    <ClCompile Include="src\TessellationGLRenderer.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\utility.cpp" />
     <ClCompile Include="src\VBO.cpp" />
@@ -56,6 +58,15 @@
     <None Include="kernels\framebuffer.cl" />
     <None Include="kernels\reyes.cl" />
     <None Include="kernels\test.cl" />
+    <None Include="shaders\tessellation.frag" />
+    <None Include="shaders\tessellation.geom" />
+    <None Include="shaders\tessellation.tess_ctrl" />
+    <None Include="shaders\tessellation.tess_eval" />
+    <None Include="shaders\tessellation.vert" />
+    <None Include="shaders\tex_draw.frag" />
+    <None Include="shaders\tex_draw.vert" />
+    <None Include="shaders\wire.frag" />
+    <None Include="shaders\wire.vert" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{091F700A-76DF-419C-A32F-3EAE8FD0AA73}</ProjectGuid>
