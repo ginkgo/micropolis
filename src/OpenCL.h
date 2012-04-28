@@ -69,7 +69,7 @@ namespace CL
         public:
 
         Kernel(Device& device, const string& filename, const string& kernelname);
-        Kernel(cl_program program, const string& kernelname);
+        Kernel(cl_program program, cl_device_id device, const string& kernelname);
         ~Kernel();
 
         template<typename T> void set_arg  (cl_uint arg_index, T buffer);
@@ -80,6 +80,7 @@ namespace CL
 
     class Program : public noncopyable
     {
+	cl_device_id _device;
         cl_program _program;
         std::stringstream* _source_buffer;
 

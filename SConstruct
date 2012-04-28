@@ -1,6 +1,9 @@
 
+import os
+
 env = Environment()
-env['CPPPATH'] = ['#/external', '#/generated', '#src']
+env['CPPPATH'] = ['#/external', '#/generated', '#src', 
+                  '%s/include' % os.environ['AMDAPPSDKROOT']]
 env['LIBS'] = ['GL', 'glfw', 'boost_regex', 'IL', 'OpenCL', 'Xrandr', 'rt']
 env['CCFLAGS'] = ['-O2', '-ggdb']
 env['CXXFLAGS'] = ['-std=c++98']
