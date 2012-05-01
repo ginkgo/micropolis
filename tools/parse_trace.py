@@ -112,7 +112,6 @@ VHEIGHT, VWIDTH = BAR_CNT * HEIGHT_PER_BAR,  LEN_PER_MS * length
 
 HEIGHT, WIDTH = VHEIGHT + 2*BORDER + AXIS, VWIDTH + 2*BORDER
 
-print (sys.argv)
 surface = cairo.PDFSurface (sys.argv[2], WIDTH, HEIGHT)
 ctx = cairo.Context(surface)
 pctx = pangocairo.CairoContext(ctx)

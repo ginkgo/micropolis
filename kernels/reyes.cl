@@ -91,7 +91,7 @@ __kernel void dice (const global float4* patch_buffer,
     float4 p = mul_m44v4(proj, pos);
 
     int2 coord = (int2)((int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
-						(int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2));
+			(int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2));
 
 
     int grid_index = calc_grid_pos(nu, nv, patch_id);
