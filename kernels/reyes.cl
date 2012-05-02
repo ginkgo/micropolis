@@ -225,7 +225,7 @@ __kernel void shade(const global float4* pos_grid,
 
 }
 
-__kernel void clear_heads(global int* heads)
+__kernel void clear_headsX(global int* heads)
 {
     heads[get_global_id(0)] = -1;
 }
@@ -244,7 +244,7 @@ int calc_tile_id(int tx, int ty)
     return tx + FRAMEBUFFER_SIZE.x/8 * ty;
 }
 
-__kernel void assign(global const int4* block_index,
+__kernel void assignX(global const int4* block_index,
                      volatile global int* heads,
                      global int2* node_heap)
 {
@@ -279,7 +279,7 @@ __kernel void assign(global const int4* block_index,
 }
 
 void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
-                              private size_t* u, private size_t* v, private size_t* patch)
+		       private size_t* u, private size_t* v, private size_t* patch)
 {
     *patch = block_id / BLOCKS_PER_PATCH;
     size_t local_block_id = block_id % BLOCKS_PER_PATCH;
@@ -349,7 +349,60 @@ typedef int lock_t;
     break;                                  \
     }
 
-__kernel void sample(global const int* heads,
+
+__kernel void sample(global const int4* block_index,
+		     global const int2* pxlpos_grid,
+		     global const float4* color_grid,
+		     global const float* depth_grid,
+		     global float4* color_buffer,
+		     global float* depth_buffer,
+		     volatile global int* tile_locks)
+{
+    local float4 colors[8][8];
+    local float depths[8][8];
+    local int locks[8][8];
+
+    int block_id = get_global_id(0);
+    int4 block_bound = block_index[block_id];
+
+    if (is_empty(block_bount.xy, block_bound.zx)) {
+	return;
+    }
+
+    int2 min_tile = block_bound.xy >> (PXLCOORD_SHIFT + 3);
+    int2 max_tile = block_bound.zw >> (PXLCOORD_SHIFT + 3);
+
+
+    locks[l.x][l.y] = 1;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for     (int ty = min_tile.y; ty <= max_tile.y; ++ty) {
+        for (int tx = min_tile.x; tx <= max_tile.x; ++tx) {
+            int tile_id = calc_tile_id(tx,ty);
+	    int2 fb_pos = l + (int2)(tx,ty) * 8;
+	    int fb_id = calc_framebuffer_pos(fb_pos);
+
+	    depths[l.x][l.y] = INFINITY;
+	    
+	    barrier(CLK_LOCAL_MEM_FENCE);
+
+	    // rasterize tile
+
+	    if (head) LOCK(tile_lock[tile_id]);
+	    barrier(CLK_LOCAL_MEM_FENCE);
+
+	    if (depths[l.x][l.y] < depth_buffer[fb_id]) {
+		depth_buffer[fb_id] = depths[l.x][l.y];
+		color_buffer = colors[l.x][l.y];
+	    }
+
+	    barrier(CLK_LOCAL_MEM_FENCE);
+	    if (head) UNLOCK(tile_lock[tile_id]);
+        }
+    }    
+}
+
+__kernel void sampleX(global const int* heads,
                      global const int2* node_heap,
                      global const int2* pxlpos_grid,
                      global float4* framebuffer,
