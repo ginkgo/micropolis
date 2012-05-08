@@ -41,18 +41,15 @@ namespace Reyes
         CL::Buffer _color_grid;
         CL::Buffer _depth_grid;
         CL::Buffer _block_index;
-        CL::Buffer _head_buffer;
-        CL::Buffer _node_heap;
+        CL::Buffer _tile_locks;
         
         CL::Program _reyes_program;
 
         scoped_ptr<CL::Kernel> _dice_kernel;
         scoped_ptr<CL::Kernel> _shade_kernel;
-        scoped_ptr<CL::Kernel> _clear_heads_kernel;
-        scoped_ptr<CL::Kernel> _assign_kernel;
         scoped_ptr<CL::Kernel> _sample_kernel;
+	scoped_ptr<CL::Kernel> _init_tile_locks_kernel;
 
-        CL::Event _last_dice;
         CL::Event _last_sample;
         CL::Event _framebuffer_cleared;
 

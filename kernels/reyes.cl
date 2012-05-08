@@ -225,183 +225,223 @@ __kernel void shade(const global float4* pos_grid,
 
 }
 
-__kernel void clear_headsX(global int* heads)
-{
-    heads[get_global_id(0)] = -1;
-}
-
-int calc_node_pos(int block_id, int assign_cnt)
-{
-    if (assign_cnt >= MAX_BLOCK_ASSIGNMENTS) {
-        return -2;
-    }
-
-    return block_id + assign_cnt * MAX_BLOCK_COUNT;
-}
 
 int calc_tile_id(int tx, int ty)
 {
     return tx + FRAMEBUFFER_SIZE.x/8 * ty;
 }
 
-__kernel void assignX(global const int4* block_index,
-                     volatile global int* heads,
-                     global int2* node_heap)
-{
-    int block_id = get_global_id(0);
-    int4 block_bound = block_index[block_id];
 
-    int assign_cnt = 0;
+/* void recover_patch_pos(size_t block_id, size_t lx, size_t ly, */
+/* 		       private size_t* u, private size_t* v, private size_t* patch) */
+/* { */
+/*     *patch = block_id / BLOCKS_PER_PATCH; */
+/*     size_t local_block_id = block_id % BLOCKS_PER_PATCH; */
+/*     size_t bv = local_block_id / BLOCKS_PER_LINE; */
+/*     size_t bu = local_block_id % BLOCKS_PER_LINE; */
 
-    if (is_empty(block_bound.xy, block_bound.zw)) {
-        // Empty block
-        return;
-    }
+/*     *u = bv * 8 + lx; */
+/*     *v = bu * 8 + ly; */
+/* } */
 
-    int2 min_tile = block_bound.xy >> (PXLCOORD_SHIFT + 3);
-    int2 max_tile = block_bound.zw >> (PXLCOORD_SHIFT + 3);
-
-    for     (int ty = min_tile.y; ty <= max_tile.y; ++ty) {
-        for (int tx = min_tile.x; tx <= max_tile.x; ++tx) {
-            int tile_id = calc_tile_id(tx,ty);
-            int heap_pos = calc_node_pos(block_id, assign_cnt);
-
-            ++assign_cnt;
-
-            int old_head = atomic_xchg(heads + tile_id, heap_pos);
-
-            if (heap_pos >= 0) {
-                node_heap[heap_pos] = (int2)(block_id, old_head);
-            }
-        }
-    }
-
-}
-
-void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
-		       private size_t* u, private size_t* v, private size_t* patch)
-{
-    *patch = block_id / BLOCKS_PER_PATCH;
-    size_t local_block_id = block_id % BLOCKS_PER_PATCH;
-    size_t bv = local_block_id / BLOCKS_PER_LINE;
-    size_t bu = local_block_id % BLOCKS_PER_LINE;
-
-    *u = bv * 8 + lx;
-    *v = bu * 8 + ly;
-}
-
-int3 idot3 (int3 Ax, int3 Ay, int3 Bx, int3 By)
-{
-    // return mad24(Ax, Bx, mul24(Ay,  By));
-    return Ax * Bx + Ay * By;
-}
+/* int3 idot3 (int3 Ax, int3 Ay, int3 Bx, int3 By) */
+/* { */
+/*     // return mad24(Ax, Bx, mul24(Ay,  By)); */
+/*     return Ax * Bx + Ay * By; */
+/* } */
 
 
-int4 idot4 (int4 Ax, int4 Ay, int4 Bx, int4 By)
-{
-    // return mad24(Ax, Bx, mul24(Ay,  By));
-    return Ax * Bx + Ay * By;
-}
+/* int4 idot4 (int4 Ax, int4 Ay, int4 Bx, int4 By) */
+/* { */
+/*     // return mad24(Ax, Bx, mul24(Ay,  By)); */
+/*     return Ax * Bx + Ay * By; */
+/* } */
 
 
-int idot (int2 a, int2 b)
-{
-    //return mad24(a.x, b.x, mul24(a.y,  b.y));
-    return a.x * b.x + a.y * b.y;
-}
+/* int idot (int2 a, int2 b) */
+/* { */
+/*     //return mad24(a.x, b.x, mul24(a.y,  b.y)); */
+/*     return a.x * b.x + a.y * b.y; */
+/* } */
 
-int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
-{
-    int3 Dx = Py.yzx - Py;
-    int3 Dy = Px - Px.yzx;
+/* int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth) */
+/* { */
+/*     int3 Dx = Py.yzx - Py; */
+/*     int3 Dy = Px - Px.yzx; */
 
-    /* int CCW = (Dy.x*Dx.z-Dx.x*Dy.z) < 0; */
+/*     /\* int CCW = (Dy.x*Dx.z-Dx.x*Dy.z) < 0; *\/ */
 
-    /* Dx = CCW ? Dx : -Dx; */
-    /* Dy = CCW ? Dy : -Dy; */
+/*     /\* Dx = CCW ? Dx : -Dx; *\/ */
+/*     /\* Dy = CCW ? Dy : -Dy; *\/ */
 
-    int3 O = idot3(Dx, Dy, Px, Py);
+/*     int3 O = idot3(Dx, Dy, Px, Py); */
     
-    int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3)(-1,-1,-1) : (int3)(0,0,0);
+/*     int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3)(-1,-1,-1) : (int3)(0,0,0); */
 
-    int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O;
+/*     int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O; */
 
-    int success = all(V > C);
+/*     int success = all(V > C); */
 
-    float3 weights = convert_float3(V.yzx) / convert_float3(idot3(Dx.yzx, Dy.yzx, Px, Py) - O.yzx);
+/*     float3 weights = convert_float3(V.yzx) / convert_float3(idot3(Dx.yzx, Dy.yzx, Px, Py) - O.yzx); */
 
-    float d = dot(dv, weights);
+/*     float d = dot(dv, weights); */
 
-    *depth = success && d < *depth ? d : *depth;
+/*     *depth = success && d < *depth ? d : *depth; */
 
-    return success;
+/*     return success; */
+/* } */
+
+
+__kernel void init_tile_locks (global int* tile_locks)
+{
+    // Mark all as unlocked. We only have to call this once.
+    int pos = get_global_id(0);
+    tile_locks[pos] = 1;
 }
 
 
-typedef int lock_t;
 
-#define LOCK(lock)  \
-    while (1) {  \
-    if (atomic_cmpxchg(&(lock), 1, 0)) continue;
+/* #define LOCK(lock)  \ */
+/*     while (1) {  \ */
+/*     if (atomic_cmpxchg(&(lock), 1, 0)) continue; */
 
-#define UNLOCK(lock) \
-    atomic_xchg(&(lock), 1);                    \
-    break;                                  \
-    }
+/* #define UNLOCK(lock) \ */
+/*     atomic_xchg(&(lock), 1);                    \ */
+/*     break;                                  \ */
+/*     } */
 
+//#define MAX_LOCAL_COORD  ((8<<PXLCOORD_SHIFT) - 1)
 
 __kernel void sample(global const int4* block_index,
 		     global const int2* pxlpos_grid,
 		     global const float4* color_grid,
 		     global const float* depth_grid,
-		     global float4* color_buffer,
-		     global float* depth_buffer,
-		     volatile global int* tile_locks)
+		     volatile global int* tile_locks,
+		     global float4* color_buffer
+		     //global float* depth_buffer
+		     )
 {
     local float4 colors[8][8];
     local float depths[8][8];
-    local int locks[8][8];
+    volatile local int locks[8][8];
 
-    int block_id = get_global_id(0);
+    int2 l = (int2)(get_global_id(0), get_global_id(1));
+    int block_id = get_global_id(2);
     int4 block_bound = block_index[block_id];
 
-    if (is_empty(block_bount.xy, block_bound.zx)) {
+    if (is_empty(block_bound.xy, block_bound.zx)) {
 	return;
     }
 
     int2 min_tile = block_bound.xy >> (PXLCOORD_SHIFT + 3);
     int2 max_tile = block_bound.zw >> (PXLCOORD_SHIFT + 3);
 
+    //int head = (l.x == 0 && l.y == 0);
+    
+
+    /* // Prepare local position */
+    /* float4 c; */
+    /* int4 Px, Py; */
+    /* float4 dv; */
+    /* int2 min_gp = (int2) (MAX_LOCAL_COORD+1, MAX_LOCAL_COORD+1); */
+    /* int2 max_gp = (int2) (-1,-1); */
+
+    /* { */
+    /* 	int Pxa[4], Pya[4]; */
+    /* 	float da[4]; */
+
+    /* 	size_t patch_id, u, v; */
+    /*     recover_patch_pos(block_id, l.x, l.y,  &u, &v, &patch_id); */
+	
+    /* 	c = color_grid[calc_color_grid_pos(u, v, patch_id)]; */
+
+    /*     for (size_t idx = 0; idx < 4; ++idx) { */
+    /*         size_t p = calc_grid_pos(u+(idx&1), v+(idx>>1), patch_id); */
+
+    /*         int2 pxlpos = pxlpos_grid[p]; */
+    /*         Pxa[idx] = pxlpos.x; */
+    /*         Pya[idx] = pxlpos.y; */
+
+    /*         min_gp = min(min_gp, pxlpos); */
+    /*         max_gp = max(max_gp, pxlpos); */
+
+    /*         float depth = depth_grid[p]; */
+    /*         da[idx] = depth; */
+    /*     } */
+	
+    /*     Px   = vload4(0, &Pxa[0]); */
+    /*     Py   = vload4(0, &Pya[0]); */
+    /*     dv = vload4(0, &da[0]); */
+    /* } */
 
     locks[l.x][l.y] = 1;
     barrier(CLK_LOCAL_MEM_FENCE);
 
     for     (int ty = min_tile.y; ty <= max_tile.y; ++ty) {
         for (int tx = min_tile.x; tx <= max_tile.x; ++tx) {
-            int tile_id = calc_tile_id(tx,ty);
-	    int2 fb_pos = l + (int2)(tx,ty) * 8;
+	    int2 o = (int2)(tx*8, ty*8);
+	    //int2 os = o << PXLCOORD_SHIFT;
+            //int tile_id = calc_tile_id(tx,ty);
+	    int2 fb_pos = l + o;
 	    int fb_id = calc_framebuffer_pos(fb_pos);
 
 	    depths[l.x][l.y] = INFINITY;
-	    
+
 	    barrier(CLK_LOCAL_MEM_FENCE);
+	    
+	    /* int2 min_p = max(min_gp - os, (int2) (0,0)); */
+	    /* int2 max_p = min(max_gp - os, (int2) (MAX_LOCAL_COORD, MAX_LOCAL_COORD)); */
+
+	    /* min_p = min_p >> PXLCOORD_SHIFT; */
+	    /* max_p = max_p >> PXLCOORD_SHIFT; */
+
+	    /* for (int y = min_p.y; y <= max_p.y; ++y) { */
+	    /* 	for (int x = min_p.x; x <= max_p.x; ++x) { */
+
+	    /* 	    int2 tp = ((int2)(x,y) << PXLCOORD_SHIFT) - os; */
+
+	    /* 	    float depth = 1; */
+	    /* 	    int inside1 = inside_triangle(Px.xyw, Py.xyw, tp, dv.xyw, &depth); */
+	    /* 	    int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth); */
+                
+	    /* 	    if (inside1 || inside2) { */
+	    /* 		while (1) { */
+	    /* 		    if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue; */
+
+	    /* 		    //colors[y][x] += 0.2f; */
+
+	    /* 		    if (depths[y][x] > depth) { */
+	    /* 			colors[y][x] = c; */
+	    /* 			depths[y][x] = depth; */
+	    /* 		    } */
+                        
+	    /* 		    atomic_xchg(&(locks[y][x]), 1); */
+	    /* 		    break; */
+	    /* 		} */
+	    /* 	    } */
+	    /* 	} */
+	    /* } */
+
+	    
 
 	    // rasterize tile
 
-	    if (head) LOCK(tile_lock[tile_id]);
-	    barrier(CLK_LOCAL_MEM_FENCE);
+	    /* if (head) while(atomic_cmpxchg(&(tile_locks[tile_id]), 1, 0)); */
+	    /* barrier(CLK_LOCAL_MEM_FENCE); */
 
-	    if (depths[l.x][l.y] < depth_buffer[fb_id]) {
-		depth_buffer[fb_id] = depths[l.x][l.y];
-		color_buffer = colors[l.x][l.y];
-	    }
+	    /* if (depths[l.x][l.y] < depth_buffer[fb_id]) { */
+	    /* 	depth_buffer[fb_id] = depths[l.x][l.y]; */
+	    color_buffer[fb_id] = (float4)(.01, .01, .01, .01) + color_buffer[fb_id];
+	    //color_buffer[fb_id] = colors[l.x][l.y];
+	    /* } */
 
-	    barrier(CLK_LOCAL_MEM_FENCE);
-	    if (head) UNLOCK(tile_lock[tile_id]);
+	    /* barrier(CLK_LOCAL_MEM_FENCE); */
+	    /* if (head) atomic_xchg(&(tile_locks[tile_id]), 1); */
         }
     }    
 }
 
+/*
 __kernel void sampleX(global const int* heads,
                      global const int2* node_heap,
                      global const int2* pxlpos_grid,
@@ -517,3 +557,4 @@ __kernel void sampleX(global const int* heads,
     
 }
 
+*/

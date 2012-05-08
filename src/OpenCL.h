@@ -204,7 +204,7 @@ namespace CL
         cl_int status;
 
         status = clSetKernelArg(_kernel, arg_index, sizeof(T), &value);
-        OPENCL_ASSERT(status);
+	OPENCL_ASSERT(status);
     }
 
     template<typename T> 
