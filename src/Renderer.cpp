@@ -190,7 +190,6 @@ namespace Reyes
         CL::Event e, f;
         e = _queue.enq_write_buffer(*(active.buffer), active.host, _patch_count * sizeof(vec4) * 16,
 				    "write patches", CL::Event());
-	active.write_complete = e;
 
         int patch_size  = config.reyes_patch_size();
         int group_width = config.dice_group_width();
@@ -204,11 +203,12 @@ namespace Reyes
                               "shade", e);
         e = _queue.enq_kernel(*_sample_kernel, ivec3(8,8,_patch_count * square(patch_size/8)), ivec3(8,8,1),
                               "sample", _framebuffer_cleared | e);
-                                
+                        
+	active.write_complete = e;
         _last_sample = e;
         _patch_count = 0;
 
-        _queue.flush();
+        //_queue.flush();
         
     }
 
