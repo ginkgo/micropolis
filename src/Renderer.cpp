@@ -34,6 +34,7 @@ namespace Reyes
         _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE),
         _tile_locks(_device,
 		    _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
+	_depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_float), CL_MEM_READ_WRITE),
         _reyes_program()
     {
         _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
@@ -56,6 +57,7 @@ namespace Reyes
         _shade_kernel.reset(_reyes_program.get_kernel("shade"));
         _sample_kernel.reset(_reyes_program.get_kernel("sample"));
 	_init_tile_locks_kernel.reset(_reyes_program.get_kernel("init_tile_locks"));
+	_clear_depth_buffer_kernel.reset(_reyes_program.get_kernel("clear_depth_buffer"));
 
         _dice_kernel->set_arg_r(1, _pos_grid);
         _dice_kernel->set_arg_r(2, _pxlpos_grid);
@@ -72,6 +74,9 @@ namespace Reyes
         _sample_kernel->set_arg_r(3, _depth_grid);
         _sample_kernel->set_arg_r(4, _tile_locks);
         _sample_kernel->set_arg_r(5, _framebuffer.get_buffer());
+        _sample_kernel->set_arg_r(6, _depth_buffer);
+
+	_clear_depth_buffer_kernel->set_arg_r(0, _depth_buffer);
 
 	_patch_buffers.resize(config.patch_buffer_count());
 
@@ -114,7 +119,10 @@ namespace Reyes
     void Renderer::prepare()
     {
         CL::Event e = _framebuffer.acquire(_queue, CL::Event());
-        _framebuffer_cleared = _framebuffer.clear(_queue, e);
+        e = _framebuffer.clear(_queue, e);
+	_framebuffer_cleared = _queue.enq_kernel(*_clear_depth_buffer_kernel, 
+						 _framebuffer.size().x * _framebuffer.size().y, 64, 
+						 "clear depthbuffer", e);
 
         statistics.start_render();
     }

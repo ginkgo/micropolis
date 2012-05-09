@@ -42,6 +42,7 @@ namespace Reyes
         CL::Buffer _depth_grid;
         CL::Buffer _block_index;
         CL::Buffer _tile_locks;
+	CL::Buffer _depth_buffer;
         
         CL::Program _reyes_program;
 
@@ -49,6 +50,7 @@ namespace Reyes
         scoped_ptr<CL::Kernel> _shade_kernel;
         scoped_ptr<CL::Kernel> _sample_kernel;
 	scoped_ptr<CL::Kernel> _init_tile_locks_kernel;
+	scoped_ptr<CL::Kernel> _clear_depth_buffer_kernel;
 
         CL::Event _last_sample;
         CL::Event _framebuffer_cleared;
