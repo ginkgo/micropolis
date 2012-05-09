@@ -32,9 +32,9 @@ namespace Reyes
                     config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(float),
                     CL_MEM_READ_WRITE),
         _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE),
-        _head_buffer(_device,
-                     _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
-        _node_heap(_device, _max_block_count * config.max_block_assignments() * sizeof(ivec2), CL_MEM_READ_WRITE),
+        _tile_locks(_device,
+		    _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
+	_depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_float), CL_MEM_READ_WRITE),
         _reyes_program()
     {
         _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
@@ -55,9 +55,9 @@ namespace Reyes
 
         _dice_kernel.reset(_reyes_program.get_kernel("dice"));
         _shade_kernel.reset(_reyes_program.get_kernel("shade"));
-        _clear_heads_kernel.reset(_reyes_program.get_kernel("clear_heads"));
-        _assign_kernel.reset(_reyes_program.get_kernel("assign"));
         _sample_kernel.reset(_reyes_program.get_kernel("sample"));
+	_init_tile_locks_kernel.reset(_reyes_program.get_kernel("init_tile_locks"));
+	_clear_depth_buffer_kernel.reset(_reyes_program.get_kernel("clear_depth_buffer"));
 
         _dice_kernel->set_arg_r(1, _pos_grid);
         _dice_kernel->set_arg_r(2, _pxlpos_grid);
@@ -68,18 +68,15 @@ namespace Reyes
         _shade_kernel->set_arg_r(2, _block_index);
         _shade_kernel->set_arg_r(3, _color_grid);
 
-        _clear_heads_kernel->set_arg_r(0, _head_buffer);
+        _sample_kernel->set_arg_r(0, _block_index);
+        _sample_kernel->set_arg_r(1, _pxlpos_grid);
+        _sample_kernel->set_arg_r(2, _color_grid);
+        _sample_kernel->set_arg_r(3, _depth_grid);
+        _sample_kernel->set_arg_r(4, _tile_locks);
+        _sample_kernel->set_arg_r(5, _framebuffer.get_buffer());
+        _sample_kernel->set_arg_r(6, _depth_buffer);
 
-        _assign_kernel->set_arg_r(0, _block_index);
-        _assign_kernel->set_arg_r(1, _head_buffer);
-        _assign_kernel->set_arg_r(2, _node_heap);
-
-        _sample_kernel->set_arg_r(0, _head_buffer);
-        _sample_kernel->set_arg_r(1, _node_heap);
-        _sample_kernel->set_arg_r(2, _pxlpos_grid);
-        _sample_kernel->set_arg_r(3, _framebuffer.get_buffer());
-        _sample_kernel->set_arg_r(4, _color_grid);
-        _sample_kernel->set_arg_r(5, _depth_grid);
+	_clear_depth_buffer_kernel->set_arg_r(0, _depth_buffer);
 
 	_patch_buffers.resize(config.patch_buffer_count());
 
@@ -102,6 +99,9 @@ namespace Reyes
 
 	_back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
 	    
+	_init_tile_locks_kernel->set_arg_r(0, _tile_locks);
+	_queue.enq_kernel(*_init_tile_locks_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64, 
+			  "init tile locks", CL::Event());
     }
 
     Renderer::~Renderer()
@@ -119,9 +119,10 @@ namespace Reyes
     void Renderer::prepare()
     {
         CL::Event e = _framebuffer.acquire(_queue, CL::Event());
-        _framebuffer_cleared = _framebuffer.clear(_queue, e);
-
-        _sample_kernel->set_arg(6, (cl_int)1);
+        e = _framebuffer.clear(_queue, e);
+	_framebuffer_cleared = _queue.enq_kernel(*_clear_depth_buffer_kernel, 
+						 _framebuffer.size().x * _framebuffer.size().y, 64, 
+						 "clear depthbuffer", e);
 
         statistics.start_render();
     }
@@ -141,7 +142,6 @@ namespace Reyes
 	    _patch_buffers.at(i).write_complete = CL::Event();
 	}
 
-        _last_dice = CL::Event();
         _last_sample = CL::Event();
         _framebuffer_cleared = CL::Event();
 
@@ -177,7 +177,7 @@ namespace Reyes
             statistics.stop_bound_n_split();
 
             flush();
-	        _queue.wait_for_events(_patch_buffers.at(_active_patch_buffer).write_complete);
+	    _queue.wait_for_events(_patch_buffers.at(_active_patch_buffer).write_complete);
 
             statistics.start_bound_n_split();
         }
@@ -190,15 +190,14 @@ namespace Reyes
         if (_patch_count == 0) {
             return;
         }
-
-	    PatchBuffer& active  = _patch_buffers.at(_active_patch_buffer);
-	    _active_patch_buffer = (_active_patch_buffer+1) % config.patch_buffer_count();
-	    _back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
+ 
+	PatchBuffer& active  = _patch_buffers.at(_active_patch_buffer);
+	_active_patch_buffer = (_active_patch_buffer+1) % config.patch_buffer_count();
+	_back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
 
         CL::Event e, f;
         e = _queue.enq_write_buffer(*(active.buffer), active.host, _patch_count * sizeof(vec4) * 16,
-                                        "write patches", CL::Event());
-	    active.write_complete = e;
+				    "write patches", CL::Event());
 
         int patch_size  = config.reyes_patch_size();
         int group_width = config.dice_group_width();
@@ -208,24 +207,16 @@ namespace Reyes
                               ivec3(patch_size + group_width, patch_size + group_width, _patch_count),
                               ivec3(group_width, group_width, 1),
                               "dice", e | _last_sample);
-
-        _last_dice = e;
-
         e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, _patch_count),  ivec3(8, 8, 1),
                               "shade", e);
-        f = _queue.enq_kernel(*_clear_heads_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 16,
-                              "clear heads", _last_sample);
-        e = _queue.enq_kernel(*_assign_kernel, _patch_count * square(patch_size/8), 16,
-                              "assign blocks", e | f);
-        e = _queue.enq_kernel(*_sample_kernel, _framebuffer.size(), ivec2(8, 8),
+        e = _queue.enq_kernel(*_sample_kernel, ivec3(8,8,_patch_count * square(patch_size/8)), ivec3(8,8,1),
                               "sample", _framebuffer_cleared | e);
-                                
+                        
+	active.write_complete = e;
         _last_sample = e;
         _patch_count = 0;
 
-        _sample_kernel->set_arg(6, (cl_int)0);
-
-        _queue.flush();
+        //_queue.flush();
         
     }
 

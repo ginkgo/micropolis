@@ -33,7 +33,7 @@ reyes_patch_size = 32
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 512
+reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 32
@@ -60,17 +60,17 @@ create_trace = true
 trace_file = reyes.trace
 
 // Controls backface-culling.
-backface_culling = false
+backface_culling = true
 
 // Flip surface order of patches while loading.
 // This may be necessary for inverted models.
 flip_surface = false
 
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = false
+do_event_polling = true
 
 // Number of patch buffers used for transferring patch data to device.
-patch_buffer_count = 16
+patch_buffer_count = 8
 
 // Allocation method of patch buffers. Either PINNED or UNPINNED.
 // PINNED should be a lot faster.
