@@ -80,10 +80,6 @@ F3 shows the object in wireframe mode after bound&split
 You can configure the program by modifying the options.txt
 configuration file. The file is pretty well-documented.
 
-Every value can also be set as command-line argument:
-
->micropolis --window-size="1280 1024"
-
 Interesting configuration-values are:
 
 input_file:
