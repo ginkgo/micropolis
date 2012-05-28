@@ -1,0 +1,6 @@
+
+*.o
+micropolis
+generated/*
+.sconsign.dblite
+reyes.trace
