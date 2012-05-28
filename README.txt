@@ -86,7 +86,7 @@ Interesting configuration-values are:
 
 input_file:
     The model to render.
-    Look in the data/ dir for model files. The default) teapot model
+    Look in the data/ dir for model files. The default teapot model
     is the most interesting. You may have to set flip_surface=true if
     models appear to be rendered inside-out
 
