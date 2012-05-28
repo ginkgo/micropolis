@@ -7,9 +7,9 @@
 Micropolis is a micropolygon rasterizer implemented in OpenCL. 
 
 It uses the REYES[1] algorithm to rasterize curved surfaces. This is
-done by splitting the surface into sub-pixel sized planar polygons
-(micropolygons) and rasterizing them. This allows the rendering of
-highly detailed, displaced surfaces.
+done by splitting the surface into sub-pixel sized polygons (micropolygons) 
+and rasterizing them. This allows the rendering of highly detailed, displaced 
+surfaces.
 
 The dicing, shading and rasterization of the micropolygons is implemented in
 OpenCL. The rasterizer fills a framebuffer that is then rendered as
