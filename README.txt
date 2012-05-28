@@ -17,7 +17,9 @@ texture in OpenGL.
 There also exists an alternative render backend that uses OpenGL hardware
 tessellation for performance comparison.
 
+
 --- COMPILATION ---
+
 
 You will need the following dependencies to build micropolis on Linux:
 
@@ -62,8 +64,8 @@ Like with the linux build, the Visual Studio project is set to look in
 $AMDAPPSDKROOT for OpenCL headers and libraries. Change if necessary.
 
 
-
 --- USAGE ---
+
 
 Just call:
 
@@ -167,6 +169,7 @@ Further limitations are
 
 
 --- COPYRIGHT & LICENSE ---
+
 
 Copyright Thomas Weber 2011-2012
 
