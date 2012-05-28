@@ -24,7 +24,7 @@ Reyes::PerspectiveProjection::PerspectiveProjection(float fovy, float hither, iv
     _aspect(float(viewport.x)/viewport.y),
     _viewport(viewport) 
 {
-    fy = 1/tan(_fovy * M_PI / 360);
+    fy = 1.0f/(float)tan(_fovy * M_PI / 360);
     fx = fy / _aspect;
 
     vp = vec2(_viewport.x/2.0, _viewport.y/2.0);
