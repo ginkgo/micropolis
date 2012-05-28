@@ -2,9 +2,7 @@
 import os
 
 env = Environment()
-# env['CC'] = 'clang'
-# env['CXX'] = 'clang'
-# env['LINK'] = 'clang'
+
 env['CPPPATH'] = ['#/external', '#/generated', '#src', 
                   '%s/include' % os.environ['AMDAPPSDKROOT']]
 env['LIBS'] = ['GL', 'glfw', 'boost_regex', 'IL', 'OpenCL', 'Xrandr', 'rt']

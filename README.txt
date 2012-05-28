@@ -140,10 +140,18 @@ Micropolis is very much a prototype. It is limited in several ways:
 - Surface cracks are not handled
     This can result in holes between surface patches.
 - Micropolygons are always flat-shaded
-    Most production renderers use Gouraud shading, but I don't really
-    know how to calculate the vertex-normal of displaced vertices in
-    an elegant way. This is especially problematic at the grid borders.
+    Gouraud shading would result in fewer artifacts and most production
+    renderers use it, but I don't really know how to calculate the vertex-
+    normal of displaced vertices in an elegant way. This is especially 
+    problematic at the borders of a surface.
 - No Multisampling or stochastic rasterization is supported
+- Bound&Split happens on the CPU
+    This was one of the major simplifications I did to get the project off
+    the ground fast. By now, B&S and Host->Device transfer of the split 
+    surfaces has become a major bottle-neck. Doing B&S on the device would
+    have several advantages (f.i. occlusion culling using the depth-buffer 
+    z-pyramid) but may need quite a lot of host-intervention and may have
+    an unpredictable memory footprint.
 
 Solving these issues will be part of my master's thesis.
 
@@ -154,9 +162,16 @@ Further limitations are
 - Only one object can be rendered at a time and only moved along the Z axis
 
 
+--- REFERENCES ---
+
+
+[1] "The Reyes image rendering architecture", 
+    H.L. Cook, L. Carpenter, E. Catmull
+    Coputer Science Press, Inc. New York, NY, USA, 1988
+
+
 --- COPYRIGHT & LICENSE ---
 
 Copyright Thomas Weber 2011-2012
 
 Micropolis is licensed under the GPLv3.
-
