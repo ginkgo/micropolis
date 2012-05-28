@@ -78,7 +78,7 @@ patch_buffer_mode = PINNED
 
 // Defines which renderer implementation to use.
 // Either OPENCL or GLTESS.
-renderer_type = GLTESS
+renderer_type = OPENCL
 
 // Defines how micropolygons are shaded.
 // Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
@@ -86,4 +86,4 @@ shading_mode = FLAT
 
 
 
-#hash:1979093423546032595
+#hash:-4729574695970159925
