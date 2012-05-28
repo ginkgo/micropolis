@@ -17,6 +17,7 @@
 
 
 #include "Projection.h"
+#include "Config.h"
 
 
 Reyes::PerspectiveProjection::PerspectiveProjection(float fovy, float hither, ivec2 viewport):
@@ -82,8 +83,10 @@ void Reyes::PerspectiveProjection::bound(const BBox& bbox, vec2& size, bool& cul
     }
 
 
-    if (min.x > _viewport.x-1 || max.x < 0 ||
-        min.y > _viewport.y-1 || max.y < 0 ){
+    if (min.x > _viewport.x-1 + config.cull_ribbon() || 
+	max.x < -config.cull_ribbon() ||
+	min.y > _viewport.y-1 + config.cull_ribbon()|| 
+	max.y < -config.cull_ribbon() ){
         cull = true;
         return;
     }

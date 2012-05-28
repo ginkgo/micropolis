@@ -151,6 +151,10 @@
       Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
     </value>
 
+    <value name="cull_ribbon" type="int" default="32">
+      The number of pixels a surface can be outside of the viewport without being culled.
+    </value>
+
   </values>
 
   <global name="config"/>

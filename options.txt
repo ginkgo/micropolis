@@ -84,6 +84,9 @@ renderer_type = OPENCL
 // Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
 shading_mode = FLAT
 
+// The number of pixels a surface can be outside of the viewport without being culled.
+cull_ribbon = 64
 
 
-#hash:-4729574695970159925
+
+#hash:5906972850566148891
