@@ -21,8 +21,8 @@ Here is a video of it in action:
 
 http://www.youtube.com/watch?v=09ozb1ttgmA
 
-
 You can get a win32 build of the program under "Downloads" on Github.
+
 
 --- COMPILATION ---
 
