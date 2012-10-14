@@ -171,7 +171,7 @@ Further limitations are
 
 [1] "The Reyes image rendering architecture", 
     H.L. Cook, L. Carpenter, E. Catmull
-    Coputer Science Press, Inc. New York, NY, USA, 1988
+    Computer Science Press, Inc. New York, NY, USA, 1988
 
 
 --- COPYRIGHT & LICENSE ---
