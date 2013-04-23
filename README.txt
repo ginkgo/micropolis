@@ -17,6 +17,12 @@ texture in OpenGL.
 There also exists an alternative render backend that uses OpenGL hardware
 tessellation for performance comparison.
 
+Here is a video of it in action: 
+
+http://www.youtube.com/watch?v=09ozb1ttgmA
+
+You can get a win32 build of the program under "Downloads" on Github.
+
 
 --- COMPILATION ---
 
@@ -165,7 +171,7 @@ Further limitations are
 
 [1] "The Reyes image rendering architecture", 
     H.L. Cook, L. Carpenter, E. Catmull
-    Coputer Science Press, Inc. New York, NY, USA, 1988
+    Computer Science Press, Inc. New York, NY, USA, 1988
 
 
 --- COPYRIGHT & LICENSE ---
