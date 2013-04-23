@@ -105,7 +105,9 @@ AXIS = 0*mm
 HEIGHT_PER_BAR = 2.5*mm
 LEN_PER_MS = 20*mm
 
-BAR_CNT = len(items)
+item_names = []
+[item_names.append(n) for n,_,_,_,_ in items if not item_names.count(n)]
+BAR_CNT = len(item_names)
 
 VHEIGHT, VWIDTH = BAR_CNT * HEIGHT_PER_BAR,  LEN_PER_MS * length
 
@@ -170,8 +172,10 @@ ctx.rel_line_to(length, 0)
 
 ctx.stroke()
 
-for i,v in enumerate(items):
+for v in items:
     n,a,b,c,d = v
+
+    i = item_names.index(n)
 
     i = BAR_CNT - i - 1
 

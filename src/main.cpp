@@ -48,7 +48,6 @@ void mainloop()
     Reyes::Scene scene(new Reyes::PerspectiveProjection(75.0f, 0.01f, config.window_size()));
     scene.add_patches(config.input_file());
 
-    Reyes::OGLSharedFramebuffer framebuffer();
     mat4 view;
     view *= glm::translate<float>(0,0,-4.5);
     view *= glm::rotate<float>(-90, 1,0,0);

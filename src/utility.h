@@ -137,6 +137,51 @@ class Bound
     }
 };
 
+
+
+
+
+template <typename T>
+inline std::ostream& operator<< (std::ostream& os, 
+                                 const glm::detail::tvec2<T>& v) {
+    return os << v.x << " " << v.y;
+}
+
+template <typename T>
+inline std::ostream& operator<< (std::ostream& os, 
+                                 const glm::detail::tvec3<T>& v) {
+    return os << v.x << " " << v.y << " " << v.z;
+}
+
+template <typename T>
+inline std::ostream& operator<< (std::ostream& os, 
+                                 const glm::detail::tvec4<T>& v) {
+    return os << v.x << " " << v.y << " " << v.z << " " << v.w;
+}
+
+
+template <typename T>
+inline std::istream& operator>> (std::istream& is, 
+                                 glm::detail::tvec2<T>& v) {
+    return is >> v.x >> v.y;
+}
+
+
+template <typename T>
+inline std::istream& operator>> (std::istream& is, 
+                                 glm::detail::tvec3<T>& v) {
+    return is >> v.x >> v.y >> v.z;
+}
+
+
+template <typename T>
+inline std::istream& operator>> (std::istream& is, 
+                                 glm::detail::tvec4<T>& v) {
+    return is >> v.x >> v.y >> v.z >> v.w;
+}
+
+
+
 /**
  * Parse a string variable and store inside a statically typed variable.
  * This is the default implementation which should work with types that 
@@ -218,46 +263,6 @@ template<> inline bool from_string(const string& s, string& t)
 template<> inline string to_string(const string& t)
 {
     return t;
-}
-
-
-template <typename T>
-inline std::ostream& operator<< (std::ostream& os, 
-                                 const glm::detail::tvec2<T>& v) {
-    return os << v.x << " " << v.y;
-}
-
-template <typename T>
-inline std::ostream& operator<< (std::ostream& os, 
-                                 const glm::detail::tvec3<T>& v) {
-    return os << v.x << " " << v.y << " " << v.z;
-}
-
-template <typename T>
-inline std::ostream& operator<< (std::ostream& os, 
-                                 const glm::detail::tvec4<T>& v) {
-    return os << v.x << " " << v.y << " " << v.z << " " << v.w;
-}
-
-
-template <typename T>
-inline std::istream& operator>> (std::istream& is, 
-                                 glm::detail::tvec2<T>& v) {
-    return is >> v.x >> v.y;
-}
-
-
-template <typename T>
-inline std::istream& operator>> (std::istream& is, 
-                                 glm::detail::tvec3<T>& v) {
-    return is >> v.x >> v.y >> v.z;
-}
-
-
-template <typename T>
-inline std::istream& operator>> (std::istream& is, 
-                                 glm::detail::tvec4<T>& v) {
-    return is >> v.x >> v.y >> v.z >> v.w;
 }
 
 template <typename T>

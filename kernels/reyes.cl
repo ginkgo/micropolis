@@ -84,23 +84,35 @@ __kernel void dice (const global float4* patch_buffer,
                     float16 proj,
                     global float* depth_grid)
 {
-    float4 patch[16];
+    __local float4 patch[16];
+
+    size_t nv = get_global_id(0), nu = get_global_id(1);
+    size_t patch_id = get_global_id(2);
+
+    if (get_local_id(0) < 4 && get_local_id(1) < 4) {
+        size_t i = get_local_id(0) * 4 + get_local_id(1);
+        patch[i] = patch_buffer[patch_id * 16 + i];
+    }
+
+    barrier(CLK_LOCAL_MEM_FENCE);
 
     if (get_global_id(0) > PATCH_SIZE ||
         get_global_id(1) > PATCH_SIZE) {
         return;
     }
-
-    size_t nv = get_global_id(0), nu = get_global_id(1);
-    size_t patch_id = get_global_id(2);
-
-    for (int i = 0; i < 16; ++i) {
-        patch[i] = patch_buffer[patch_id * 16 + i];
-    }
-
+    
     float2 uv = (float2) (nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE);
 
-    float4 pos = eval_patch(patch, uv);
+    float4 P[4];
+
+    for (int i = 0; i < 4; ++i) {
+        P[i] = eval_spline(patch[4 * i + 0],
+                           patch[4 * i + 1],
+                           patch[4 * i + 2],
+                           patch[4 * i + 3], uv.y);
+    }
+
+    float4 pos = eval_spline(P[0],P[1],P[2],P[3], uv.x);
 
     pos.x += native_sin(pos.y*15) * 0.04f;
     pos.y += native_sin(pos.x*15) * 0.04f;
