@@ -70,11 +70,12 @@ namespace Reyes
 
 
     OGLSharedFramebuffer::OGLSharedFramebuffer(CL::Device& device,
-                                               const ivec2& size, int tile_size) :
+                                               const ivec2& size, int tile_size, GLFWwindow* window) :
         Framebuffer(device, size, tile_size),
         _tex_buffer(_act_size.x * _act_size.y * sizeof(vec4), GL_RGBA32F),
         _shared(device.share_gl()),
-        _local(0)
+        _local(0),
+		_glfw_window(window)
     {
         if (_shared) {
             _cl_buffer = new CL::Buffer(device, _tex_buffer.get_buffer());
@@ -137,6 +138,7 @@ namespace Reyes
         
         _tex_buffer.unbind();
 
-        glfwSwapBuffers();        
+        glfwSwapBuffers(_glfw_window);
+		glfwPollEvents();
     }
 }

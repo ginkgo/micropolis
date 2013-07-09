@@ -56,8 +56,7 @@ using std::cerr;
 using std::endl;
 
 #include <flextGL.h>
-#define GLFW_NO_GLU
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 
 #include "utility.h"
 

@@ -76,10 +76,12 @@ namespace Reyes
         GL::TextureBuffer _tex_buffer;
         bool _shared;
         void* _local;
+		GLFWwindow* _glfw_window;
+		
 
         public:
 
-        OGLSharedFramebuffer(CL::Device& device, const ivec2& size, int tile_size);
+        OGLSharedFramebuffer(CL::Device& device, const ivec2& size, int tile_size, GLFWwindow* window);
 
         virtual ~OGLSharedFramebuffer();
 

@@ -19,6 +19,9 @@
 #include "OpenCL.h"
 #include "Config.h"
 
+
+#include "CL/cl_gl.h"
+
 #ifdef linux
 #include "GL/glx.h"
 #endif
@@ -665,10 +668,10 @@ namespace CL
     {
         cl_int status;
 
-        _buffer = clCreateFromGLTexture(device.get_context(), flags,
-                                        GL_TEXTURE_2D, 0, 
-                                        texture.texture_name(),
-                                        &status);
+        _buffer = clCreateFromGLTexture2D(device.get_context(), flags,
+                                          GL_TEXTURE_2D, 0, 
+                                          texture.texture_name(),
+                                          &status);
 
         OPENCL_ASSERT(status);
     }

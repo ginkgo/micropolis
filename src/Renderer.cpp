@@ -31,7 +31,7 @@ namespace Reyes
     Renderer::Renderer() :
         _device(config.platform_id(), config.device_id()),
         _queue(_device),
-        _framebuffer(_device, config.window_size(), config.framebuffer_tile_size()),
+        _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext()),
         _active_patch_buffer(0),
         _patch_buffers(config.patch_buffer_count()),
         _back_buffer(0),
@@ -52,7 +52,7 @@ namespace Reyes
         _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE),
         _tile_locks(_device,
 		    _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
-	_depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_float), CL_MEM_READ_WRITE),
+		_depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_float), CL_MEM_READ_WRITE),
         _reyes_program()
     {
         _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());

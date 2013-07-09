@@ -1,4 +1,4 @@
-/******************************************************************************\
+/******************************************************************************	\
  * This file is part of Micropolis.                                           *
  *                                                                            *
  * Micropolis is free software: you can redistribute it and/or modify         *
@@ -47,7 +47,8 @@ namespace Reyes
     {
 
 		_shader.unbind();
-        glfwSwapBuffers();
+        glfwSwapBuffers(glfwGetCurrentContext());
+		glfwPollEvents();
     }
 
     void WireGLRenderer::set_projection(const Projection& projection)

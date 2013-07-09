@@ -62,7 +62,8 @@ void Reyes::TessellationGLRenderer::finish()
 
     get_errors();
 
-    glfwSwapBuffers();
+    glfwSwapBuffers(glfwGetCurrentContext());
+	glfwPollEvents();
     
     statistics.end_render();
 }

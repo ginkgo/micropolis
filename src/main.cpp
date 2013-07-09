@@ -30,14 +30,8 @@
 
 #include "TessellationGLRenderer.h"
 
-static bool close_window = false;
-static int GLFWCALL window_close_callback( void )
-{
-    close_window = true;
-    return GL_FALSE;
-}
 
-void mainloop()
+void mainloop(GLFWwindow* window)
 {
     CL::Device device(config.platform_id(), config.device_id());
 
@@ -81,11 +75,11 @@ void mainloop()
         double time_diff = now - last;
         last = now;
 
-        if (glfwGetKey(GLFW_KEY_UP)) {
+        if (glfwGetKey(window, GLFW_KEY_UP)) {
             view = glm::translate<float>(0,0,-time_diff) * view;
         }
 
-        if (glfwGetKey(GLFW_KEY_DOWN)) {
+        if (glfwGetKey(window, GLFW_KEY_DOWN)) {
             view = glm::translate<float>(0,0, time_diff) * view;
         }
 
@@ -96,7 +90,7 @@ void mainloop()
 
         scene.set_view(view);
 
-        if (glfwGetKey(GLFW_KEY_F3)) {
+        if (glfwGetKey(window, GLFW_KEY_F3)) {
             scene.draw(wire_renderer);
             statistics.reset_timer();
         } else {
@@ -107,9 +101,10 @@ void mainloop()
 
 
         // Check if the window has been closed
-        running = running && !glfwGetKey( GLFW_KEY_ESC );
-        running = running && !glfwGetKey( 'Q' );
-        running = running && !close_window;
+        running = running && !glfwGetKey( window, GLFW_KEY_ESCAPE );
+        running = running && !glfwGetKey( window,  'Q' );
+		running = running && !glfwWindowShouldClose( window );
+		
     }
 
     delete renderer;
@@ -138,7 +133,7 @@ void handle_arguments(int argc, char** argv)
     
 }
 
-int init_opengl(ivec2 window_size);
+GLFWwindow* init_opengl(ivec2 window_size);
 
 int main(int argc, char** argv)
 {
@@ -146,7 +141,9 @@ int main(int argc, char** argv)
 
     ivec2 size = config.window_size();
 
-    if (!init_opengl(size)) {
+	GLFWwindow* window = init_opengl(size);
+	
+    if (window == NULL) {
         return 1;
     }
     
@@ -154,12 +151,11 @@ int main(int argc, char** argv)
     cout << "MICROPOLIS - A micropolygon rasterizer" << " (c) Thomas Weber 2012" << endl;
     cout << endl;
 
-    glfwSetWindowTitle(config.window_title().c_str());
-    glfwSetWindowCloseCallback(window_close_callback);
+    glfwSetWindowTitle(window, config.window_title().c_str());
 
     try {
 
-        mainloop();
+        mainloop(window);
 
     } catch (CL::Exception& e) {
 
@@ -167,18 +163,14 @@ int main(int argc, char** argv)
 
     }
 
-    assert(statistics.opencl_memory == 0L);
-    
-    glfwCloseWindow();
-
-    glfwTerminate();
+    // glfwTerminate();
     return 0;
 }
 
 /* 
  * Helper function that properly initializes the GLFW window before opening.
  */
-int init_opengl(ivec2 size)
+GLFWwindow* init_opengl(ivec2 size)
 {
     if (!glfwInit()) {
         cout << "Failed to initialize GLFW" << endl;
@@ -187,42 +179,24 @@ int init_opengl(ivec2 size)
 
     int version = FLEXT_MAJOR_VERSION * 10 + FLEXT_MINOR_VERSION;
 
-    // We can use this to setup the desired OpenGL version in GLFW
-    //glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
-    //glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, FLEXT_MAJOR_VERSION);
-    //glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, FLEXT_MINOR_VERSION);
-
-    //glfwOpenWindowHint(GLFW_FSAA_SAMPLES, 8);
-
-    if (version >= 32) {
-        // OpenGL 3.2+ allow specification of profile
-
-        GLuint profile;
-        if (FLEXT_CORE_PROFILE) {
-            profile = GLFW_OPENGL_CORE_PROFILE;
-        } else {
-            profile = GLFW_OPENGL_COMPAT_PROFILE;
-        }
-
-        //glfwOpenWindowHint(GLFW_OPENGL_PROFILE, profile);
-    }
 
     // Create window and OpenGL context
-    GLint success = glfwOpenWindow(size.x, size.y, 0,0,0,0, 24, 8, GLFW_WINDOW);
+    GLFWwindow* window = glfwCreateWindow(size.x, size.y, "Window title", NULL, NULL);
 
-    glfwSwapInterval(0);
-
-    if (!success) {
+	if (!window) {
         cerr << "Failed to create OpenGL window." << endl;
-        return GL_FALSE;
-    }
+		return NULL;
+	}
+	
+	glfwMakeContextCurrent(window);
+    glfwSwapInterval(0);
     
     // Call flext's init function.
-    success = flextInit();
+    int success = flextInit(window);
 
     if (!success) {
         glfwTerminate();
     }
 
-    return success;
+    return window;
 }
