@@ -5,8 +5,8 @@ import re
 
 import math
 import cairo
-import pango
-import pangocairo
+#import pango
+#import pangocairo
 import random
 
 def parse(file):
@@ -116,7 +116,7 @@ HEIGHT, WIDTH = VHEIGHT + 2*BORDER + AXIS, VWIDTH + 2*BORDER
 
 surface = cairo.PDFSurface (sys.argv[2], WIDTH, HEIGHT)
 ctx = cairo.Context(surface)
-pctx = pangocairo.CairoContext(ctx)
+#pctx = pangocairo.CairoContext(ctx)
 
 ctx.set_line_width(0.005)
 

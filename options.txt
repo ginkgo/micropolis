@@ -1,5 +1,5 @@
 // Size of the window in pixels.
-window_size = 800 600
+window_size = 1024 768
 
 // Application window title.
 window_title = MICROPOLIS
