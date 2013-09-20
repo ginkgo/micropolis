@@ -114,14 +114,14 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_spline(P[0],P[1],P[2],P[3], uv.x);
 
-    pos.x += native_sin(pos.y*15) * 0.04f;
-    pos.y += native_sin(pos.x*15) * 0.04f;
-    pos.z += native_sin(pos.x*15) * native_sin(pos.y*15) * 0.04f;
+    // pos.x += native_sin(pos.y*15) * 0.04f;
+    // pos.y += native_sin(pos.x*15) * 0.04f;
+    // pos.z += native_sin(pos.x*15) * native_sin(pos.y*15) * 0.04f;
     
     float4 p = mul_m44v4(proj, pos);
 
     int2 coord = (int2)((int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
-			(int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2));
+                        (int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2));
 
 
     int grid_index = calc_grid_pos(nu, nv, patch_id);
@@ -263,7 +263,7 @@ int calc_tile_id(int tx, int ty)
 
 
 void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
-		       private size_t* u, private size_t* v, private size_t* patch)
+                       private size_t* u, private size_t* v, private size_t* patch)
 {
     *patch = block_id / BLOCKS_PER_PATCH;
     size_t local_block_id = block_id % BLOCKS_PER_PATCH;
@@ -341,13 +341,13 @@ __kernel void clear_depth_buffer (global float* depth_buffer)
 #define MAX_LOCAL_COORD  ((8<<PXLCOORD_SHIFT) - 1)
 
 __kernel void sample(global const int4* block_index,
-		     global const int2* pxlpos_grid,
-		     global const float4* color_grid,
-		     global const float* depth_grid,
-		     volatile global int* tile_locks,
-		     global float4* color_buffer,
-		     global float* depth_buffer
-		     )
+                     global const int2* pxlpos_grid,
+                     global const float4* color_grid,
+                     global const float* depth_grid,
+                     volatile global int* tile_locks,
+                     global float4* color_buffer,
+                     global float* depth_buffer
+                     )
 {
     local float4 colors[8][8];
     local float depths[8][8];
@@ -358,7 +358,7 @@ __kernel void sample(global const int4* block_index,
     int4 block_bound = block_index[block_id];
 
     if (is_empty(block_bound.xy, block_bound.zx)) {
-	return;
+        return;
     }
 
     int2 min_tile = block_bound.xy >> (PXLCOORD_SHIFT + 3);
@@ -406,64 +406,64 @@ __kernel void sample(global const int4* block_index,
 
     for     (int ty = min_tile.y; ty <= max_tile.y; ++ty) {
         for (int tx = min_tile.x; tx <= max_tile.x; ++tx) {
-	    int2 o = (int2)(tx*8, ty*8);
-	    int2 os = o << PXLCOORD_SHIFT;
+            int2 o = (int2)(tx*8, ty*8);
+            int2 os = o << PXLCOORD_SHIFT;
             int tile_id = calc_tile_id(tx,ty);
-	    int2 fb_pos = l + o;
-	    int fb_id = calc_framebuffer_pos(fb_pos);
+            int2 fb_pos = l + o;
+            int fb_id = calc_framebuffer_pos(fb_pos);
 
-	    depths[l.x][l.y] = INFINITY;
+            depths[l.x][l.y] = INFINITY;
+            colors[l.x][l.y] = (float4)(0,1,1,1);
 
-	    barrier(CLK_LOCAL_MEM_FENCE);
+            barrier(CLK_LOCAL_MEM_FENCE);
 	    
-	    int2 min_p = clamp(min_gp - os, 0, MAX_LOCAL_COORD);
-	    int2 max_p = clamp(max_gp - os, 0, MAX_LOCAL_COORD);
+            int2 min_p = clamp(min_gp - os, 0, MAX_LOCAL_COORD);
+            int2 max_p = clamp(max_gp - os, 0, MAX_LOCAL_COORD);
 
-	    min_p = min_p >> PXLCOORD_SHIFT;
-	    max_p = max_p >> PXLCOORD_SHIFT;
+            min_p = min_p >> PXLCOORD_SHIFT;
+            max_p = max_p >> PXLCOORD_SHIFT;
 
-	    //printf("%d %d %d %d\n", min_p.x, min_p.y, max_p.x, max_p.y);
+            //printf("%d %d %d %d\n", min_p.x, min_p.y, max_p.x, max_p.y);
 
-	    for (int y = min_p.y; y <= max_p.y; ++y) {
-	    	for (int x = min_p.x; x <= max_p.x; ++x) {
+            for (int y = min_p.y; y <= max_p.y; ++y) {
+                for (int x = min_p.x; x <= max_p.x; ++x) {
 
-	    	    int2 tp = ((int2)(x,y) << PXLCOORD_SHIFT) + os;
+                    int2 tp = ((int2)(x,y) << PXLCOORD_SHIFT) + os;
 
-	    	    float depth = 1;
-	    	    int inside1 = inside_triangle(Px.xyw, Py.xyw, tp, dv.xyw, &depth);
-	    	    int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth);
+                    float depth = 1;
+                    int inside1 = inside_triangle(Px.xyw, Py.xyw, tp, dv.xyw, &depth);
+                    int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth);
                 
-	    	    if (inside1 || inside2) {
-	    		while (1) {
-	    		    if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
-
-	    		    //colors[y][x] += 0.2f;
-
-	    		    if (depths[y][x] > depth) {
-	    			colors[y][x] = c;
-	    			depths[y][x] = depth;
-	    		    }
+                    if (inside1 || inside2) {
                         
-	    		    atomic_xchg(&(locks[y][x]), 1);
-	    		    break;
-	    		}
-	    	    }
-	    	}
-	    }
+                        while (1) {
+                            if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
+
+                            if (depths[y][x] >= depth) {
+                                depths[y][x] = depth;
+                                colors[y][x] = c;
+                            }
+
+                            atomic_xchg(&(locks[y][x]), 1);
+                            break;
+                        }
+                    }
+                }
+            }
 	    
 
-	    // rasterize tile
+            // blit tile
+            if (head) while (!atomic_cmpxchg(&(tile_locks[tile_id]), 1, 0));
+            barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+              
+            if (depths[l.y][l.x] != INFINITY && depths[l.y][l.x] <= depth_buffer[fb_id]) {
+                depth_buffer[fb_id] = depths[l.y][l.x]; 
+                color_buffer[fb_id] = colors[l.y][l.x];
+            }
+            
+            barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+            if (head) atomic_xchg(&(tile_locks[tile_id]), 1);
 
-	    if (head) while(atomic_cmpxchg(&(tile_locks[tile_id]), 1, 0));
-	    barrier(CLK_LOCAL_MEM_FENCE);
-
-	    if (depths[l.y][l.x] < depth_buffer[fb_id]) {
-		depth_buffer[fb_id] = depths[l.y][l.x]; 
-		color_buffer[fb_id] = colors[l.y][l.x];
-	    } 
-
-	    barrier(CLK_LOCAL_MEM_FENCE);
-	    if (head) atomic_xchg(&(tile_locks[tile_id]), 1);
         }
     }    
 }

@@ -106,13 +106,15 @@ void Statistics::print()
     if (config.verbose()) {
 
         uint64_t quad_count = square(config.reyes_patch_size()) * patches_per_frame;
-
+        double quads_per_second = quad_count * frames_per_second;
+        
         cout << endl
              << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl
              << ms_per_render_pass << " ms/render pass" << endl
              << ms_bound_n_split << " ms spent on bound & split" << endl
              << patches_per_frame  << " bounded patches" << endl
              << with_commas(quad_count) << " polygons" << endl
+             << with_commas((uint64_t)quads_per_second) << " polys/s" << endl
              << (opencl_memory >> MEBI_SHIFT) << " MiB allocated on OpenCL device" << endl;
     } else {
         cout  << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl;
