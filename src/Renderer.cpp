@@ -52,7 +52,7 @@ namespace Reyes
         _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE),
         _tile_locks(_device,
 		    _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE),
-		_depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_float), CL_MEM_READ_WRITE),
+		_depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_int), CL_MEM_READ_WRITE),
         _reyes_program()
     {
         _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());

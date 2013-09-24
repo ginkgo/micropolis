@@ -159,6 +159,27 @@ int calc_color_grid_pos(int u, int v, int patch_id)
     return u + v * PATCH_SIZE + patch_id * (PATCH_SIZE*PATCH_SIZE);
 }
 
+int hash(int i)
+{
+    return (int)((i*2654435761L) & 0xffffffffffffffffL);
+}
+
+float fhash(int i)
+{
+    return (float)hash(i) * pow(2., -32.);
+}
+
+float4 chash(int i)
+{
+    float3 c = (float3)(fhash(i+0), fhash(i+1), fhash(i+2));
+
+    float3 ac = fabs(c);
+    
+    c = c / fmax(ac.x, fmax(ac.y, ac.z));
+
+    return (float4)(c.x,c.y,c.z,1);
+}
+
 __kernel void shade(const global float4* pos_grid,
                     const global int2* pxlpos_grid,
                     global int4* block_index,
@@ -242,6 +263,7 @@ __kernel void shade(const global float4* pos_grid,
     float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
 
     float4 dc = (float4)(0.8f, 0.05f, 0.01f, 1);
+    //float4 dc = chash(patch_id);
     float4 sc = (float4)(1, 1, 1, 1);
         
     float3 h = normalize(l+v);
@@ -330,11 +352,11 @@ __kernel void init_tile_locks (global int* tile_locks)
 }
 
 
-__kernel void clear_depth_buffer (global float* depth_buffer)
+__kernel void clear_depth_buffer (global int* depth_buffer)
 {
     // Mark all as unlocked. We only have to call this once.
     int pos = get_global_id(0);
-    depth_buffer[pos] = INFINITY;
+    depth_buffer[pos] = 0x7fffffff;
 }
 
 
@@ -345,15 +367,15 @@ __kernel void sample(global const int4* block_index,
                      global const float4* color_grid,
                      global const float* depth_grid,
                      volatile global int* tile_locks,
-                     global float4* color_buffer,
-                     global float* depth_buffer
+                     volatile global float4* color_buffer,
+                     volatile global int* depth_buffer
                      )
 {
     local float4 colors[8][8];
     local float depths[8][8];
     volatile local int locks[8][8];
 
-    int2 l = (int2)(get_global_id(0), get_global_id(1));
+    int2 l = (int2)(get_local_id(0), get_local_id(1));
     int block_id = get_global_id(2);
     int4 block_bound = block_index[block_id];
 
@@ -413,7 +435,7 @@ __kernel void sample(global const int4* block_index,
             int fb_id = calc_framebuffer_pos(fb_pos);
 
             depths[l.x][l.y] = INFINITY;
-            colors[l.x][l.y] = (float4)(0,1,1,1);
+            colors[l.x][l.y] = (float4)(0,0,0,0);
 
             barrier(CLK_LOCAL_MEM_FENCE);
 	    
@@ -437,11 +459,12 @@ __kernel void sample(global const int4* block_index,
                     if (inside1 || inside2) {
                         
                         while (1) {
-                            if (atomic_cmpxchg(&(locks[y][x]), 1, 0)) continue;
+                            if (atomic_xchg(&(locks[y][x]), 0)) continue;
 
-                            if (depths[y][x] >= depth) {
+                            if (depths[y][x] > depth) {
                                 depths[y][x] = depth;
                                 colors[y][x] = c;
+                                //colors[y][x] += 0.1;
                             }
 
                             atomic_xchg(&(locks[y][x]), 1);
@@ -453,11 +476,12 @@ __kernel void sample(global const int4* block_index,
 	    
 
             // blit tile
-            if (head) while (!atomic_cmpxchg(&(tile_locks[tile_id]), 1, 0));
+            if (head) while (!atomic_xchg(&(tile_locks[tile_id]), 0));
             barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-              
-            if (depths[l.y][l.x] != INFINITY && depths[l.y][l.x] <= depth_buffer[fb_id]) {
-                depth_buffer[fb_id] = depths[l.y][l.x]; 
+
+            int d = (int)(clamp(depths[l.y][l.x] / 200.0f , 0.0f, 1.0f) * 0x7fffffff);
+            if (d < atomic_min(depth_buffer + fb_id, d)) {
+                //depth_buffer[fb_id] = depths[l.y][l.x]; 
                 color_buffer[fb_id] = colors[l.y][l.x];
             }
             
