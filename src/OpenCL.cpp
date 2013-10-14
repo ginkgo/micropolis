@@ -146,7 +146,7 @@ namespace
 
         cl_device_id dev = device.get_device();
 
-        status = clBuildProgram(program, 1, &dev, "-I. -cl-fast-relaxed-math -cl-std=1.1 -cl-mad-enable", NULL, NULL);
+        status = clBuildProgram(program, 1, &dev, "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable", NULL, NULL);
 
         if (status != CL_SUCCESS && status != CL_BUILD_PROGRAM_FAILURE) {
             OPENCL_ASSERT(status);

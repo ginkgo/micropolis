@@ -114,9 +114,9 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_spline(P[0],P[1],P[2],P[3], uv.x);
 
-    // pos.x += native_sin(pos.y*15) * 0.04f;
-    // pos.y += native_sin(pos.x*15) * 0.04f;
-    // pos.z += native_sin(pos.x*15) * native_sin(pos.y*15) * 0.04f;
+    pos.x += native_sin(pos.y*15) * 0.04f;
+    pos.y += native_sin(pos.x*15) * 0.04f;
+    pos.z += native_sin(pos.x*15) * native_sin(pos.y*15) * 0.04f;
     
     float4 p = mul_m44v4(proj, pos);
 
@@ -262,15 +262,20 @@ __kernel void shade(const global float4* pos_grid,
 
     float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
 
-    float4 dc = (float4)(0.8f, 0.05f, 0.01f, 1);
-    //float4 dc = chash(patch_id);
+    float4 ac = (float4)(0.005,0.005,0.005,1);
+    //float4 dc = (float4)(0.9f, 0.9f, 0.9f, 1);
+    float4 dc = (float4)(0.9f, 0.02f, 0.01f, 1);
     float4 sc = (float4)(1, 1, 1, 1);
-        
+
+    //float4 ac = chash(patch_id) * 0.02;
+    //dc = 0.8 * dc + 0.2 * chash(patch_id);
+    
+    
     float3 h = normalize(l+v);
         
-    float sh = 30.0f;
+    float sh = 60.0f;
 
-    float4 c = max(dot(n,l),0.0f) * dc + pow(max(dot(n,h), 0.0f), sh) * sc;
+    float4 c = ac + max(dot(n,l),0.0f) * dc + pow(max(dot(n,h), 0.0f), sh) * sc;
 
     color_grid[calc_color_grid_pos(nu, nv, patch_id)] = c;
 

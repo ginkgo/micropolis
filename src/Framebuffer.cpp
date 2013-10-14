@@ -105,8 +105,9 @@ namespace Reyes
     CL::Event OGLSharedFramebuffer::release(CL::CommandQueue& queue, const CL::Event& evt)
     {
         if (_shared) {
-            CL::Event e = queue.enq_GL_release(_cl_buffer->get(),
-                                               "release framebuffer", evt);
+            CL::Event e = queue.enq_GL_release(_cl_buffer->get(), "release framebuffer", evt);
+            queue.wait_for_events(e);
+            
             return e;
         } else {
 
