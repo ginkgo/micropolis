@@ -41,6 +41,8 @@ using glm::mat3;
 using glm::mat4;
 using glm::mat4x3;
 
+using glm::quat;
+
 #include <vector>
 #include <map>
 
@@ -68,5 +70,8 @@ using std::endl;
 using boost::shared_ptr;
 using boost::scoped_ptr;
 using boost::noncopyable;
+
+template<typename T>
+using shared_vector = vector<shared_ptr<T> >;
 
 #endif

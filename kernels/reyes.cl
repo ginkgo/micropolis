@@ -114,9 +114,18 @@ __kernel void dice (const global float4* patch_buffer,
 
     float4 pos = eval_spline(P[0],P[1],P[2],P[3], uv.x);
 
-    pos.x += native_sin(pos.y*15) * 0.04f;
-    pos.y += native_sin(pos.x*15) * 0.04f;
-    pos.z += native_sin(pos.x*15) * native_sin(pos.y*15) * 0.04f;
+    // pos.x += native_sin(pos.y*3*5) * 0.04f;
+    // pos.y += native_sin(pos.x*3*5) * 0.04f;
+    // pos.z += native_sin(pos.y*3*5) * native_sin(pos.x*3*5) * 0.04f;
+
+    // pos.x += native_sin(pos.y*7*5) * 0.02f;
+    // pos.y += native_sin(pos.x*7*5) * 0.02f;
+    // pos.z += native_sin(pos.y*7*5) * native_sin(pos.x*7*5) * 0.02f;
+
+    // pos.x += native_sin(pos.y*13*5) * 0.01f;
+    // pos.y += native_sin(pos.x*13*5) * 0.01f;
+    // pos.z += native_sin(pos.y*13*5) * native_sin(pos.x*13*5) * 0.01f;
+
     
     float4 p = mul_m44v4(proj, pos);
 

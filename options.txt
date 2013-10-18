@@ -29,14 +29,14 @@ verbose = true
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 32
+reyes_patch_size = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
 reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 32
+bound_n_split_limit = 16
 
 // Width of the work-group for the dicing kernel.
 dice_group_width = 8
@@ -51,7 +51,7 @@ subpixel_bits = 6
 clear_color = 0.025 0.05 0.2 0
 
 // Patch data input file.
-input_file = data/teapot
+input_file = mscene/teapot.mscene
 
 // Create an OpenCL timing trace.
 create_trace = true
@@ -62,15 +62,11 @@ trace_file = reyes.trace
 // Controls backface-culling.
 backface_culling = true
 
-// Flip surface order of patches while loading.
-// This may be necessary for inverted models.
-flip_surface = false
-
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
 do_event_polling = true
 
 // Number of patch buffers used for transferring patch data to device.
-patch_buffer_count = 8
+patch_buffer_count = 3
 
 // Allocation method of patch buffers. Either PINNED or UNPINNED.
 // PINNED should be a lot faster.
@@ -85,8 +81,8 @@ renderer_type = OPENCL
 shading_mode = FLAT
 
 // The number of pixels a surface can be outside of the viewport without being culled.
-cull_ribbon = 64
+cull_ribbon = 32
 
 
 
-#hash:5906972850566148891
+#hash:-5178625630950496526

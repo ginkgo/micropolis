@@ -107,7 +107,7 @@
       Clear color for framebuffer.
     </value>
 
-    <value name="input_file" type="string" default="data/teapot">
+    <value name="input_file" type="string" default="mscene/teapot.mscene">
       Patch data input file.
     </value>
 
@@ -121,11 +121,6 @@
 
     <value name="backface_culling" type="bool" default="true">
       Controls backface-culling.
-    </value>
-
-    <value name="flip_surface" type="bool" default="false">
-      Flip surface order of patches while loading.
-      This may be necessary for inverted models.
     </value>
 
     <value name="do_event_polling" type="bool" default="true">

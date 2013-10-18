@@ -401,8 +401,8 @@ namespace CL
                                    const string& name, const Event& events)
     {
         size_t offset[] = {0};
-        size_t global[] = {global_size};
-        size_t local[]  = {local_size};
+        size_t global[] = {(size_t)global_size};
+        size_t local[]  = {(size_t)local_size};
         
         size_t cnt = init_event_pad(events);
         cl_event e;
@@ -422,8 +422,8 @@ namespace CL
                                    const string& name, const Event& events)
     {
         size_t offset[] = {0,0};
-        size_t global[] = {global_size.x,global_size.y};
-        size_t local[]  = {local_size.x, local_size.y};
+        size_t global[] = {(size_t)global_size.x, (size_t)global_size.y};
+        size_t local[]  = {(size_t)local_size.x, (size_t)local_size.y};
         
         size_t cnt = init_event_pad(events);
         cl_event e;        
@@ -442,8 +442,8 @@ namespace CL
                                    const string& name, const Event& events)
     {
         size_t offset[] = {0,0,0};
-        size_t global[] = {global_size.x,global_size.y,global_size.z};
-        size_t local[]  = {local_size.x, local_size.y, local_size.z};
+        size_t global[] = {(size_t)global_size.x, (size_t)global_size.y, (size_t)global_size.z};
+        size_t local[]  = {(size_t)local_size.x, (size_t)local_size.y, (size_t)local_size.z};
         
         size_t cnt = init_event_pad(events);
         cl_event e;        

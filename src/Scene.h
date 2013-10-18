@@ -28,24 +28,55 @@ namespace Reyes
     class Projection;
     class PatchDrawer;
 
+    
+    struct DirectionalLight
+    {
+        string name;
+        vec3 dir;
+        vec3 color;
+    };
+
+
+    struct BezierMesh
+    {
+        string name;
+        vector<BezierPatch> patches;
+    };
+
+
+    struct Object
+    {
+        string name;
+        mat4 transform;
+        vec4 color;
+        shared_ptr<BezierMesh> mesh;
+    };
+
+
+    struct Camera
+    {
+        string name;
+        mat4 transform;
+        shared_ptr<Projection> projection;
+    };
+    
+    
     class Scene
     {
-        Projection* _projection;
-        mat4 _view;
-        vector<BezierPatch> _patches;
+        shared_vector<Camera> cameras;
+        shared_vector<DirectionalLight> lights;
+        shared_vector<Object> objects;
+        shared_vector<BezierMesh> meshes;
 
+        size_t active_cam_id;
+        
         public:
 
-        Scene(Projection* projection);
+        Scene(const string& filename);
         ~Scene();
 
-        void set_view(const mat4& view);
-        void add_patches(const string& filename);
-
-        const Projection* get_projection() const;
-        const mat4& get_view() const;
-        size_t get_patch_count() const;
-        const BezierPatch& get_patch(size_t id) const;
+        const Camera& active_cam() const { return *cameras[active_cam_id]; }
+        Camera& active_cam() { return *cameras[active_cam_id]; }
 
         void draw(PatchDrawer& renderer) const;
     };

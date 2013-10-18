@@ -27,67 +27,132 @@
 #include "Config.h"
 #include "Statistics.h"
 
-namespace Reyes {
-    Scene::Scene (Projection* projection) :
-        _projection(projection), 
-        _view(), 
-        _patches()
-    {
+#include <fcntl.h>
+#include <unistd.h>
+#include "mscene.capnp.h"
+#include "capnp/message.h"
+#include "capnp/serialize.h"
+#include "capnp/serialize-packed.h"
 
+namespace {
+
+    vec3 to_vec3(const ::Vec3::Reader& vec)
+    {
+        return vec3(vec.getX(), vec.getY(), vec.getZ());
+    }
+
+    quat to_quat(const ::Quaternion::Reader& q)
+    {
+        return quat(q.getR(), q.getI(), q.getJ(), q.getK());
+    }
+
+    mat4 transformToMatrix(const ::Transform::Reader& transform)
+    {
+        vec3 translation = to_vec3(transform.getTranslation());
+        quat rotation = to_quat(transform.getRotation());                      
+                         
+        return glm::translate(translation) * glm::mat4_cast(rotation);
+    }
+
+}
+
+namespace Reyes {
+    Scene::Scene (const string& filename) :
+        active_cam_id(0)
+    {
+        int fd = open(filename.c_str(), O_RDONLY);
+
+        capnp::PackedFdMessageReader message(fd);
+
+        ::Scene::Reader scene = message.getRoot<::Scene>();
+
+        for (auto c : scene.getCameras()) {
+            Camera* camera =
+                new Camera{c.getName(),
+                           transformToMatrix(c.getTransform()),
+                           shared_ptr<Projection>(new PerspectiveProjection(c.getFovy(),
+                                                                            c.getNear(),
+                                                                            ivec2(800,600)))}; // TODO
+            cameras.push_back(shared_ptr<Camera>(camera));
+        }
+
+        for (auto l : scene.getLights()) {
+            assert(l.getType() == ::LightSource::Type::DIRECTIONAL);
+            
+            DirectionalLight* light =
+                new DirectionalLight{l.getName(),
+                                     vec3(vec4(0,0,1,1) * transformToMatrix(l.getTransform())),
+                                     to_vec3(l.getColor()) * l.getIntensity()};
+
+            lights.push_back(shared_ptr<DirectionalLight>(light));
+        }
+
+        map<string, shared_ptr<BezierMesh> > meshmap;
+        for (auto m : scene.getMeshes()) {
+            assert(c.getType() == ::Mesh::Type::BEZIER);
+
+            BezierMesh* mesh = new BezierMesh{m.getName()};
+
+            int i = 0;
+            vec3 v;
+            BezierPatch patch;
+            for (float f : m.getPositions()) {
+                v[i%3] = f;
+
+                if (i%3 == 2) {
+                    patch.P[0][(i/3)%16] = v;
+                }
+
+                if (i%(3*16) == (3*16-1)) {
+                    mesh->patches.push_back(patch);
+                }
+                
+                ++i;
+            }
+
+            meshes.push_back(shared_ptr<BezierMesh>(mesh));
+            meshmap[mesh->name] = meshes.back();
+        }
+
+        for (auto o : scene.getObjects()) {
+
+            shared_ptr<BezierMesh> mesh = meshmap[o.getMeshname()];
+            Object* object = new Object{o.getName(),
+                                        transformToMatrix(o.getTransform()),
+                                        vec4(to_vec3(o.getColor()),1),
+                                        mesh};
+            
+            objects.push_back(shared_ptr<Object>(object));
+        }
+
+        close(fd);
     }
 
     Scene::~Scene()
     {
-        delete _projection;
     }
-    
-    void Scene::set_view(const mat4& view)
-    {
-        _view = view;
-    }
-
-    void Scene::add_patches(const string& filename)
-    {
-        read_patches(filename.c_str(), _patches, config.flip_surface());
-    }
-
-    const Projection* Scene::get_projection() const
-    {
-        return _projection;
-    }
-
-    const mat4& Scene::get_view() const
-    {
-        return _view;
-    }
-
-    size_t Scene::get_patch_count() const
-    {
-        return _patches.size();
-    }
-
-    const BezierPatch& Scene::get_patch(size_t id) const
-    {
-        return _patches.at(id);
-    }
- 
+     
     void Scene::draw(PatchDrawer& renderer) const
     {
         renderer.prepare();
-        renderer.set_projection(*_projection);
 
-        statistics.start_bound_n_split();
-        BezierPatch patch;
-        mat4x3 matrix(_view);
-        for (size_t i = 0; i < _patches.size(); ++i) {
+        renderer.set_projection(*(active_cam().projection));
+
+        for (auto object : objects) {
+            statistics.start_bound_n_split();
+            BezierPatch patch;
+            mat4x3 matrix(object->transform * glm::inverse(active_cam().transform));
             
-            transform_patch(_patches[i], matrix, patch);
+            for (size_t i = 0; i < object->mesh->patches.size(); ++i) {
+            
+                transform_patch(object->mesh->patches[i], matrix, patch);
 
-            bound_n_split(patch, *_projection, renderer);
+                bound_n_split(patch, *(active_cam().projection), renderer);
 
+            }
+            statistics.stop_bound_n_split();
         }
-        statistics.stop_bound_n_split();
-
+        
         renderer.finish();
     }
        

@@ -39,12 +39,12 @@ void mainloop(GLFWwindow* window)
         device.print_info();
     }
 
-    Reyes::Scene scene(new Reyes::PerspectiveProjection(75.0f, 0.01f, config.window_size()));
-    scene.add_patches(config.input_file());
+    Reyes::Scene scene(config.input_file());
 
-    mat4 view;
-    view *= glm::translate<float>(0,0,-4.5);
-    view *= glm::rotate<float>(-90, 1,0,0);
+    // // TODO: Move to scene
+    // mat4 view;
+    // view *= glm::translate<float>(0,0,-4.5);
+    // view *= glm::rotate<float>(-90, 1,0,0);
     
     Reyes::WireGLRenderer wire_renderer;
     Reyes::PatchDrawer* renderer;
@@ -69,27 +69,43 @@ void mainloop(GLFWwindow* window)
 
     statistics.reset_timer();
     double last = glfwGetTime();
+
+    glm::dvec2 last_cursor_pos;
+    glfwGetCursorPos(window, &(last_cursor_pos.x), &(last_cursor_pos.y));
+    
     while (running) {
 
         double now = glfwGetTime();
         double time_diff = now - last;
         last = now;
 
-        if (glfwGetKey(window, GLFW_KEY_UP)) {
-            view = glm::translate<float>(0,0,-time_diff) * view;
+        vec3 translation((glfwGetKey(window, 'A') ? -1 : 0) + (glfwGetKey(window, 'D') ? 1 : 0), 0,
+                         (glfwGetKey(window, 'W') ? -1 : 0) + (glfwGetKey(window, 'S') ? 1 : 0));
+        translation *= time_diff * 2;
+
+        glm::dvec2 cursor_pos;
+        glfwGetCursorPos(window, &(cursor_pos.x), &(cursor_pos.y));
+
+        vec2 rotation(0,0);
+        float zrotation = 0.0f;
+
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+            rotation = (cursor_pos - last_cursor_pos) * 0.1;
+        } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
+            zrotation = (cursor_pos.x - last_cursor_pos.x) * 0.4f;
+        } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+            translation.x += (cursor_pos.x - last_cursor_pos.x) * -0.01;
+            translation.y += (cursor_pos.y - last_cursor_pos.y) * 0.01;
         }
-
-        if (glfwGetKey(window, GLFW_KEY_DOWN)) {
-            view = glm::translate<float>(0,0, time_diff) * view;
-        }
-
-        view *= glm::rotate<float>((float)time_diff * 5, 0,0,1);
-        view *= glm::rotate<float>((float)time_diff * 7, 0,1,0);
-        view *= glm::rotate<float>((float)time_diff * 11, 1,0,0);
-
-
-        scene.set_view(view);
-
+        last_cursor_pos = cursor_pos;
+            
+        
+        scene.active_cam().transform = scene.active_cam().transform
+            * glm::translate<float>(translation.x, translation.y, translation.z)
+            * glm::rotate<float>(rotation.x, 0,1,0)
+            * glm::rotate<float>(rotation.y, 1,0,0)
+            * glm::rotate<float>(zrotation, 0,0,1);
+        
         if (glfwGetKey(window, GLFW_KEY_F3)) {
             scene.draw(wire_renderer);
             statistics.reset_timer();
@@ -98,7 +114,6 @@ void mainloop(GLFWwindow* window)
         }
 
         statistics.update();
-
 
         // Check if the window has been closed
         running = running && !glfwGetKey( window, GLFW_KEY_ESCAPE );

@@ -98,7 +98,7 @@ namespace CL
 
     class Program : public noncopyable
     {
-	cl_device_id _device;
+        cl_device_id _device;
         cl_program _program;
         std::stringstream* _source_buffer;
 
@@ -131,7 +131,7 @@ namespace CL
         Event(long id);
         Event(const Event& event);
 
-        Event operator  | (const Event& other) const;
+        Event operator | (const Event& other) const;
         Event& operator = (const Event& other);
         const size_t get_id_count() const;
         const long* get_ids() const;        
