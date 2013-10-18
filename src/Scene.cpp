@@ -21,7 +21,7 @@
 #include "Scene.h"
 
 #include "Projection.h"
-#include "Renderer.h"
+#include "PatchDrawer.h"
 #include "Patch.h"
 
 #include "Config.h"
@@ -72,7 +72,7 @@ namespace Reyes {
                            transformToMatrix(c.getTransform()),
                            shared_ptr<Projection>(new PerspectiveProjection(c.getFovy(),
                                                                             c.getNear(),
-                                                                            ivec2(800,600)))}; // TODO
+                                                                            config.window_size()))};
             cameras.push_back(shared_ptr<Camera>(camera));
         }
 

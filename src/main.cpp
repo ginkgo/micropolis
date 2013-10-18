@@ -28,7 +28,7 @@
 
 #include "Statistics.h"
 
-#include "TessellationGLRenderer.h"
+//#include "TessellationGLRenderer.h"
 
 
 void mainloop(GLFWwindow* window)
@@ -40,25 +40,20 @@ void mainloop(GLFWwindow* window)
     }
 
     Reyes::Scene scene(config.input_file());
-
-    // // TODO: Move to scene
-    // mat4 view;
-    // view *= glm::translate<float>(0,0,-4.5);
-    // view *= glm::rotate<float>(-90, 1,0,0);
     
     Reyes::WireGLRenderer wire_renderer;
-    Reyes::PatchDrawer* renderer;
+    // Reyes::PatchDrawer* renderer;
     
-    switch (config.renderer_type()) {
-    case Config::OPENCL:
-        renderer = new Reyes::Renderer();
-        break;
-    case Config::GLTESS:
-        renderer = new Reyes::TessellationGLRenderer();
-        break;
-    default:
-        assert(0);
-    }
+    // switch (config.renderer_type()) {
+    // case Config::OPENCL:
+    //     renderer = new Reyes::Renderer();
+    //     break;
+    // case Config::GLTESS:
+    //     renderer = new Reyes::TessellationGLRenderer();
+    //     break;
+    // default:
+    //     assert(0);
+    // }
 
     if(config.verbose() || !device.share_gl()) {
         cout << endl;
@@ -105,13 +100,16 @@ void mainloop(GLFWwindow* window)
             * glm::rotate<float>(rotation.x, 0,1,0)
             * glm::rotate<float>(rotation.y, 1,0,0)
             * glm::rotate<float>(zrotation, 0,0,1);
+
         
-        if (glfwGetKey(window, GLFW_KEY_F3)) {
-            scene.draw(wire_renderer);
-            statistics.reset_timer();
-        } else {
-            scene.draw(*renderer);
-        }
+        scene.draw(wire_renderer);
+        
+        // if (glfwGetKey(window, GLFW_KEY_F3)) {
+        //     scene.draw(wire_renderer);
+        //     statistics.reset_timer();
+        // } else {
+        //     scene.draw(*renderer);
+        // }
 
         statistics.update();
 
@@ -122,7 +120,7 @@ void mainloop(GLFWwindow* window)
 		
     }
 
-    delete renderer;
+    //delete renderer;
 }
 
 void handle_arguments(int argc, char** argv)
