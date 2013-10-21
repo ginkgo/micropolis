@@ -1,5 +1,5 @@
 // Size of the window in pixels.
-window_size = 1280 720
+window_size = 1280 300
 
 // Application window title.
 window_title = MICROPOLIS
@@ -29,14 +29,14 @@ verbose = true
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 64
+reyes_patch_size = 32
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
 reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 64
+bound_n_split_limit = 32
 
 // Width of the work-group for the dicing kernel.
 dice_group_width = 8

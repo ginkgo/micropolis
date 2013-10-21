@@ -33,11 +33,11 @@
 
 void mainloop(GLFWwindow* window)
 {
-    CL::Device device(config.platform_id(), config.device_id());
+    // CL::Device device(config.platform_id(), config.device_id());
 
-    if (config.verbose()) {
-        device.print_info();
-    }
+    // if (config.verbose()) {
+    //     device.print_info();
+    // }
 
     Reyes::Scene scene(config.input_file());
     
@@ -55,10 +55,10 @@ void mainloop(GLFWwindow* window)
     //     assert(0);
     // }
 
-    if(config.verbose() || !device.share_gl()) {
-        cout << endl;
-        cout << "Device is" << (device.share_gl() ? " " : " NOT ") << "shared." << endl << endl;
-    }
+    // if(config.verbose() || !device.share_gl()) {
+    //     cout << endl;
+    //     cout << "Device is" << (device.share_gl() ? " " : " NOT ") << "shared." << endl << endl;
+    // }
 
     bool running = true;
 
@@ -176,7 +176,6 @@ int main(int argc, char** argv)
 
     }
 
-    // glfwTerminate();
     return 0;
 }
 

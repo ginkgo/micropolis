@@ -32,8 +32,10 @@ namespace Reyes
     {
 		GL::Shader _shader;
 		GL::VBO _vbo;
-		
-        public:
+
+        map<void*, vector<BezierPatch> > _patch_index;
+        
+    public:
 
         WireGLRenderer();
         ~WireGLRenderer() {};
@@ -41,8 +43,17 @@ namespace Reyes
         virtual void prepare();
         virtual void finish();
         
-        virtual void set_projection(const Projection& projection);
-        virtual void draw_patch (const BezierPatch& patch);
+        virtual bool are_patches_loaded(void* patches_handle);
+        virtual void load_patches(void* patches_handle, vector<BezierPatch> patch_data);
+        
+        virtual void draw_patches(void* patches_handle,
+                                  const mat4& matrix,
+                                  const Projection& projection,
+                                  const vec4& color);
+
+    private:
+
+        void draw_patch(const BezierPatch& patch);
     };
     
 }

@@ -19,6 +19,7 @@
 #include "WireGLRenderer.h"
 
 #include "Projection.h"
+#include "Config.h"
 
 #define P(pi,pj) patch.P[pi][pj]
 
@@ -43,6 +44,7 @@ namespace Reyes
 		_shader.bind();
     }
 
+    
     void WireGLRenderer::finish()
     {
 
@@ -51,14 +53,69 @@ namespace Reyes
 		glfwPollEvents();
     }
 
-    void WireGLRenderer::set_projection(const Projection& projection)
+
+    bool WireGLRenderer::are_patches_loaded(void* patches_handle)
+    {
+        return _patch_index.count(patches_handle) > 0;
+    }
+
+
+    void WireGLRenderer::load_patches(void* patches_handle, vector<BezierPatch> patch_data)
+    {
+        _patch_index[patches_handle] = patch_data;
+    }
+
+
+    void WireGLRenderer::draw_patches(void* patches_handle,
+                                      const mat4& matrix,
+                                      const Projection& projection,
+                                      const vec4& color)
     {
         mat4 proj;
         projection.calc_projection(proj);
-                   
-		_shader.bind();
-		_shader.set_uniform("projection", proj);
+        
+        _shader.set_uniform("color", color);
+        _shader.set_uniform("projection", proj);
+
+        projection.calc_projection_with_aspect_correction(proj);
+        
+        vector<BezierPatch> stack;
+        BezierPatch p0, p1;
+        int s = config.bound_n_split_limit();
+
+        const vector<BezierPatch>& patch_list = _patch_index[patches_handle];
+
+        stack.resize(patch_list.size());
+        for (size_t i = 0; i < patch_list.size(); ++i) {
+            transform_patch(patch_list[i], matrix, stack[i]);
+        }
+        
+        BBox box;
+        
+        while (!stack.empty()) {
+
+            BezierPatch p = stack.back();
+            stack.pop_back();
+
+            calc_bbox(p, box);
+
+            vec2 size;
+            bool cull;
+            projection.bound(box, size, cull);
+            
+            if (cull) continue;
+            
+            if (box.min.z < 0 && size.x < s && size.y < s) {
+                draw_patch(p);
+            } else {
+                pisplit_patch(p, p0, p1, proj);
+                stack.push_back(p0);
+                stack.push_back(p1);
+            }                
+        }
+        
     }
+                                      
 
     void WireGLRenderer::draw_patch(const BezierPatch& patch)
     {

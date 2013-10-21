@@ -31,20 +31,17 @@ namespace Reyes
         virtual ~PatchDrawer() {};
 
         virtual void prepare() = 0;
-        //virtual void flush() = 0;
         virtual void finish() = 0;
 
-        //virtual void set_modelview(const glm::mat44& matrix) = 0;        
-        virtual void set_projection(const Reyes::Projection& projection) = 0;
-
-        //virtual void set_material_color(const vec4 color) = 0;
+        virtual bool are_patches_loaded(void* patches_handle) = 0;
+        virtual void load_patches(void* patches_handle, vector<BezierPatch> patch_data) = 0;
         
-        virtual void draw_patch(const BezierPatch& patch) = 0;
+        virtual void draw_patches(void* patches_handle,
+                                  const mat4& matrix,
+                                  const Projection& projection,
+                                  const vec4& color) = 0;
     };
 
-    void bound_n_split(const BezierPatch& patch, 
-                       const Reyes::Projection& projection,
-                       PatchDrawer& patch_drawer);
 }
 
 #endif

@@ -136,21 +136,18 @@ namespace Reyes {
     {
         renderer.prepare();
 
-        renderer.set_projection(*(active_cam().projection));
-
         for (auto object : objects) {
-            statistics.start_bound_n_split();
-            BezierPatch patch;
-            mat4x3 matrix(object->transform * glm::inverse(active_cam().transform));
-            
-            for (size_t i = 0; i < object->mesh->patches.size(); ++i) {
-            
-                transform_patch(object->mesh->patches[i], matrix, patch);
 
-                bound_n_split(patch, *(active_cam().projection), renderer);
-
+            // Load patch data on demand
+            if (!renderer.are_patches_loaded(object->mesh.get())) {
+                renderer.load_patches(object->mesh.get(), object->mesh->patches);
             }
-            statistics.stop_bound_n_split();
+
+            mat4 matrix(object->transform * glm::inverse(active_cam().transform));
+
+
+            renderer.draw_patches(object->mesh.get(), matrix, *(active_cam().projection), object->color);
+            
         }
         
         renderer.finish();

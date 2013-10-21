@@ -30,6 +30,7 @@ namespace Reyes {
         virtual ~Projection() {};
 
         virtual void calc_projection(mat4& proj) const = 0;
+        virtual void calc_projection_with_aspect_correction(mat4& proj) const = 0;
         virtual ivec4 get_viewport() const = 0;
         virtual void bound(const BBox& bbox, vec2& size, bool& cull) const = 0;
     };
@@ -51,6 +52,7 @@ namespace Reyes {
         virtual ~PerspectiveProjection() {};
 
         void calc_projection(mat4& proj) const;    
+        void calc_projection_with_aspect_correction(mat4& proj) const;    
         ivec4 get_viewport() const;    
         void bound(const BBox& bbox, vec2& size, bool& cull) const;
     };

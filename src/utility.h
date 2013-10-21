@@ -109,6 +109,15 @@ class BBox
     vec3 center() const {
         return (max + min) * 0.5f;
     }
+
+    void clear() {
+        min = vec3( std::numeric_limits<float>::infinity(),
+                    std::numeric_limits<float>::infinity(),
+                    std::numeric_limits<float>::infinity());
+        max = vec3(-std::numeric_limits<float>::infinity(),
+                   -std::numeric_limits<float>::infinity(),
+                   -std::numeric_limits<float>::infinity());
+    }
 };
 
 class Bound
@@ -119,8 +128,8 @@ class Bound
     public:
 
     Bound():
-        min(std::numeric_limits<float>::infinity(),
-            std::numeric_limits<float>::infinity()),
+        min( std::numeric_limits<float>::infinity(),
+             std::numeric_limits<float>::infinity()),
         max(-std::numeric_limits<float>::infinity(),
             -std::numeric_limits<float>::infinity()) {}
 
