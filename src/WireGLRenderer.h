@@ -28,13 +28,20 @@
 namespace Reyes
 {
 
+    struct PatchRange
+    {
+        Bound range;
+        size_t depth;
+        size_t patch_id;
+    };
+        
     class WireGLRenderer : public PatchDrawer
     {
 		GL::Shader _shader;
 		GL::VBO _vbo;
 
         map<void*, vector<BezierPatch> > _patch_index;
-        
+
     public:
 
         WireGLRenderer();
@@ -53,7 +60,7 @@ namespace Reyes
 
     private:
 
-        void draw_patch(const BezierPatch& patch);
+        void draw_patch(const BezierPatch& patch, const Bound& range);
     };
     
 }

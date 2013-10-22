@@ -8,6 +8,9 @@ import capnp
 mscene = capnp.load('src/mscene.capnp')
 #import mscene_capnp as mscene
 
+import math
+from random import uniform
+
 
 def lookat(eye, at, up):
     e,l,U = (Vector(v) for v in (eye,at,up))
@@ -112,6 +115,7 @@ def parse_bez (filename, options):
 def parse_args():
     parser = OptionParser(usage='Usage %prog [options] infile outfile')
     parser.add_option('-f', '--flip', dest='flip', action='store_true', default=False)
+    parser.add_option('-m', '--multi', dest='multi', type=int, default=0)
     options, args = parser.parse_args()
 
     if len(args) < 2 or len(args) > 2:
@@ -136,10 +140,23 @@ if __name__ == '__main__':
     lights = scene.init_resizable_list('lights')
     objects = scene.init_resizable_list('objects')
     
-    add_camera(cameras, 'Camera', (4,4,3), (0,0,0), (0,0,1), 0.01, 1000.0, 60.0)
+    add_camera(cameras, 'Camera', (25,25,3), (0,0,0), (0,0,1), 0.01, 1000.0, 60.0)
     add_directional_light(lights, 'Light', Color((1,1,1)), 1.0, (0.1,1,0.1))
     add_bezier_mesh(meshes, 'Mesh', patchdata)
-    add_object(objects, 'Object', Matrix.Identity(4), 'Mesh', Color((1.0,0.1, 0.03)))
+
+    if options.multi == 0:
+        add_object(objects, 'Object', Matrix.Identity(4), 'Mesh', Color((1.0,0.1, 0.03)))
+    else:
+        for i in range(options.multi):
+            rcolor = Color()
+            rcolor.hsv = uniform(0,1), uniform(0.7,1),1
+
+            rmatrix = Matrix.Identity(3)
+            rmatrix.rotate(Euler((uniform(0,math.pi*2), uniform(0,math.pi*2), uniform(0,math.pi*2)), 'XYZ'))
+            rmatrix.resize_4x4()
+            rmatrix.translation = uniform(-10,10), uniform(-10,10), uniform(-10,10)
+            
+            add_object(objects, 'Object-%d' % i, rmatrix, 'Mesh', rcolor)
     
     cameras.finish()
     objects.finish()

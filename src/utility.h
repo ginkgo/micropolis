@@ -122,16 +122,22 @@ class BBox
 
 class Bound
 {
+public:
+
+    
     vec2 min;
     vec2 max;
 
-    public:
 
-    Bound():
-        min( std::numeric_limits<float>::infinity(),
-             std::numeric_limits<float>::infinity()),
-        max(-std::numeric_limits<float>::infinity(),
-            -std::numeric_limits<float>::infinity()) {}
+    Bound()
+        : min( std::numeric_limits<float>::infinity(),
+               std::numeric_limits<float>::infinity())
+        , max(-std::numeric_limits<float>::infinity(),
+              -std::numeric_limits<float>::infinity()) {}
+
+    Bound(float xmin, float ymin, float xmax, float ymax)
+        : min(xmin, ymin)
+        , max(xmax, ymax) {}
 
     void add_point(const vec2& p) {
         min.x = minimum(p.x, min.x);

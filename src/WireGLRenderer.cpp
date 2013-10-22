@@ -23,6 +23,70 @@
 
 #define P(pi,pj) patch.P[pi][pj]
 
+
+namespace
+{
+    using namespace Reyes;
+
+    void vsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
+    {
+        r0 = {r.range, r.depth + 1, r.patch_id};
+        r1 = {r.range, r.depth + 1, r.patch_id};
+        
+        float cy = (r.range.min.y + r.range.max.y) * 0.5f;
+
+        r0.range.min.y = cy;
+        r1.range.max.y = cy;
+    }
+    
+    void hsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
+    {
+        r0 = {r.range, r.depth + 1, r.patch_id};
+        r1 = {r.range, r.depth + 1, r.patch_id};
+
+        float cx = (r.range.min.x + r.range.max.x) * 0.5f;
+
+        r0.range.min.x = cx;
+        r1.range.max.x = cx;
+    }
+
+
+    void bound_patch_range (const PatchRange& r, const BezierPatch& p, const mat4& mv, const mat4& mvp,
+                       BBox& box, float& vlen, float& hlen)
+    {
+        const size_t RES = 4;
+        
+        vec2 pp[RES][RES];
+        vec3 pos;
+     
+        box.clear();
+        
+        for (int iu = 0; iu < RES; ++iu) {
+            for (int iv = 0; iv < RES; ++iv) {
+                float u = r.range.min.x + (r.range.max.x - r.range.min.x) * iu * (1.0f / (RES-1));
+                float v = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
+
+                eval_patch(p, u, v, pos);
+                box.add_point(vec3(mv * vec4(pos,1)));
+
+                pp[iu][iv] = vec2(mvp * vec4(pos,1));
+            }
+        }
+
+        vlen = 0;
+        hlen = 0;
+
+        for (int i = 0; i < RES; ++i) {
+            for (int j = 0; j < RES-1; ++j) {
+                vlen += glm::distance(pp[j][i], pp[j+1][i]);
+                hlen += glm::distance(pp[i][j], pp[i][j+1]);
+            }
+        }
+    }
+
+    
+};
+
 namespace Reyes
 {
 
@@ -37,9 +101,9 @@ namespace Reyes
     {
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
-        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		_shader.bind();
     }
@@ -75,30 +139,35 @@ namespace Reyes
         projection.calc_projection(proj);
         
         _shader.set_uniform("color", color);
-        _shader.set_uniform("projection", proj);
+        _shader.set_uniform("mvp", proj * matrix);
 
         projection.calc_projection_with_aspect_correction(proj);
+
+        mat4 mvp = proj * matrix;
+        mat4 mv = matrix;
         
-        vector<BezierPatch> stack;
-        BezierPatch p0, p1;
+        vector<PatchRange> stack;
+        PatchRange r0, r1;
         int s = config.bound_n_split_limit();
 
         const vector<BezierPatch>& patch_list = _patch_index[patches_handle];
 
         stack.resize(patch_list.size());
         for (size_t i = 0; i < patch_list.size(); ++i) {
-            transform_patch(patch_list[i], matrix, stack[i]);
+            stack[i] = PatchRange{Bound(0,0,1,1), 0, i};
         }
         
         BBox box;
-        
+        float vlen, hlen;
+
+        int patchcnt = 0;
         while (!stack.empty()) {
 
-            BezierPatch p = stack.back();
+            PatchRange r = stack.back();
             stack.pop_back();
 
-            calc_bbox(p, box);
-
+            bound_patch_range(r, patch_list[r.patch_id], mv, mvp, box, vlen, hlen);
+            
             vec2 size;
             bool cull;
             projection.bound(box, size, cull);
@@ -106,51 +175,51 @@ namespace Reyes
             if (cull) continue;
             
             if (box.min.z < 0 && size.x < s && size.y < s) {
-                draw_patch(p);
+                draw_patch(patch_list[r.patch_id], r.range);
+                patchcnt++;
             } else {
-                pisplit_patch(p, p0, p1, proj);
-                stack.push_back(p0);
-                stack.push_back(p1);
+                if (vlen < hlen)
+                    vsplit_range(r, r0, r1);
+                else
+                    hsplit_range(r, r0, r1);
+                
+                stack.push_back(r0);
+                stack.push_back(r1);
             }                
-        }
-        
+        }        
     }
                                       
-
-    void WireGLRenderer::draw_patch(const BezierPatch& patch)
+    
+    void WireGLRenderer::draw_patch(const BezierPatch& patch, const Bound& range)
     {
+        const int n = 4;
+        
         vec3 p;
 
 		_vbo.clear();
-
-        int n = 16;
-
+        
+        // min min -> max min
         for (int i = 0; i < n; ++i) {
-            float t = float(i)/n;
-
-            eval_spline(P(0,0), P(1,0), P(2,0), P(3,0), t, p);
-            _vbo.vertex(p.x, p.y, p.z);
+            eval_patch(patch, range.min.x + (range.max.x - range.min.x) * i / float(n), range.min.y, p);
+            _vbo.vertex(p.x, p.y, p.z);            
         }
-    
+        
+        // max min -> max max
         for (int i = 0; i < n; ++i) {
-            float t = float(i)/n;
-
-            eval_spline(P(3,0), P(3,1), P(3,2), P(3,3), t, p);
-            _vbo.vertex(p.x, p.y, p.z);
+            eval_patch(patch, range.max.x, range.min.y + (range.max.y - range.min.y) * i / float(n), p);
+            _vbo.vertex(p.x, p.y, p.z);            
         }
-    
-        for (int i = 0; i < n; ++i) {
-            float t = float(i)/n;
-
-            eval_spline(P(3,3), P(2,3), P(1,3), P(0,3), t, p);
-            _vbo.vertex(p.x, p.y, p.z);
+        
+        // max max -> min max
+        for (int i = n; i > 0; --i) {
+            eval_patch(patch, range.min.x + (range.max.x - range.min.x) * i / float(n), range.max.y, p);
+            _vbo.vertex(p.x, p.y, p.z);            
         }
-    
-        for (int i = 0; i < n; ++i) {
-            float t = float(i)/n;
-
-            eval_spline(P(0,3), P(0,2), P(0,1), P(0,0), t, p);
-            _vbo.vertex(p.x, p.y, p.z);
+        
+        // min max -> min min
+        for (int i = n; i > 0; --i) {
+            eval_patch(patch, range.min.x, range.min.y + (range.max.y - range.min.y) * i / float(n), p);
+            _vbo.vertex(p.x, p.y, p.z);            
         }
 
         _vbo.send_data();
