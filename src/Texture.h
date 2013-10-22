@@ -144,9 +144,10 @@ namespace GL {
         Texture(int dimensions, int w, int h, int d,
                 GLenum format, GLenum internal_format,
                 GLenum mag_filter = GL_LINEAR,
-                GLenum min_filter = GL_LINEAR_MIPMAP_LINEAR,
+                GLenum min_filter = GL_LINEAR,
                 GLenum wrap_method = GL_REPEAT,
-                int samples = 0); 
+                int samples = 0,
+                float* data = nullptr); 
     
         //~Texture();
 

@@ -20,10 +20,28 @@
 #version 150
 
 uniform mat4 mvp;
+uniform sampler3D patches;
 
 in vec3 vertex;
 
+vec3 eval_patch(vec2 t, int patch_id)
+{
+    vec2 s = 1 - t;
+
+    mat4 B = outerProduct(vec4(s.x*s.x*s.x, 3*s.x*s.x*t.x, 3*s.x*t.x*t.x, t.x*t.x*t.x),
+                          vec4(s.y*s.y*s.y, 3*s.y*s.y*t.y, 3*s.y*t.y*t.y, t.y*t.y*t.y));                          
+    
+    vec3 sum = vec3(0,0,0);
+    for (int u = 0; u < 4; ++u) {
+        for (int v = 0; v < 4; ++v) {
+            sum += B[v][u] * texelFetch(patches, ivec3(u,v,patch_id), 0).xyz;
+        }
+    }
+
+    return sum;
+}
+
 void main()
 {
-	gl_Position  = mvp * vec4(vertex,1);
+	gl_Position  = mvp * vec4(eval_patch(vertex.xy, int(vertex.z)),1);
 }

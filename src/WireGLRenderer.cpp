@@ -107,7 +107,8 @@ namespace Reyes
 
 	WireGLRenderer::WireGLRenderer():
 		_shader("wire"),
-		_vbo(64)
+		_vbo(4 * config.reyes_patches_per_pass()),
+        _patch_count(0)
 	{
 
 	}
@@ -119,6 +120,7 @@ namespace Reyes
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		_shader.bind();
     }
@@ -141,7 +143,14 @@ namespace Reyes
 
     void WireGLRenderer::load_patches(void* patches_handle, vector<BezierPatch> patch_data)
     {
-        _patch_index[patches_handle] = patch_data;
+        _patch_index[patches_handle].patches = patch_data;
+        _patch_index[patches_handle].patch_texture.reset
+            (new GL::Texture(3, 4, 4, (int)patch_data.size(),
+                             GL_RGB, GL_RGB32F,
+                             GL_LINEAR, GL_LINEAR, GL_REPEAT,
+                             0, (float*)(patch_data.data())));
+
+        
     }
 
 
@@ -152,9 +161,14 @@ namespace Reyes
     {
         mat4 proj;
         projection.calc_projection(proj);
+
+        GL::Tex& patch_tex = *_patch_index[patches_handle].patch_texture;
+
+        patch_tex.bind();
         
         _shader.set_uniform("color", color);
         _shader.set_uniform("mvp", proj * matrix);
+        _shader.set_uniform("patches", patch_tex);
 
         projection.calc_projection_with_aspect_correction(proj);
 
@@ -165,7 +179,7 @@ namespace Reyes
         PatchRange r0, r1;
         int s = config.bound_n_split_limit();
 
-        const vector<BezierPatch>& patch_list = _patch_index[patches_handle];
+        const vector<BezierPatch>& patch_list = _patch_index[patches_handle].patches;
 
         stack.resize(patch_list.size());
         for (size_t i = 0; i < patch_list.size(); ++i) {
@@ -189,9 +203,11 @@ namespace Reyes
             
             if (cull) continue;
             
-            if (r.depth > 20 || box.min.z < 0 && size.x < s && size.y < s) {
-                draw_patch(patch_list[r.patch_id], r.range);
+            if (box.min.z < 0 && size.x < s && size.y < s) {
+                draw_patch(r);
                 patchcnt++;
+            } else if (r.depth > 20) {
+                //cout << "Warning: Split limit reached" << endl;
             } else {
                 if (vlen < hlen)
                     vsplit_range(r, r0, r1);
@@ -201,46 +217,41 @@ namespace Reyes
                 stack.push_back(r0);
                 stack.push_back(r1);
             }                
-        }        
+        }
+
+        if (_patch_count > 0) {
+            flush();
+        }
+        
+        patch_tex.unbind();
     }
                                       
     
-    void WireGLRenderer::draw_patch(const BezierPatch& patch, const Bound& range)
+    void WireGLRenderer::draw_patch(const PatchRange& range)
     {
         const int n = 4;
-        
-        vec3 p;
 
-		_vbo.clear();
-        
-        // min min -> max min
-        for (int i = 0; i < n; ++i) {
-            eval_patch(patch, range.min.x + (range.max.x - range.min.x) * i / float(n), range.min.y, p);
-            _vbo.vertex(p.x, p.y, p.z);            
-        }
-        
-        // max min -> max max
-        for (int i = 0; i < n; ++i) {
-            eval_patch(patch, range.max.x, range.min.y + (range.max.y - range.min.y) * i / float(n), p);
-            _vbo.vertex(p.x, p.y, p.z);            
-        }
-        
-        // max max -> min max
-        for (int i = n; i > 0; --i) {
-            eval_patch(patch, range.min.x + (range.max.x - range.min.x) * i / float(n), range.max.y, p);
-            _vbo.vertex(p.x, p.y, p.z);            
-        }
-        
-        // min max -> min min
-        for (int i = n; i > 0; --i) {
-            eval_patch(patch, range.min.x, range.min.y + (range.max.y - range.min.y) * i / float(n), p);
-            _vbo.vertex(p.x, p.y, p.z);            
-        }
+        const Bound& r = range.range;
+        const size_t pid = range.patch_id;
 
+        _vbo.vertex(r.min.x, r.min.y, pid);
+        _vbo.vertex(r.max.x, r.min.y, pid);
+        _vbo.vertex(r.max.x, r.max.y, pid);
+        _vbo.vertex(r.min.x, r.max.y, pid);
+
+        _patch_count++;
+        
+        if (_patch_count >= config.reyes_patches_per_pass()) {
+            flush();
+        }
+    }
+
+    void WireGLRenderer::flush()
+    {
         _vbo.send_data();
-		
-		
-		_vbo.draw(GL_LINE_LOOP, _shader);
-		
+        _vbo.draw(GL_QUADS, _shader);
+        _vbo.clear();
+
+        _patch_count = 0;        
     }
 }

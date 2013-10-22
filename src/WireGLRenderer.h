@@ -24,6 +24,7 @@
 
 #include "Shader.h"
 #include "VBO.h"
+#include "Texture.h"
 
 namespace Reyes
 {
@@ -39,8 +40,15 @@ namespace Reyes
     {
 		GL::Shader _shader;
 		GL::VBO _vbo;
+        size_t _patch_count;
 
-        map<void*, vector<BezierPatch> > _patch_index;
+        struct PatchData
+        {
+            vector<BezierPatch> patches;
+            shared_ptr<GL::Texture> patch_texture;
+        };
+        
+        map<void*, PatchData> _patch_index;
 
     public:
 
@@ -60,7 +68,8 @@ namespace Reyes
 
     private:
 
-        void draw_patch(const BezierPatch& patch, const Bound& range);
+        void draw_patch(const PatchRange& range);
+        void flush();
     };
     
 }

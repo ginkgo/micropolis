@@ -58,7 +58,8 @@ namespace GL {
                      GLenum format, GLenum internal_format,
                      GLenum mag_filter, GLenum min_filter,
                      GLenum wrap_method,
-                     int samples) :
+                     int samples,
+                     float* data) :
         Tex(),
         _min_filter(min_filter),
         _mag_filter(mag_filter),
@@ -68,8 +69,10 @@ namespace GL {
         _internal_format(internal_format),
         _width(w), _height(h), _depth(d)
     {
-        setup(NULL, GL_FLOAT, samples);
+        setup(data, GL_FLOAT, samples);
     }
+
+    
     void Texture::setup(const void* data, GLenum type, int samples)
     { 
         assert(_dimensions >= 1 && _dimensions <= 3);
