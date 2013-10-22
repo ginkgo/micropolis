@@ -51,12 +51,18 @@ namespace
     }
 
 
+    vec2 project (const vec4& p)
+    {
+        return vec2(p.x, p.y) / p.w;
+    }
+    
     void bound_patch_range (const PatchRange& r, const BezierPatch& p, const mat4& mv, const mat4& mvp,
                        BBox& box, float& vlen, float& hlen)
     {
-        const size_t RES = 4;
+        const size_t RES = 8;
         
-        vec2 pp[RES][RES];
+        //vec2 pp[RES][RES];
+        vec3 ps[RES][RES];
         vec3 pos;
      
         box.clear();
@@ -67,9 +73,13 @@ namespace
                 float v = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
 
                 eval_patch(p, u, v, pos);
-                box.add_point(vec3(mv * vec4(pos,1)));
 
-                pp[iu][iv] = vec2(mvp * vec4(pos,1));
+                vec3 pt = vec3(mv * vec4(pos,1));
+                
+                box.add_point(pt);
+
+                // pp[iu][iv] = project(mvp * vec4(pos,1));
+                ps[iu][iv] = pt;
             }
         }
 
@@ -77,10 +87,15 @@ namespace
         hlen = 0;
 
         for (int i = 0; i < RES; ++i) {
+            float h = 0, v = 0;
             for (int j = 0; j < RES-1; ++j) {
-                vlen += glm::distance(pp[j][i], pp[j+1][i]);
-                hlen += glm::distance(pp[i][j], pp[i][j+1]);
+                // v += glm::distance(pp[j][i], pp[j+1][i]);
+                // h += glm::distance(pp[i][j], pp[i][j+1]);
+                v += glm::distance(ps[j][i], ps[j+1][i]);
+                h += glm::distance(ps[i][j], ps[i][j+1]);
             }
+            vlen = maximum(v, vlen);
+            hlen = maximum(h, hlen);
         }
     }
 
@@ -174,7 +189,7 @@ namespace Reyes
             
             if (cull) continue;
             
-            if (box.min.z < 0 && size.x < s && size.y < s) {
+            if (r.depth > 20 || box.min.z < 0 && size.x < s && size.y < s) {
                 draw_patch(patch_list[r.patch_id], r.range);
                 patchcnt++;
             } else {
