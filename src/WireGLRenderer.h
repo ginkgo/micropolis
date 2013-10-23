@@ -45,7 +45,7 @@ namespace Reyes
         struct PatchData
         {
             vector<BezierPatch> patches;
-            shared_ptr<GL::Texture> patch_texture;
+            shared_ptr<GL::TextureBuffer> patch_texture;
         };
         
         map<void*, PatchData> _patch_index;

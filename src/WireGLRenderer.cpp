@@ -20,6 +20,7 @@
 
 #include "Projection.h"
 #include "Config.h"
+#include "Statistics.h"
 
 #define P(pi,pj) patch.P[pi][pj]
 
@@ -107,7 +108,7 @@ namespace Reyes
 
 	WireGLRenderer::WireGLRenderer():
 		_shader("wire"),
-		_vbo(4 * config.reyes_patches_per_pass()),
+		_vbo(2 * 4 * config.reyes_patches_per_pass()),
         _patch_count(0)
 	{
 
@@ -120,6 +121,7 @@ namespace Reyes
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glPatchParameteri(GL_PATCH_VERTICES, 4);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		_shader.bind();
@@ -144,11 +146,8 @@ namespace Reyes
     void WireGLRenderer::load_patches(void* patches_handle, vector<BezierPatch> patch_data)
     {
         _patch_index[patches_handle].patches = patch_data;
-        _patch_index[patches_handle].patch_texture.reset
-            (new GL::Texture(3, 4, 4, (int)patch_data.size(),
-                             GL_RGB, GL_RGB32F,
-                             GL_LINEAR, GL_LINEAR, GL_REPEAT,
-                             0, (float*)(patch_data.data())));
+        _patch_index[patches_handle].patch_texture.reset(new GL::TextureBuffer(patch_data.size() * sizeof(BezierPatch), GL_RGB32F));
+        _patch_index[patches_handle].patch_texture->load((void*)patch_data.data());
 
         
     }
@@ -174,7 +173,8 @@ namespace Reyes
 
         mat4 mvp = proj * matrix;
         mat4 mv = matrix;
-        
+
+        statistics.start_bound_n_split();
         vector<PatchRange> stack;
         PatchRange r0, r1;
         int s = config.bound_n_split_limit();
@@ -189,7 +189,6 @@ namespace Reyes
         BBox box;
         float vlen, hlen;
 
-        int patchcnt = 0;
         while (!stack.empty()) {
 
             PatchRange r = stack.back();
@@ -204,8 +203,10 @@ namespace Reyes
             if (cull) continue;
             
             if (box.min.z < 0 && size.x < s && size.y < s) {
+                statistics.stop_bound_n_split();
+                statistics.inc_patch_count();
                 draw_patch(r);
-                patchcnt++;
+                statistics.start_bound_n_split();
             } else if (r.depth > 20) {
                 //cout << "Warning: Split limit reached" << endl;
             } else {
@@ -218,6 +219,8 @@ namespace Reyes
                 stack.push_back(r1);
             }                
         }
+        
+        statistics.stop_bound_n_split();
 
         if (_patch_count > 0) {
             flush();
@@ -239,6 +242,11 @@ namespace Reyes
         _vbo.vertex(r.max.x, r.max.y, pid);
         _vbo.vertex(r.min.x, r.max.y, pid);
 
+        _vbo.vertex(r.min.x, r.min.y, pid);
+        _vbo.vertex(r.min.x, r.max.y, pid);
+        _vbo.vertex(r.max.x, r.max.y, pid);
+        _vbo.vertex(r.max.x, r.min.y, pid);
+
         _patch_count++;
         
         if (_patch_count >= config.reyes_patches_per_pass()) {
@@ -249,7 +257,7 @@ namespace Reyes
     void WireGLRenderer::flush()
     {
         _vbo.send_data();
-        _vbo.draw(GL_QUADS, _shader);
+        _vbo.draw(GL_PATCHES, _shader);
         _vbo.clear();
 
         _patch_count = 0;        

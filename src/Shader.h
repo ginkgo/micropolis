@@ -111,27 +111,6 @@ namespace GL
 			return (_uniform_map.count(uniform_name) > 0);
 		}
 
-		// void set_uniform(const string& uniform_name, const TextureArray& texture)
-		// {
-		//     UniformMap::iterator it = _uniform_map.find(uniform_name);
-        
-		//     if (it == _uniform_map.end())
-		//         return;
-
-		//     gltype_info<GLint>::set_uniform(it->second, texture.get_unit_number());
-		// }
-
-		// void set_uniform_block(const string& block_name, 
-		//                        const UniformBuffer& UBO) 
-		// {
-		//     UniformBlockMap::iterator it = _uniform_block_map.find(block_name);
-        
-		//     if (it == _uniform_block_map.end())
-		//         return;
-
-		//     glUniformBlockBinding(_program, it->second, UBO.get_binding());
-		// };
-
 		/**
 		 * Return the location of an attrib.
 		 */

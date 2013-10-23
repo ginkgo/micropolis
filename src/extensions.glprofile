@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Micropolis.  If not, see <http://www.gnu.org/licenses/>.
 
-version 4.2 core
+version 4.3 core
 
 extension EXT_texture_filter_anisotropic optional
 extension ARB_cl_event optional

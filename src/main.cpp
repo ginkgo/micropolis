@@ -101,8 +101,9 @@ void mainloop(GLFWwindow* window)
             * glm::rotate<float>(rotation.y, 1,0,0)
             * glm::rotate<float>(zrotation, 0,0,1);
 
-        
+        statistics.start_render();
         scene.draw(wire_renderer);
+        statistics.end_render();
         
         // if (glfwGetKey(window, GLFW_KEY_F3)) {
         //     scene.draw(wire_renderer);

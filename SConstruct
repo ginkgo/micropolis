@@ -9,7 +9,7 @@ env['CC'] = 'gcc'
 env['CXX'] = 'g++'
 env['LIBS'] = ['GL', 'glfw', 'boost_regex', 'IL', 'OpenCL', 'Xrandr', 'rt', 'capnp', 'kj']
 #env['CCFLAGS'] = ['-O0', '-ggdb']
-env['CCFLAGS'] = ['-O3']
+env['CCFLAGS'] = ['-O3', '-msse4']
 env['CXXFLAGS'] = ['-std=c++11']
 env['CFLAGS'] = ['-std=c99']
 env['LINKFLAGS'] = []
@@ -20,8 +20,8 @@ python27 = 'python2.7'
 python3 = 'python3'
 
 env.Command(['#/generated/flextGL.c', '#/generated/flextGL.h'],
-            ['#/src/extensions.glprofile', '#/tools/flextGL/flextGLgen.py', 
-             Glob('#/tools/flextGL/templates/glfw/*template')],
+            ['#/src/extensions.glprofile', '#/tools/flextGL/flextGLgen.py', '#/tools/flextGL/flext.py',
+             Glob('#/tools/flextGL/templates/glfw3/*template')],
             python3+' tools/flextGL/flextGLgen.py src/extensions.glprofile -Dgenerated -Tglfw3')
              
 env.Command(['#/generated/Config.cpp', '#/generated/Config.h'],

@@ -230,10 +230,8 @@ namespace GL
 
 
 #ifdef GL_VERSION_4_0
-        _tess_ctrl_shader = compile_shader_object(shader, material,
-                                                  GL_TESS_CONTROL_SHADER);
-        _tess_eval_shader = compile_shader_object(shader, material,
-                                                  GL_TESS_EVALUATION_SHADER);
+        _tess_ctrl_shader = compile_shader_object(shader, material, GL_TESS_CONTROL_SHADER);
+        _tess_eval_shader = compile_shader_object(shader, material, GL_TESS_EVALUATION_SHADER);
 
         if (_tess_eval_shader != 0 && _tess_ctrl_shader != 0) {
             glAttachShader(_program, _tess_ctrl_shader);
