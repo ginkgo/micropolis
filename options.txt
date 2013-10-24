@@ -2,7 +2,7 @@
 window_size = 1280 1024
 
 // Number of anti-aliasing samples. (0 means no AA)
-fsaa_samples = 0
+fsaa_samples = 4
 
 // Application window title.
 window_title = MICROPOLIS
@@ -32,7 +32,7 @@ verbose = true
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 64
+reyes_patch_size = 32
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.

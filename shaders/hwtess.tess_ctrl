@@ -1,0 +1,17 @@
+#version 430
+
+layout(vertices=4) out;
+
+uniform int dicing_rate;
+
+void main(void)
+{
+    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+
+    gl_TessLevelInner[0] = dicing_rate;
+    gl_TessLevelInner[1] = dicing_rate;
+    gl_TessLevelOuter[0] = dicing_rate;
+    gl_TessLevelOuter[1] = dicing_rate;
+    gl_TessLevelOuter[2] = dicing_rate;
+    gl_TessLevelOuter[3] = dicing_rate;
+}

@@ -24,5 +24,6 @@
 #include "Scene.h"
 //#include "Renderer.h"
 #include "WireGLRenderer.h"
+#include "HWTessRenderer.h"
 
 #endif

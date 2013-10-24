@@ -16,7 +16,7 @@
 \******************************************************************************/
 
 
-#include "WireGLRenderer.h"
+#include "HWTessRenderer.h"
 
 #include "Projection.h"
 #include "Config.h"
@@ -106,15 +106,15 @@ namespace
 namespace Reyes
 {
 
-	WireGLRenderer::WireGLRenderer():
-		_shader("wire"),
+	HWTessRenderer::HWTessRenderer():
+		_shader("hwtess"),
 		_vbo(2 * 4 * config.reyes_patches_per_pass()),
         _patch_count(0)
 	{
 
 	}
 
-    void WireGLRenderer::prepare()
+    void HWTessRenderer::prepare()
     {
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
@@ -122,13 +122,14 @@ namespace Reyes
         glDisable(GL_CULL_FACE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glPatchParameteri(GL_PATCH_VERTICES, 4);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		_shader.bind();
     }
 
     
-    void WireGLRenderer::finish()
+    void HWTessRenderer::finish()
     {
 
 		_shader.unbind();
@@ -137,13 +138,13 @@ namespace Reyes
     }
 
 
-    bool WireGLRenderer::are_patches_loaded(void* patches_handle)
+    bool HWTessRenderer::are_patches_loaded(void* patches_handle)
     {
         return _patch_index.count(patches_handle) > 0;
     }
 
 
-    void WireGLRenderer::load_patches(void* patches_handle, vector<BezierPatch> patch_data)
+    void HWTessRenderer::load_patches(void* patches_handle, vector<BezierPatch> patch_data)
     {
         _patch_index[patches_handle].patches = patch_data;
         _patch_index[patches_handle].patch_texture.reset(new GL::TextureBuffer(patch_data.size() * sizeof(BezierPatch), GL_RGB32F));
@@ -153,7 +154,7 @@ namespace Reyes
     }
 
 
-    void WireGLRenderer::draw_patches(void* patches_handle,
+    void HWTessRenderer::draw_patches(void* patches_handle,
                                       const mat4& matrix,
                                       const Projection& projection,
                                       const vec4& color)
@@ -168,6 +169,7 @@ namespace Reyes
         _shader.set_uniform("color", color);
         _shader.set_uniform("mvp", proj * matrix);
         _shader.set_uniform("patches", patch_tex);
+        _shader.set_uniform("dicing_rate", (int)config.reyes_patch_size());
 
         projection.calc_projection_with_aspect_correction(proj);
 
@@ -230,7 +232,7 @@ namespace Reyes
     }
                                       
     
-    void WireGLRenderer::draw_patch(const PatchRange& range)
+    void HWTessRenderer::draw_patch(const PatchRange& range)
     {
         const Bound& r = range.range;
         const size_t pid = range.patch_id;
@@ -240,11 +242,6 @@ namespace Reyes
         _vbo.vertex(r.max.x, r.max.y, pid);
         _vbo.vertex(r.min.x, r.max.y, pid);
 
-        _vbo.vertex(r.min.x, r.min.y, pid);
-        _vbo.vertex(r.min.x, r.max.y, pid);
-        _vbo.vertex(r.max.x, r.max.y, pid);
-        _vbo.vertex(r.max.x, r.min.y, pid);
-
         _patch_count++;
         
         if (_patch_count >= config.reyes_patches_per_pass()) {
@@ -252,7 +249,7 @@ namespace Reyes
         }
     }
 
-    void WireGLRenderer::flush()
+    void HWTessRenderer::flush()
     {
         _vbo.send_data();
         _vbo.draw(GL_PATCHES, _shader);

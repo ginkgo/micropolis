@@ -16,56 +16,12 @@
 \******************************************************************************/
 
 
-#ifndef WIREGLRENDERER_H
-#define WIREGLRENDERER_H
 
-#include "Patch.h"
-#include "PatchDrawer.h"
+#version 430
 
-#include "Shader.h"
-#include "VBO.h"
-#include "Texture.h"
-#include "BoundNSplit.h"
+in vec3 vertex;
 
-namespace Reyes
+void main()
 {
-        
-    class WireGLRenderer : public PatchDrawer
-    {
-		GL::Shader _shader;
-		GL::VBO _vbo;
-        size_t _patch_count;
-
-        struct PatchData
-        {
-            vector<BezierPatch> patches;
-            shared_ptr<GL::TextureBuffer> patch_texture;
-        };
-        
-        map<void*, PatchData> _patch_index;
-
-    public:
-
-        WireGLRenderer();
-        ~WireGLRenderer() {};
-
-        virtual void prepare();
-        virtual void finish();
-        
-        virtual bool are_patches_loaded(void* patches_handle);
-        virtual void load_patches(void* patches_handle, vector<BezierPatch> patch_data);
-        
-        virtual void draw_patches(void* patches_handle,
-                                  const mat4& matrix,
-                                  const Projection& projection,
-                                  const vec4& color);
-
-    private:
-
-        void draw_patch(const PatchRange& range);
-        void flush();
-    };
-    
+    gl_Position = vec4(vertex, 1);
 }
-
-#endif

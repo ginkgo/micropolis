@@ -38,27 +38,25 @@ void mainloop(GLFWwindow* window)
     // if (config.verbose()) {
     //     device.print_info();
     // }
-
-    Reyes::Scene scene(config.input_file());
     
-    Reyes::WireGLRenderer wire_renderer;
-    // Reyes::PatchDrawer* renderer;
-    
-    // switch (config.renderer_type()) {
-    // case Config::OPENCL:
-    //     renderer = new Reyes::Renderer();
-    //     break;
-    // case Config::GLTESS:
-    //     renderer = new Reyes::TessellationGLRenderer();
-    //     break;
-    // default:
-    //     assert(0);
-    // }
-
     // if(config.verbose() || !device.share_gl()) {
     //     cout << endl;
     //     cout << "Device is" << (device.share_gl() ? " " : " NOT ") << "shared." << endl << endl;
     // }
+
+    Reyes::Scene scene(config.input_file());
+    
+    Reyes::WireGLRenderer wire_renderer;
+    shared_ptr<Reyes::PatchDrawer> renderer;
+    
+    switch (config.renderer_type()) {
+    case Config::OPENCL:
+    case Config::GLTESS:
+        renderer.reset(new Reyes::HWTessRenderer());
+        break;
+    default:
+        assert(0);
+    }
 
     bool running = true;
 
@@ -101,27 +99,26 @@ void mainloop(GLFWwindow* window)
             * glm::rotate<float>(rotation.y, 1,0,0)
             * glm::rotate<float>(zrotation, 0,0,1);
 
-        statistics.start_render();
-        scene.draw(wire_renderer);
-        statistics.end_render();
         
-        // if (glfwGetKey(window, GLFW_KEY_F3)) {
-        //     scene.draw(wire_renderer);
-        //     statistics.reset_timer();
-        // } else {
-        //     scene.draw(*renderer);
-        // }
+        statistics.start_render();
+        if (glfwGetKey(window, GLFW_KEY_F3)) {
+            scene.draw(wire_renderer);
+            statistics.reset_timer();
+        } else {
+            scene.draw(*renderer);
+        }
+        statistics.end_render();
 
         statistics.update();
 
+        get_errors();
+        
         // Check if the window has been closed
         running = running && !glfwGetKey( window, GLFW_KEY_ESCAPE );
         running = running && !glfwGetKey( window,  'Q' );
 		running = running && !glfwWindowShouldClose( window );
 		
     }
-
-    //delete renderer;
 }
 
 void handle_arguments(int argc, char** argv)
