@@ -192,6 +192,9 @@ GLFWwindow* init_opengl(ivec2 size)
 
     int version = FLEXT_MAJOR_VERSION * 10 + FLEXT_MINOR_VERSION;
 
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_SAMPLES, config.fsaa_samples());
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
 
     // Create window and OpenGL context
     GLFWwindow* window = glfwCreateWindow(size.x, size.y, "Window title", NULL, NULL);

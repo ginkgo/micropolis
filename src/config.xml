@@ -42,6 +42,10 @@
       Size of the window in pixels.
     </value>
 
+    <value name="fsaa_samples" type="int" default="0">
+      Number of anti-aliasing samples. (0 means no AA)
+    </value>
+
     <value name="window_title" type="string" default="MICROPOLIS">
       Application window title.
     </value>

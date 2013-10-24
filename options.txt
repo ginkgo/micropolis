@@ -1,6 +1,9 @@
 // Size of the window in pixels.
 window_size = 1280 1024
 
+// Number of anti-aliasing samples. (0 means no AA)
+fsaa_samples = 0
+
 // Application window title.
 window_title = MICROPOLIS
 
@@ -51,7 +54,7 @@ subpixel_bits = 6
 clear_color = 0.025 0.05 0.2 0
 
 // Patch data input file.
-input_file = mscene/hair.mscene
+input_file = mscene/teapots.mscene
 
 // Create an OpenCL timing trace.
 create_trace = true
@@ -85,4 +88,4 @@ cull_ribbon = 32
 
 
 
-#hash:-5178625630950496526
+#hash:4870159146455382746
