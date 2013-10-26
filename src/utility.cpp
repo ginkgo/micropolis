@@ -79,7 +79,7 @@ string read_file(const string &filename)
 }
 
 
-void get_errors(void)
+void get_errors()
 {
     static int call_count = 0;
 
@@ -113,4 +113,117 @@ void get_errors(void)
             ++call_count;
         }
     }
+}
+
+
+
+
+/**
+ * Callback method for ARB_debug_output.
+ * @param source Source of the message.
+ * @param type Type of the message.
+ * @param id Identification number of the message.
+ * @param severity Severity of the message.
+ * @param length Length of the messge in bytes(?).
+ * @param message Message.
+ * @param userParam NULL.
+ */
+GLvoid APIENTRY opengl_debug_callback(GLenum source,
+                                      GLenum type,
+                                      GLuint id,
+                                      GLenum severity,
+                                      GLsizei length,
+                                      const GLchar* message,
+                                      GLvoid* userParam)
+{
+    // A small hack to avoid getting the same error message again and again.
+    static int call_count = 0;
+
+    string source_name = "Unknown";
+    string type_name = "Unknown";
+    string severity_name = "Unknown";
+
+    // Find source name
+    switch (source) {
+    case GL_DEBUG_SOURCE_API_ARB:
+        source_name = "OpenGL"; break;
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
+        source_name = "Window System"; break;
+    case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
+        source_name = "Shader Compiler"; break;
+    case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
+        source_name = "External debuggers/middleware"; break;
+    case GL_DEBUG_SOURCE_APPLICATION_ARB:
+        source_name = "Application"; break;
+    case GL_DEBUG_SOURCE_OTHER_ARB:
+        source_name = "Other"; break;
+    }
+
+    // Find type name
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR_ARB:
+        type_name = "Error"; break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
+        type_name = "Deprecated Behavior"; break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
+        type_name = "Undefined Behavior"; break;
+    case GL_DEBUG_TYPE_PORTABILITY_ARB:
+        type_name = "Portability"; break;
+    case GL_DEBUG_TYPE_PERFORMANCE_ARB:
+        type_name = "Performance"; break;
+    case GL_DEBUG_TYPE_OTHER_ARB:
+        type_name = "Other"; break;
+    }
+
+    // Find severity name.
+    switch (severity) {
+    case GL_DEBUG_SEVERITY_HIGH_ARB:
+        severity_name = "high"; break;
+    case GL_DEBUG_SEVERITY_MEDIUM_ARB:
+        severity_name = "medium"; break;
+    case GL_DEBUG_SEVERITY_LOW_ARB:
+        severity_name = "low"; break;
+    }
+
+    if (call_count < 8) {
+        // Print all received message information.
+        cerr << "Caught OpenGL debug message:" << endl;
+        cerr << "\tSource: " << source_name << endl;
+        cerr << "\tType: " << type_name << endl;
+        cerr << "\tSeverity: " << severity_name << endl;
+        cerr << "\tID: " << id << endl;
+        cerr << "\tMessage: " << message << endl;
+        cerr << endl;
+    }
+    
+    ++call_count;
+}
+
+
+void set_GL_error_callbacks()
+{
+    if (FLEXT_ARB_debug_output) {
+        // Enable synchronous callbacks.
+        // Otherwise we might not get usable stack-traces.
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+    
+        // Enable ALL debug messages.
+        glDebugMessageControlARB(GL_DONT_CARE,
+                                 GL_DONT_CARE,
+                                 GL_DONT_CARE,
+                                 0, NULL,
+                                 GL_TRUE);
+
+        // Set callback function
+        glDebugMessageCallbackARB(opengl_debug_callback, NULL);
+    }
+}
+
+
+
+
+
+vec2 project (const vec4& p)
+{
+    return vec2(p.x, p.y) / p.w;
 }

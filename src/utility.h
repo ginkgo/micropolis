@@ -63,9 +63,20 @@ string read_file(const string &filename);
  * Check for OpenGL errors.
  * Prints a message to STDERR if an error has been found.
  */
-void get_errors(void);
+void get_errors();
+
+
+/**
+* Attempt to set ARB_debug_output callback.
+* This only does something when usign the Debug build.
+*/
+void set_GL_error_callbacks();
+
+
 
 string reverse (const string& s);
+
+vec2 project (const vec4& p);
 
 template <typename T> T minimum (T a, T b)
 {
@@ -285,5 +296,7 @@ inline T square (T a)
 {
     return a*a;
 }
+
+    
 
 #endif
