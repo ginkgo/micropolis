@@ -111,8 +111,6 @@ void mainloop(GLFWwindow* window)
 
         statistics.update();
 
-        get_errors();
-        
         // Check if the window has been closed
         running = running && !glfwGetKey( window, GLFW_KEY_ESCAPE );
         running = running && !glfwGetKey( window,  'Q' );
@@ -192,6 +190,7 @@ GLFWwindow* init_opengl(ivec2 size)
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, config.fsaa_samples());
     glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 
     // Create window and OpenGL context
     GLFWwindow* window = glfwCreateWindow(size.x, size.y, "Window title", NULL, NULL);
@@ -211,5 +210,7 @@ GLFWwindow* init_opengl(ivec2 size)
         glfwTerminate();
     }
 
+    set_GL_error_callbacks();
+    
     return window;
 }

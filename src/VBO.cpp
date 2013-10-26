@@ -19,9 +19,16 @@
 #include "VBO.h"
 
 #include "Shader.h"
-
+#include "Statistics.h"
 
 using namespace GL;
+
+
+
+/*----------------------------------------------------------------------------*/
+// VBO implementation
+
+
 
 GL::VBO::VBO(size_t vertex_cnt):
 	_buffer(0),
@@ -34,6 +41,8 @@ GL::VBO::VBO(size_t vertex_cnt):
 	_vertices.resize(vertex_cnt);
 	
 	send_data();
+
+    statistics.alloc_opengl_memory(_size);
 }
 
 
@@ -46,6 +55,8 @@ GL::VBO::~VBO()
 
 		glDeleteVertexArrays(1, &vao);
 	}
+
+    statistics.free_opengl_memory(_size);
 }
 
 
@@ -138,4 +149,135 @@ bool GL::VBO::full() const
 bool GL::VBO::empty() const
 {
     return _vertex_count == 0;
+}
+
+
+
+/*----------------------------------------------------------------------------*/
+// IndirectVBO implementation
+
+
+
+GL::IndirectVBO::IndirectVBO(size_t max_vertex_count)
+    : _vbuffer(0)
+    , _ibuffer(0)
+    , _max_vertex_count(max_vertex_count)
+{
+    glGenBuffers(1, &_vbuffer);
+    glGenBuffers(1, &_ibuffer);
+
+    glBindBuffer(GL_ARRAY_BUFFER, _vbuffer);
+    glBufferData(GL_ARRAY_BUFFER, max_vertex_count * sizeof(vec3), NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _ibuffer);
+    glBufferData(GL_DRAW_INDIRECT_BUFFER, 4 * sizeof(GLuint), NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+
+    statistics.alloc_opengl_memory(_max_vertex_count * sizeof(vec3));
+    statistics.alloc_opengl_memory(4 * sizeof(GLuint));
+}
+
+
+GL::IndirectVBO::~IndirectVBO()
+{
+	glDeleteBuffers(1, &_vbuffer);
+	glDeleteBuffers(1, &_ibuffer);
+
+	for (map<GLuint, GLuint>::iterator i = _vaos.begin(); i != _vaos.end(); ++i) {
+		GLuint vao = i->second;
+
+		glDeleteVertexArrays(1, &vao);
+	}
+    
+    statistics.free_opengl_memory(_max_vertex_count * sizeof(vec3));
+    statistics.free_opengl_memory(4 * sizeof(GLuint));
+}
+
+
+void GL::IndirectVBO::load_vertices(const vector<vec3>& vertices)
+{
+    assert(vertices.size() * sizeof(vec3) <= _size);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, _vbuffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(vec3), vertices.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void GL::IndirectVBO::load_indirection(GLuint count, GLuint instance_count, GLuint first, GLuint base_instance)
+{
+    struct
+    {
+        GLuint count;
+        GLuint instance_count;
+        GLuint first;
+        GLuint base_instance;
+    } indirection = {count, instance_count, first, base_instance};
+
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _ibuffer);
+    glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(indirection), &indirection);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+}
+
+
+GLuint GL::IndirectVBO::get_max_vertex_count() const
+{
+    return _max_vertex_count;
+}
+
+
+GLuint GL::IndirectVBO::get_vertex_buffer()
+{
+    return _vbuffer;
+}
+
+
+GLuint GL::IndirectVBO::get_indirection_buffer()
+{
+    return _ibuffer;
+}
+
+
+void GL::IndirectVBO::draw(GLenum mode, const Shader& shader) const
+{
+	GLuint program_id = shader.get_program_ID();
+	
+	if (_vaos.count(program_id) < 1) {
+		create_vao(shader);
+	}
+
+	GLuint vao = _vaos.at(program_id);
+
+	glBindVertexArray(vao);
+
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _ibuffer);
+	glDrawArraysIndirect(mode, 0);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+
+	glBindVertexArray(0);
+}
+
+
+
+void GL::IndirectVBO::create_vao(const Shader& shader) const
+{
+	GLuint vao;
+
+	glGenVertexArrays(1, &vao);
+
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, _vbuffer);
+	
+	GLint location = shader.get_attrib_location("vertex");
+
+	glEnableVertexAttribArray(location);
+	glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+    
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+
+	_vaos[shader.get_program_ID()] = vao;
 }

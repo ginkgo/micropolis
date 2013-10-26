@@ -33,12 +33,13 @@ class Statistics
 
     public:
 
-    float  frames_per_second;
-    float  ms_per_frame;
-    float  ms_per_render_pass;
-    float  ms_bound_n_split;
-    int    patches_per_frame;
-    uint64_t   opencl_memory;
+    float    frames_per_second;
+    float    ms_per_frame;
+    float    ms_per_render_pass;
+    float    ms_bound_n_split;
+    int      patches_per_frame;
+    uint64_t opencl_memory;
+    uint64_t opengl_memory;
     
     public:
         
@@ -54,6 +55,9 @@ class Statistics
 
     void alloc_opencl_memory(long mem_size);
     void free_opencl_memory(long mem_size);
+
+    void alloc_opengl_memory(long mem_size);
+    void free_opengl_memory(long mem_size);
 
     void update();
     void reset_timer();

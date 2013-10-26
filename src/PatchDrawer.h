@@ -34,11 +34,11 @@ namespace Reyes
         virtual void finish() = 0;
 
         virtual bool are_patches_loaded(void* patches_handle) = 0;
-        virtual void load_patches(void* patches_handle, vector<BezierPatch> patch_data) = 0;
+        virtual void load_patches(void* patches_handle, const vector<BezierPatch>& patch_data) = 0;
         
         virtual void draw_patches(void* patches_handle,
                                   const mat4& matrix,
-                                  const Projection& projection,
+                                  const Projection* projection,
                                   const vec4& color) = 0;
     };
 

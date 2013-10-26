@@ -41,6 +41,9 @@ reyes_patches_per_pass = 1024
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 64
 
+// Maximum number of times a surface patch can be split.
+max_split_depth = 20
+
 // Width of the work-group for the dicing kernel.
 dice_group_width = 8
 
@@ -88,4 +91,4 @@ cull_ribbon = 32
 
 
 
-#hash:4870159146455382746
+#hash:-642071619790388316

@@ -20,6 +20,8 @@
 #include "Image.h"
 #include "Config.h"
 
+#include "Statistics.h"
+
 namespace GL {
 
     Tex::UnitManager Tex::_unit_manager;
@@ -284,11 +286,15 @@ namespace GL {
         glTexBuffer(GL_TEXTURE_BUFFER, internal_format, _buffer);
 
         unbind();
+
+        statistics.alloc_opengl_memory(_size);
     }
 
     TextureBuffer::~TextureBuffer()
     {
         glDeleteBuffers(1, &_buffer);
+        
+        statistics.free_opengl_memory(_size);
     }
 
     void TextureBuffer::load(void* data)

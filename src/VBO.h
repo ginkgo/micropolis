@@ -59,6 +59,36 @@ namespace GL
 		void create_vao(const Shader& shader) const;
 	};
 
+
+    class IndirectVBO
+    {
+        GLuint _vbuffer;
+        GLuint _ibuffer;
+
+        GLuint _max_vertex_count;
+        
+		mutable map<GLuint, GLuint> _vaos;
+        
+    public:
+
+        IndirectVBO(size_t max_vertex_cnt);
+        ~IndirectVBO();
+
+        void load_vertices(const vector<vec3>& vertices);
+        void load_indirection(GLuint count, GLuint instance_count, GLuint first, GLuint base_instance);
+
+        GLuint get_max_vertex_count() const;
+        
+        GLuint get_vertex_buffer();
+        GLuint get_indirection_buffer();
+
+        void draw(GLenum mode, const Shader& shader) const;
+
+	private:
+
+		void create_vao(const Shader& shader) const;
+    };
+
 }
 
 #endif

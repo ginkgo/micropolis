@@ -19,13 +19,13 @@
 #ifndef WIREGLRENDERER_H
 #define WIREGLRENDERER_H
 
+#include "BoundNSplit.h"
 #include "Patch.h"
 #include "PatchDrawer.h"
-
+#include "PatchesIndex.h"
 #include "Shader.h"
-#include "VBO.h"
 #include "Texture.h"
-#include "BoundNSplit.h"
+#include "VBO.h"
 
 namespace Reyes
 {
@@ -33,16 +33,11 @@ namespace Reyes
     class WireGLRenderer : public PatchDrawer
     {
 		GL::Shader _shader;
-		GL::VBO _vbo;
+		GL::IndirectVBO _vbo;
         size_t _patch_count;
 
-        struct PatchData
-        {
-            vector<BezierPatch> patches;
-            shared_ptr<GL::TextureBuffer> patch_texture;
-        };
-        
-        map<void*, PatchData> _patch_index;
+        shared_ptr<PatchesIndex> _patch_index;
+        shared_ptr<BoundNSplit> _bound_n_split;
 
     public:
 
@@ -53,13 +48,13 @@ namespace Reyes
         virtual void finish();
         
         virtual bool are_patches_loaded(void* patches_handle);
-        virtual void load_patches(void* patches_handle, vector<BezierPatch> patch_data);
+        virtual void load_patches(void* patches_handle, const vector<BezierPatch>& patch_data);
         
         virtual void draw_patches(void* patches_handle,
                                   const mat4& matrix,
-                                  const Projection& projection,
+                                  const Projection* projection,
                                   const vec4& color);
-
+        
     private:
 
         void draw_patch(const PatchRange& range);

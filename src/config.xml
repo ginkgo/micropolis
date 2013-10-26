@@ -95,6 +95,10 @@
       Maximum size for patches before they can be sent to the dicing stage.
     </value>
 
+    <value name="max_split_depth" type="size_t" default="20">
+      Maximum number of times a surface patch can be split.
+    </value>
+
     <value name="dice_group_width" type="size_t" default="32">
       Width of the work-group for the dicing kernel.
     </value>

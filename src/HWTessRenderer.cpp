@@ -22,93 +22,13 @@
 #include "Config.h"
 #include "Statistics.h"
 
-#define P(pi,pj) patch.P[pi][pj]
-
-
-namespace
-{
-    using namespace Reyes;
-
-    void vsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
-    {
-        r0 = {r.range, r.depth + 1, r.patch_id};
-        r1 = {r.range, r.depth + 1, r.patch_id};
-        
-        float cy = (r.range.min.y + r.range.max.y) * 0.5f;
-
-        r0.range.min.y = cy;
-        r1.range.max.y = cy;
-    }
-    
-    void hsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
-    {
-        r0 = {r.range, r.depth + 1, r.patch_id};
-        r1 = {r.range, r.depth + 1, r.patch_id};
-
-        float cx = (r.range.min.x + r.range.max.x) * 0.5f;
-
-        r0.range.min.x = cx;
-        r1.range.max.x = cx;
-    }
-
-
-    vec2 project (const vec4& p)
-    {
-        return vec2(p.x, p.y) / p.w;
-    }
-    
-    void bound_patch_range (const PatchRange& r, const BezierPatch& p, const mat4& mv, const mat4& mvp,
-                       BBox& box, float& vlen, float& hlen)
-    {
-        const size_t RES = 8;
-        
-        //vec2 pp[RES][RES];
-        vec3 ps[RES][RES];
-        vec3 pos;
-     
-        box.clear();
-        
-        for (int iu = 0; iu < RES; ++iu) {
-            for (int iv = 0; iv < RES; ++iv) {
-                float u = r.range.min.x + (r.range.max.x - r.range.min.x) * iu * (1.0f / (RES-1));
-                float v = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
-
-                eval_patch(p, u, v, pos);
-
-                vec3 pt = vec3(mv * vec4(pos,1));
-                
-                box.add_point(pt);
-
-                // pp[iu][iv] = project(mvp * vec4(pos,1));
-                ps[iu][iv] = pt;
-            }
-        }
-
-        vlen = 0;
-        hlen = 0;
-
-        for (int i = 0; i < RES; ++i) {
-            float h = 0, v = 0;
-            for (int j = 0; j < RES-1; ++j) {
-                // v += glm::distance(pp[j][i], pp[j+1][i]);
-                // h += glm::distance(pp[i][j], pp[i][j+1]);
-                v += glm::distance(ps[j][i], ps[j+1][i]);
-                h += glm::distance(ps[i][j], ps[i][j+1]);
-            }
-            vlen = maximum(v, vlen);
-            hlen = maximum(h, hlen);
-        }
-    }
-
-    
-};
 
 namespace Reyes
 {
 
 	HWTessRenderer::HWTessRenderer():
 		_shader("hwtess"),
-		_vbo(2 * 4 * config.reyes_patches_per_pass()),
+		_vbo(4 * config.reyes_patches_per_pass()),
         _patch_count(0)
 	{
 
@@ -119,11 +39,9 @@ namespace Reyes
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
+        glEnable(GL_CULL_FACE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glPatchParameteri(GL_PATCH_VERTICES, 4);
-
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		_shader.bind();
     }
@@ -144,7 +62,7 @@ namespace Reyes
     }
 
 
-    void HWTessRenderer::load_patches(void* patches_handle, vector<BezierPatch> patch_data)
+    void HWTessRenderer::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
     {
         _patch_index[patches_handle].patches = patch_data;
         _patch_index[patches_handle].patch_texture.reset(new GL::TextureBuffer(patch_data.size() * sizeof(BezierPatch), GL_RGB32F));
@@ -156,11 +74,11 @@ namespace Reyes
 
     void HWTessRenderer::draw_patches(void* patches_handle,
                                       const mat4& matrix,
-                                      const Projection& projection,
+                                      const Projection* projection,
                                       const vec4& color)
     {
         mat4 proj;
-        projection.calc_projection(proj);
+        projection->calc_projection(proj);
 
         GL::Tex& patch_tex = *_patch_index[patches_handle].patch_texture;
 
@@ -171,7 +89,7 @@ namespace Reyes
         _shader.set_uniform("patches", patch_tex);
         _shader.set_uniform("dicing_rate", (int)config.reyes_patch_size());
 
-        projection.calc_projection_with_aspect_correction(proj);
+        projection->calc_projection_with_aspect_correction(proj);
 
         mat4 mvp = proj * matrix;
         mat4 mv = matrix;
@@ -200,7 +118,7 @@ namespace Reyes
             
             vec2 size;
             bool cull;
-            projection.bound(box, size, cull);
+            projection->bound(box, size, cull);
             
             if (cull) continue;
             

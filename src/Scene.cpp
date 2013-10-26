@@ -146,7 +146,7 @@ namespace Reyes {
             mat4 matrix(glm::inverse(active_cam().transform) * object->transform);
 
 
-            renderer.draw_patches(object->mesh.get(), matrix, *(active_cam().projection), object->color);
+            renderer.draw_patches(object->mesh.get(), matrix, active_cam().projection.get(), object->color);
             
         }
         

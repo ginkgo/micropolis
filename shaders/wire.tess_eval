@@ -2,6 +2,7 @@
 
 layout(isolines, equal_spacing, ccw) in;
 
+uniform bool flip;
 uniform mat4 mvp;
 uniform samplerBuffer patches;
 
@@ -24,8 +25,11 @@ vec3 eval_patch(vec2 t, int patch_id)
 
 void main()
 {
-    vec2 t = mix(mix(gl_in[0].gl_Position.xy, gl_in[1].gl_Position.xy, gl_TessCoord.x),
-                 mix(gl_in[3].gl_Position.xy, gl_in[2].gl_Position.xy, gl_TessCoord.x), gl_TessCoord.y * 2);
+    vec2 tc = gl_TessCoord.xy * vec2(1,2);
+    tc = flip ? tc.xy : tc.yx;
+
+    vec2 t = mix(mix(gl_in[0].gl_Position.xy, gl_in[1].gl_Position.xy, tc.x),
+                 mix(gl_in[3].gl_Position.xy, gl_in[2].gl_Position.xy, tc.x), tc.y);
 
     gl_Position  = mvp * vec4(eval_patch(t, int(gl_in[0].gl_Position.z)),1);
 }

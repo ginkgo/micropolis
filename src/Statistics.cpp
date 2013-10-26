@@ -23,13 +23,14 @@
     
 Statistics statistics;
 
-Statistics::Statistics() :
-    _frames(0), 
-    frames_per_second(0.0f),
-    ms_per_frame(0.0f),
-    ms_per_render_pass(0.0f),
-    patches_per_frame(0),
-    opencl_memory(0)
+Statistics::Statistics()
+    : _frames(0)
+    , frames_per_second(0.0f)
+    , ms_per_frame(0.0f)
+    , ms_per_render_pass(0.0f)
+    , patches_per_frame(0)
+    , opencl_memory(0)
+    , opengl_memory(0)
 {
     _last_fps_calculation = nanotime();
 }
@@ -78,6 +79,16 @@ void Statistics::free_opencl_memory(long mem_size)
     opencl_memory -= mem_size;
 }
 
+void Statistics::alloc_opengl_memory(long mem_size)
+{
+    opengl_memory += mem_size;
+}
+
+void Statistics::free_opengl_memory(long mem_size)
+{
+    opengl_memory -= mem_size;
+}
+
 void Statistics::update()
 {
     ++_frames;
@@ -115,7 +126,8 @@ void Statistics::print()
              << patches_per_frame  << " bounded patches" << endl
              << with_commas(quad_count) << " polygons" << endl
              << with_commas((uint64_t)quads_per_second) << " polys/s" << endl
-             << (opencl_memory >> MEBI_SHIFT) << " MiB allocated on OpenCL device" << endl;
+             << (opencl_memory >> KIBI_SHIFT) << " KiB allocated on OpenCL device" << endl
+             << (opengl_memory >> KIBI_SHIFT) << " KiB allocated in OpenGL context" << endl;
     } else {
         cout  << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl;
     }

@@ -17,3 +17,4 @@ version 4.3 core
 
 extension EXT_texture_filter_anisotropic optional
 extension ARB_cl_event optional
+extension ARB_debug_output optional
