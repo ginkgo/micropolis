@@ -34,7 +34,6 @@ namespace Reyes
     {
 		GL::Shader _shader;
 		GL::IndirectVBO _vbo;
-        size_t _patch_count;
 
         shared_ptr<PatchesIndex> _patch_index;
         shared_ptr<BoundNSplit> _bound_n_split;
@@ -54,11 +53,6 @@ namespace Reyes
                                   const mat4& matrix,
                                   const Projection* projection,
                                   const vec4& color);
-        
-    private:
-
-        void draw_patch(const PatchRange& range);
-        void flush();
     };
     
 }

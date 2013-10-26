@@ -2,13 +2,15 @@
 #ifndef HWTESSRENDERER_H
 #define HWTESSRENDERER_H
 
+
+#include "BoundNSplit.h"
 #include "Patch.h"
 #include "PatchDrawer.h"
-
+#include "PatchesIndex.h"
 #include "Shader.h"
-#include "VBO.h"
 #include "Texture.h"
-#include "BoundNSplit.h"
+#include "VBO.h"
+
 
 namespace Reyes
 {
@@ -16,16 +18,10 @@ namespace Reyes
     class HWTessRenderer : public PatchDrawer
     {
 		GL::Shader _shader;
-		GL::VBO _vbo;
-        size_t _patch_count;
-
-        struct PatchData
-        {
-            vector<BezierPatch> patches;
-            shared_ptr<GL::TextureBuffer> patch_texture;
-        };
+		GL::IndirectVBO _vbo;
         
-        map<void*, PatchData> _patch_index;
+        shared_ptr<PatchesIndex> _patch_index;
+        shared_ptr<BoundNSplit> _bound_n_split;
 
     public:
 
@@ -42,11 +38,6 @@ namespace Reyes
                                   const mat4& matrix,
                                   const Projection* projection,
                                   const vec4& color);
-
-    private:
-
-        void draw_patch(const PatchRange& range);
-        void flush();
     };
     
 }

@@ -19,6 +19,8 @@ Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchesIndex>& patch_index)
 
 void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
+    statistics.start_bound_n_split();
+    
     _active_handle = patches_handle;
     
     const vector<BezierPatch>& patches = _patch_index->get_patch_vector(_active_handle);
@@ -35,6 +37,8 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
     
     _mvp = proj * matrix;
     _mv = matrix;
+
+    statistics.stop_bound_n_split();
 }
 
 
@@ -46,6 +50,8 @@ bool Reyes::BoundNSplit::done()
 
 void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
 {
+    statistics.start_bound_n_split();
+    
     const vector<BezierPatch>& patches = _patch_index->get_patch_vector(_active_handle);
 
     assert(vbo.get_max_vertex_count() >= 4);    
@@ -106,7 +112,8 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
 
     vbo.load_vertices(vertex_data);
     vbo.load_indirection(vertex_data.size(), 1, 0, 0);
-    
+
+    statistics.stop_bound_n_split();
 }
 
 
