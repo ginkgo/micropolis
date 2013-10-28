@@ -32,6 +32,9 @@ namespace GL
 	 */
 	class Shader
 	{
+
+    protected:
+
 		bool _valid; /**< State variable for testing compilation success */
 
 		GLuint _program; /**< Shader program handle. */
@@ -41,6 +44,9 @@ namespace GL
 		typedef boost::unordered_map<string, GLint> UniformMap;
 		UniformMap _uniform_map;
 
+
+        Shader();
+        
     public:
     
 		/**
@@ -130,7 +136,7 @@ namespace GL
 			return _valid;
 		}
     
-    private:
+    protected:
 
 		void link();
 	};

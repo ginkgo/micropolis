@@ -106,6 +106,9 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
     case GL_TESS_CONTROL_SHADER: file_extension = ".tess_ctrl"; break;
     case GL_TESS_EVALUATION_SHADER: file_extension = ".tess_eval"; break;
 #endif
+#ifdef GL_VERSION_4_3
+    case GL_COMPUTE_SHADER: file_extension = ".compute"; break;
+#endif
     default:
         assert(0);
     }

@@ -24,6 +24,14 @@
 #include "Config.h"
 
 
+GL::Shader::Shader()
+    : _valid(false)
+    , _program(0)
+    , _name("")
+{
+
+}
+
 GL::Shader::Shader(const string& shader,
                    const string& material) :
     _valid(false),
