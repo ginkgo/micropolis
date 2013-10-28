@@ -89,9 +89,10 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
             vertex_data.push_back(vec3(pr.max.x, pr.max.y, pid));
             vertex_data.push_back(vec3(pr.min.x, pr.max.y, pid));
 
+            statistics.inc_patch_count();
+            
             if (vertex_data.size() + 4 >= vbo.get_max_vertex_count()) {
-                // VBO full, end this batch
-                break; 
+                break; // VBO full, end this batch
             }
 
         } else if (r.depth > config.max_split_depth()) {
@@ -147,7 +148,7 @@ void Reyes::hsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
 void Reyes::bound_patch_range (const PatchRange& r, const BezierPatch& p, const mat4& mv, const mat4& mvp,
                                BBox& box, float& vlen, float& hlen)
 {
-    const size_t RES = 3;
+    const size_t RES = 2;
         
     //vec2 pp[RES][RES];
     vec3 ps[RES][RES];

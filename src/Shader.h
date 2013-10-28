@@ -35,20 +35,11 @@ namespace GL
 		bool _valid; /**< State variable for testing compilation success */
 
 		GLuint _program; /**< Shader program handle. */
-
-		GLuint _vertex_shader; /**< Vertex shader handle. */
-		GLuint _geometry_shader; /**< Geometry shader handle */
-		GLuint _fragment_shader; /**< Fragment shader handle */
-		GLuint _tess_ctrl_shader; /**< Tessellation control shader handle */
-		GLuint _tess_eval_shader; /**< Tessellation evaluation shader handle */
-
+        
 		string _name;
 
 		typedef boost::unordered_map<string, GLint> UniformMap;
 		UniformMap _uniform_map;
-
-		typedef boost::unordered_map<string, GLuint> UniformBlockMap;
-		UniformBlockMap _uniform_block_map;
 
     public:
     
@@ -141,8 +132,9 @@ namespace GL
     
     private:
 
-		void clean_up();
+		void link();
 	};
+
 
 }
 #endif

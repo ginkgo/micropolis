@@ -57,7 +57,7 @@ subpixel_bits = 6
 clear_color = 0.025 0.05 0.2 0
 
 // Patch data input file.
-input_file = mscene/teapots.mscene
+input_file = mscene/bigguy.mscene
 
 // Create an OpenCL timing trace.
 create_trace = true
