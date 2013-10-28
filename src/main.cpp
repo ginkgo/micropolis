@@ -65,6 +65,9 @@ void mainloop(GLFWwindow* window)
 
     glm::dvec2 last_cursor_pos;
     glfwGetCursorPos(window, &(last_cursor_pos.x), &(last_cursor_pos.y));
+
+    bool in_wire_mode = false;
+    bool last_f3_state = glfwGetKey(window, GLFW_KEY_F3);
     
     while (running) {
 
@@ -72,6 +75,7 @@ void mainloop(GLFWwindow* window)
         double time_diff = now - last;
         last = now;
 
+        // Camera navigation
         vec3 translation((glfwGetKey(window, 'A') ? -1 : 0) + (glfwGetKey(window, 'D') ? 1 : 0), 0,
                          (glfwGetKey(window, 'W') ? -1 : 0) + (glfwGetKey(window, 'S') ? 1 : 0));
         translation *= time_diff * 2;
@@ -99,11 +103,18 @@ void mainloop(GLFWwindow* window)
             * glm::rotate<float>(rotation.y, 1,0,0)
             * glm::rotate<float>(zrotation, 0,0,1);
 
-        
-        statistics.start_render();
-        if (glfwGetKey(window, GLFW_KEY_F3)) {
-            scene.draw(wire_renderer);
+        // Wireframe toggle
+        bool f3_state = glfwGetKey(window, GLFW_KEY_F3);
+        if (f3_state && !last_f3_state) {
+            in_wire_mode = !in_wire_mode;
             statistics.reset_timer();
+        }
+        last_f3_state = f3_state;
+
+        // Render scene
+        statistics.start_render();
+        if (in_wire_mode) {
+            scene.draw(wire_renderer);
         } else {
             scene.draw(*renderer);
         }
