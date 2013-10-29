@@ -4,6 +4,7 @@
 #include "Projection.h"
 #include "VBO.h"
 #include "Patch.h"
+#include "Texture.h"
 
 namespace Reyes
 {
@@ -27,6 +28,8 @@ namespace Reyes
         mat4 _mv;
         mat4 _mvp;
         const Projection* _projection;
+
+        unordered_map<GLuint, shared_ptr<GL::TextureBuffer> > _texture_buffer_map;
         
     public:
 
@@ -36,6 +39,10 @@ namespace Reyes
         bool done();
 
         void do_bound_n_split(GL::IndirectVBO& vbo);
+
+    private:
+        
+        GL::TextureBuffer& get_texture(GLuint buffer_id, GLenum internal_format);       
         
     };
 

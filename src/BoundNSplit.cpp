@@ -119,6 +119,18 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
 
 
 
+GL::TextureBuffer& Reyes::BoundNSplit::get_texture(GLuint buffer_id, GLenum internal_format)
+{
+    auto it = _texture_buffer_map.find(buffer_id);
+
+    if (it != _texture_buffer_map.end()) {
+        return *(it->second);
+    } else {
+        return *(_texture_buffer_map[buffer_id] =
+                 shared_ptr<GL::TextureBuffer>(new GL::TextureBuffer(0, internal_format, buffer_id)));
+    }
+}
+
 
 /*----------------------------------------------------------------------------*/
 // Implementation of utility functions

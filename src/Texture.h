@@ -174,14 +174,17 @@ namespace GL {
 
     };
 
+    
     class TextureBuffer : public Tex
     {
         GLuint _buffer;
         GLuint _size;
 
+        bool is_owner;
+        
         public:
 
-        TextureBuffer(GLuint size, GLenum internal_format);
+        TextureBuffer(GLuint size, GLenum internal_format, GLuint buffer=0);
         ~TextureBuffer();
 
         GLuint get_buffer() const { return _buffer; };
@@ -189,6 +192,7 @@ namespace GL {
 
         void load(void* data);
     };
-
+    
+    
 }
 #endif

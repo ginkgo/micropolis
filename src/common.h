@@ -45,9 +45,11 @@ using glm::quat;
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 using std::vector;
 using std::map;
+using std::unordered_map;
 
 #include <string>
 #include <iostream>

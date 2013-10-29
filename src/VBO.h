@@ -81,7 +81,7 @@ namespace GL
         
         GLuint get_vertex_buffer();
         GLuint get_indirection_buffer();
-
+        
         void draw(GLenum mode, const Shader& shader) const;
 
 	private:
