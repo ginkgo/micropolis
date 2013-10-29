@@ -95,6 +95,18 @@ void mainloop(GLFWwindow* window)
             translation.y += (cursor_pos.y - last_cursor_pos.y) * 0.01;
         }
         last_cursor_pos = cursor_pos;
+
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) {
+            translation *= 4.0f;
+            rotation    *= 2.0f;
+            zrotation   *= 2.0f;
+        }
+        
+        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL)) {
+            translation *= 0.25f;
+            rotation    *= 0.5f;
+            zrotation   *= 0.5f;
+        }
             
         
         scene.active_cam().transform = scene.active_cam().transform

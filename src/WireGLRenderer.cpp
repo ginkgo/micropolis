@@ -43,13 +43,11 @@ void Reyes::WireGLRenderer::prepare()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPatchParameteri(GL_PATCH_VERTICES, 4);
 
-    _shader.bind();
 }
 
     
 void Reyes::WireGLRenderer::finish()
 {
-    _shader.unbind();
     glfwSwapBuffers(glfwGetCurrentContext());
     glfwPollEvents();
 }
@@ -78,22 +76,26 @@ void Reyes::WireGLRenderer::draw_patches(void* patches_handle,
     GL::Tex& patch_tex = _patch_index->get_patch_texture(patches_handle);
 
     patch_tex.bind();
-        
+
+    _shader.bind();
     _shader.set_uniform("color", color);
     _shader.set_uniform("mvp", proj * matrix);
     _shader.set_uniform("patches", patch_tex);
-
+    _shader.unbind();
+    
     _bound_n_split->init(patches_handle, matrix, projection);
 
     while (!_bound_n_split->done()) {
 
         _bound_n_split->do_bound_n_split(_vbo);
 
+        _shader.bind();
         _shader.set_uniform("flip", GL_FALSE);
         _vbo.draw(GL_PATCHES, _shader);
             
         _shader.set_uniform("flip", GL_TRUE);
         _vbo.draw(GL_PATCHES, _shader);
+        _shader.unbind();
 
     }
         
