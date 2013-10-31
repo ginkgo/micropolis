@@ -68,12 +68,19 @@ void GL::VBO::clear()
 
 void GL::VBO::vertex(const vec2& v)
 {
-	_vertices.at(_vertex_count) = vec3(v.x,v.y,0);
+	_vertices.at(_vertex_count) = vec4(v.x,v.y,0,1);
 	_vertex_count++;
 }
 
 
 void GL::VBO::vertex(const vec3& v)
+{
+	_vertices.at(_vertex_count) = vec4(v.x,v.y,v.z,1);
+	_vertex_count++;
+}
+
+
+void GL::VBO::vertex(const vec4& v)
 {
 	_vertices.at(_vertex_count) = v;
 	_vertex_count++;
@@ -81,12 +88,12 @@ void GL::VBO::vertex(const vec3& v)
 
 void GL::VBO::vertex(float x, float y)
 {
-	vertex(vec3(x,y,0));
+	vertex(vec4(x,y,0,1));
 }
 
 void GL::VBO::vertex(float x, float y, float z)
 {
-	vertex(vec3(x,y,z));
+	vertex(vec4(x,y,z,1));
 }
 
 
@@ -131,7 +138,7 @@ void GL::VBO::create_vao(const Shader& shader) const
 	GLint location = shader.get_attrib_location("vertex");
 
 	glEnableVertexAttribArray(location);
-	glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -159,49 +166,28 @@ bool GL::VBO::empty() const
 
 
 GL::IndirectVBO::IndirectVBO(size_t max_vertex_count)
-    : _vbuffer(0)
-    , _ibuffer(0)
+    : _vbuffer(max_vertex_count * sizeof(vec4))
+    , _ibuffer(4 * sizeof(GLuint))
     , _max_vertex_count(max_vertex_count)
 {
-    glGenBuffers(1, &_vbuffer);
-    glGenBuffers(1, &_ibuffer);
-
-    glBindBuffer(GL_ARRAY_BUFFER, _vbuffer);
-    glBufferData(GL_ARRAY_BUFFER, max_vertex_count * sizeof(vec3), NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _ibuffer);
-    glBufferData(GL_DRAW_INDIRECT_BUFFER, 4 * sizeof(GLuint), NULL, GL_STREAM_DRAW);
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-
-    statistics.alloc_opengl_memory(_max_vertex_count * sizeof(vec3));
-    statistics.alloc_opengl_memory(4 * sizeof(GLuint));
 }
 
 
 GL::IndirectVBO::~IndirectVBO()
 {
-	glDeleteBuffers(1, &_vbuffer);
-	glDeleteBuffers(1, &_ibuffer);
-
 	for (map<GLuint, GLuint>::iterator i = _vaos.begin(); i != _vaos.end(); ++i) {
 		GLuint vao = i->second;
 
 		glDeleteVertexArrays(1, &vao);
 	}
-    
-    statistics.free_opengl_memory(_max_vertex_count * sizeof(vec3));
-    statistics.free_opengl_memory(4 * sizeof(GLuint));
 }
 
 
-void GL::IndirectVBO::load_vertices(const vector<vec3>& vertices)
+void GL::IndirectVBO::load_vertices(const vector<vec4>& vertices)
 {
-    assert(vertices.size() * sizeof(vec3) <= _size);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, _vbuffer);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(vec3), vertices.data());
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    _vbuffer.bind(GL_ARRAY_BUFFER);
+    _vbuffer.send_subdata((void*)vertices.data(), 0, vertices.size() * sizeof(vec4));
+    _vbuffer.unbind();
 }
 
 
@@ -215,9 +201,9 @@ void GL::IndirectVBO::load_indirection(GLuint count, GLuint instance_count, GLui
         GLuint base_instance;
     } indirection = {count, instance_count, first, base_instance};
 
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _ibuffer);
-    glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, sizeof(indirection), &indirection);
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+    _ibuffer.bind(GL_DRAW_INDIRECT_BUFFER);
+    _ibuffer.send_subdata(&indirection, 0, sizeof(indirection));
+    _ibuffer.unbind();
 }
 
 
@@ -227,13 +213,13 @@ GLuint GL::IndirectVBO::get_max_vertex_count() const
 }
 
 
-GLuint GL::IndirectVBO::get_vertex_buffer()
+GL::Buffer& GL::IndirectVBO::get_vertex_buffer()
 {
     return _vbuffer;
 }
 
 
-GLuint GL::IndirectVBO::get_indirection_buffer()
+GL::Buffer& GL::IndirectVBO::get_indirection_buffer()
 {
     return _ibuffer;
 }
@@ -251,9 +237,9 @@ void GL::IndirectVBO::draw(GLenum mode, const Shader& shader) const
 
 	glBindVertexArray(vao);
 
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, _ibuffer);
+    _ibuffer.bind(GL_DRAW_INDIRECT_BUFFER);
 	glDrawArraysIndirect(mode, 0);
-    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+    _ibuffer.unbind();
 
 	glBindVertexArray(0);
 }
@@ -267,15 +253,15 @@ void GL::IndirectVBO::create_vao(const Shader& shader) const
 	glGenVertexArrays(1, &vao);
 
 	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, _vbuffer);
+    _vbuffer.bind(GL_ARRAY_BUFFER);
 	
 	GLint location = shader.get_attrib_location("vertex");
 
 	glEnableVertexAttribArray(location);
-	glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 
-    
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    _vbuffer.unbind();
 	glBindVertexArray(0);
 
 

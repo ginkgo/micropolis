@@ -1,0 +1,31 @@
+#version 430
+
+layout (local_size_x = 64) in;
+
+uniform int patch_count;
+
+buffer stack_min
+{
+    vec2 smin[];
+};
+
+buffer stack_max
+{
+    vec2 smax[];
+};
+
+buffer stack_pid
+{
+    uint spid[];
+};
+
+
+void main (void)
+{
+    uint pid = gl_GlobalInvocationID.x;
+    if (pid < patch_count) {
+        smin[pid] = vec2(0,0);
+        smax[pid] = vec2(1,1);
+        spid[pid] = pid;                
+    }
+}

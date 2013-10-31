@@ -45,6 +45,8 @@ void Reyes::PatchesIndex::load_patches(void* handle, const vector<BezierPatch>& 
     
     PatchData& record = _index[handle];
 
+    record.patch_count = patch_data.size();
+    
     if (_retain_vector) {
         record.patches = patch_data;
     }
@@ -79,4 +81,10 @@ GL::TextureBuffer& Reyes::PatchesIndex::get_patch_texture(void* handle)
     assert(_load_as_texture);
 
     return *(_index[handle].patch_texture);            
+}
+
+
+size_t Reyes::PatchesIndex::get_patch_count(void* handle)
+{
+    return _index[handle].patch_count;
 }

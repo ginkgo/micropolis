@@ -27,6 +27,9 @@
 
 namespace GL
 {
+
+    class Buffer;
+    
 	/**
 	 * Represents a compiled GLSL shader.
 	 */
@@ -103,10 +106,13 @@ namespace GL
 		{
 			set_uniform(uniform_name, (Tex&) texture);
 		}
+        
 
 		bool has_uniform(const string& uniform_name) const {
 			return (_uniform_map.count(uniform_name) > 0);
 		}
+
+        void set_buffer(const string& buffer_name, const GL::Buffer& buffer);
 
 		/**
 		 * Return the location of an attrib.

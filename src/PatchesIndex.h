@@ -12,6 +12,7 @@ namespace Reyes
 
         struct PatchData
         {
+            size_t patch_count;
             vector<BezierPatch> patches;
             shared_ptr<GL::TextureBuffer> patch_texture;
         };
@@ -38,6 +39,7 @@ namespace Reyes
         
         const vector<BezierPatch>& get_patch_vector(void* handle);
         GL::TextureBuffer& get_patch_texture(void* handle);
+        size_t get_patch_count(void* handle);
 
         
     };

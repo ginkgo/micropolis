@@ -21,6 +21,8 @@
 
 #include "common.h"
 
+#include "Buffer.h"
+
 namespace GL
 {
 	class Shader;
@@ -34,7 +36,7 @@ namespace GL
 		GLuint _size;
 		mutable map<GLuint, GLuint> _vaos;
 
-		vector<vec3> _vertices;
+		vector<vec4> _vertices;
 		size_t _vertex_count;
 
 	public:
@@ -45,6 +47,7 @@ namespace GL
 		void clear();
 		void vertex(const vec2& v);
 		void vertex(const vec3& v);
+		void vertex(const vec4& v);
 		void vertex(float x, float y);
 		void vertex(float x, float y, float z);
 		void send_data(bool stream = true);
@@ -62,8 +65,8 @@ namespace GL
 
     class IndirectVBO
     {
-        GLuint _vbuffer;
-        GLuint _ibuffer;
+        Buffer _vbuffer;
+        Buffer _ibuffer;
 
         GLuint _max_vertex_count;
         
@@ -74,13 +77,13 @@ namespace GL
         IndirectVBO(size_t max_vertex_cnt);
         ~IndirectVBO();
 
-        void load_vertices(const vector<vec3>& vertices);
+        void load_vertices(const vector<vec4>& vertices);
         void load_indirection(GLuint count, GLuint instance_count, GLuint first, GLuint base_instance);
 
         GLuint get_max_vertex_count() const;
         
-        GLuint get_vertex_buffer();
-        GLuint get_indirection_buffer();
+        Buffer& get_vertex_buffer();
+        Buffer& get_indirection_buffer();
         
         void draw(GLenum mode, const Shader& shader) const;
 

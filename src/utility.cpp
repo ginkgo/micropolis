@@ -194,9 +194,12 @@ GLvoid APIENTRY opengl_debug_callback(GLenum source,
         cerr << "\tID: " << id << endl;
         cerr << "\tMessage: " << message << endl;
         cerr << endl;
+    } else if (severity == GL_DEBUG_SEVERITY_HIGH_ARB) {
+        exit(1);
     }
     
     ++call_count;
+    
 }
 
 

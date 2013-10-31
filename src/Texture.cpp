@@ -269,20 +269,17 @@ void GL::Texture::generate_mipmaps()
     }    
 }
 
-GL::TextureBuffer::TextureBuffer(GLuint size, GLenum internal_format, GLuint buffer)
+GL::TextureBuffer::TextureBuffer(GLuint size, GLenum internal_format)
     : Tex()
-    , _buffer(buffer)
+    , _buffer(0)
     , _size(size)
-    , is_owner(buffer==0)
 {
-    if (is_owner) {
-        glGenBuffers(1, &_buffer);
+    glGenBuffers(1, &_buffer);
 
-        glBindBuffer(GL_TEXTURE_BUFFER, _buffer);
-        glBufferData(GL_TEXTURE_BUFFER, size, NULL, GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_TEXTURE_BUFFER, 0);
-        statistics.alloc_opengl_memory(_size);
-    }
+    glBindBuffer(GL_TEXTURE_BUFFER, _buffer);
+    glBufferData(GL_TEXTURE_BUFFER, size, NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_TEXTURE_BUFFER, 0);
+    statistics.alloc_opengl_memory(_size);
 
     _target = GL_TEXTURE_BUFFER;
 
@@ -296,10 +293,8 @@ GL::TextureBuffer::TextureBuffer(GLuint size, GLenum internal_format, GLuint buf
 
 GL::TextureBuffer::~TextureBuffer()
 {
-    if (is_owner) {
-        glDeleteBuffers(1, &_buffer);        
-        statistics.free_opengl_memory(_size);
-    }
+    glDeleteBuffers(1, &_buffer);        
+    statistics.free_opengl_memory(_size);
 }
 
 void GL::TextureBuffer::load(void* data)

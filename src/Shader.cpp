@@ -20,8 +20,10 @@
 
 #include "glutils.h"
 #include "ShaderObject.h"
+#include "Buffer.h"
 
 #include "Config.h"
+
 
 
 GL::Shader::Shader()
@@ -106,18 +108,31 @@ void GL::Shader::link()
 
     _valid = true;
 
+    char buffer[1000];
+    
     // Query active uniforms    
     GLint active_uniforms;
     
     glGetProgramiv(_program, GL_ACTIVE_UNIFORMS, &active_uniforms);
 
-    char buffer[1000];
 
     for (GLint uniform = 0; uniform < active_uniforms; ++uniform) {
-        glGetActiveUniformName(_program, uniform, 1000, NULL, buffer);
+        glGetActiveUniformName(_program, uniform, sizeof(buffer), NULL, buffer);
         string uniform_name(buffer);
         _uniform_map[uniform_name] = glGetUniformLocation(_program, buffer);
     }
+
+    // // Query active shader storage buffers blocks
+    // GLint active_buffer_blocks;
+    // glGetProgramInterfaceiv(_program, GL_SHADER_STORAGE_BLOCK, GL_ACTIVE_RESOURCES, &active_buffer_blocks);
+    
+    // cout << active_buffer_blocks << " active buffer blocks in \"" << _name << "\"" << endl;
+    // for (GLuint block_index = 0; block_index < active_buffer_blocks; ++block_index) {
+    //     glGetProgramResourceName(_program, GL_SHADER_STORAGE_BLOCK, block_index, sizeof(buffer), NULL, buffer);
+    //     cout << buffer << endl;
+    // }
+        
+
 }
 
 GLint GL::Shader::get_attrib_count() const
@@ -139,5 +154,15 @@ string GL::Shader::get_attrib_name(GLint index) const
     glGetActiveAttrib(_program, index, 1000, NULL, &attrib_size, &attrib_type, buffer);
 
     return string(buffer);
+}
+
+
+void GL::Shader::set_buffer(const string& buffer_name, const GL::Buffer& buffer)
+{
+    GLuint storage_block = glGetProgramResourceIndex(_program, GL_SHADER_STORAGE_BLOCK, buffer_name.c_str());
+
+    if (storage_block == GL_INVALID_INDEX) return;
+    
+    glShaderStorageBlockBinding(_program, storage_block, buffer.get_target_index());
 }
 

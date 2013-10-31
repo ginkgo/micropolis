@@ -19,9 +19,9 @@
 
 #version 430
 
-in vec3 vertex;
+in vec4 vertex;
 
 void main()
 {
-    gl_Position = vec4(vertex, 1);
+    gl_Position = vertex;
 }

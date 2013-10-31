@@ -5,6 +5,7 @@
 #include "VBO.h"
 #include "Patch.h"
 #include "Texture.h"
+#include "ComputeShader.h"
 
 namespace Reyes
 {
@@ -23,13 +24,19 @@ namespace Reyes
         shared_ptr<PatchesIndex> _patch_index;
 
         void* _active_handle;
-        vector<PatchRange> _stack;
 
         mat4 _mv;
         mat4 _mvp;
         const Projection* _projection;
 
-        unordered_map<GLuint, shared_ptr<GL::TextureBuffer> > _texture_buffer_map;
+        GL::Buffer _stack_min;
+        GL::Buffer _stack_max;
+        GL::Buffer _stack_pid;
+
+        size_t _stack_height;
+        
+        GL::ComputeShader _init_ranges;
+        GL::ComputeShader _create_geometry_for_ranges;
         
     public:
 
@@ -39,10 +46,6 @@ namespace Reyes
         bool done();
 
         void do_bound_n_split(GL::IndirectVBO& vbo);
-
-    private:
-        
-        GL::TextureBuffer& get_texture(GLuint buffer_id, GLenum internal_format);       
         
     };
 

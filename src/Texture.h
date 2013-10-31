@@ -179,12 +179,10 @@ namespace GL {
     {
         GLuint _buffer;
         GLuint _size;
-
-        bool is_owner;
         
         public:
 
-        TextureBuffer(GLuint size, GLenum internal_format, GLuint buffer=0);
+        TextureBuffer(GLuint size, GLenum internal_format);
         ~TextureBuffer();
 
         GLuint get_buffer() const { return _buffer; };
