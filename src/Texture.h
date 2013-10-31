@@ -18,14 +18,16 @@
 
 /** @file Texture.h */
 
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#pragma once
 
 #include "common.h"
+
+#include "Buffer.h"
 
 class Image;
 
 namespace GL {
+    
     class Tex : boost::noncopyable
     {
         protected: 
@@ -177,20 +179,18 @@ namespace GL {
     
     class TextureBuffer : public Tex
     {
-        GLuint _buffer;
-        GLuint _size;
+        Buffer _buffer;
         
         public:
 
         TextureBuffer(GLuint size, GLenum internal_format);
         ~TextureBuffer();
 
-        GLuint get_buffer() const { return _buffer; };
-        GLuint get_size() const { return _size; };
+        const Buffer& get_buffer() const { return _buffer; };
+        size_t get_size() const  { return _buffer.get_size(); };
 
         void load(void* data);
     };
     
     
 }
-#endif

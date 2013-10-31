@@ -24,8 +24,8 @@ void main (void)
 {
     uint pid = gl_GlobalInvocationID.x;
     if (pid < patch_count) {
-        smin[pid] = vec2(0,0);
-        smax[pid] = vec2(1,1);
+        smin[pid] = vec2(0.0,0.0);
+        smax[pid] = vec2(1.0,1.0);
         spid[pid] = pid;                
     }
 }

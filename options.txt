@@ -32,7 +32,7 @@ verbose = true
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 32
+reyes_patch_size = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.

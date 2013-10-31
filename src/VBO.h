@@ -32,8 +32,7 @@ namespace GL
 	 */
 	class VBO
 	{
-		GLuint _buffer;
-		GLuint _size;
+		Buffer _buffer;
 		mutable map<GLuint, GLuint> _vaos;
 
 		vector<vec4> _vertices;

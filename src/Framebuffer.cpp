@@ -78,7 +78,7 @@ namespace Reyes
 		_glfw_window(window)
     {
         if (_shared) {
-            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_buffer());
+            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_buffer().get_id());
         } else {
             _cl_buffer = new CL::Buffer(device, _tex_buffer.get_size(), CL_MEM_READ_WRITE);
             _local = malloc(_tex_buffer.get_size());
