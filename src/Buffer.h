@@ -1,12 +1,12 @@
 #pragma once
 
 #include "common.h"
-
+#include <initializer_list>
 
 namespace GL
 {
 
-    class Buffer
+    class Buffer : public noncopyable
     {
         GLuint _buffer;
         size_t _size;
@@ -18,6 +18,9 @@ namespace GL
 
         Buffer(size_t size);
         ~Buffer();
+
+        Buffer(Buffer&& other);
+        Buffer& operator=(Buffer&& other);
 
         GLuint get_id() const;
         size_t get_size() const;
@@ -31,7 +34,26 @@ namespace GL
         
         void send_data(void* data, size_t size);
         void send_subdata(void* data, size_t offset, size_t size);
+
+        void read_data(void* data, size_t size);
+
         
+        template<typename ... Types>
+        static void bind_all(GLenum target, GLuint start, Buffer& buffer, Types&& ... rest)
+        {
+            buffer.bind(target, start);
+            bind_all(target, start+1, rest...);
+        }
+        
+        template<typename ... Types>
+        static void unbind_all(Buffer& buffer, Types&& ... rest)
+        {
+            buffer.unbind();
+            unbind_all(rest...);
+        }
+        
+        static void bind_all(GLenum target, GLuint start) {};
+        static void unbind_all() {};        
     };
 
 }

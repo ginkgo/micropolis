@@ -44,6 +44,8 @@ uint64_t nanotime();
 
 string with_commas(long n);
 
+string memory_size(size_t size);
+
 /**
  * Test if a file exists on the filesystem.
  * @param filename Name of the file

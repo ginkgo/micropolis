@@ -8,15 +8,31 @@
 
 using namespace Reyes;
 
+#define BATCH_SIZE config.reyes_patches_per_pass()
 
 Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchesIndex>& patch_index)
     : _patch_index(patch_index)
     , _active_handle(nullptr)
-    , _stack_min(config.reyes_patches_per_pass() * config.max_split_depth() * sizeof(vec2))
-    , _stack_max(config.reyes_patches_per_pass() * config.max_split_depth() * sizeof(vec2))
-    , _stack_pid(config.reyes_patches_per_pass() * config.max_split_depth() * sizeof(GLuint))
+
+    , _prefix_sum(BATCH_SIZE)
+      
+    , _stack_min(BATCH_SIZE * config.max_split_depth() * sizeof(vec2))
+    , _stack_max(BATCH_SIZE * config.max_split_depth() * sizeof(vec2))
+    , _stack_pid(BATCH_SIZE * config.max_split_depth() * sizeof(GLuint))
+      
+    , _flag_pad(BATCH_SIZE * sizeof(uvec2))
+    , _split_pad_pid(BATCH_SIZE * sizeof(uint))
+    , _split_pad1_min(BATCH_SIZE * sizeof(vec2))
+    , _split_pad1_max(BATCH_SIZE * sizeof(vec2))
+    , _split_pad2_min(BATCH_SIZE * sizeof(vec2))
+    , _split_pad2_max(BATCH_SIZE * sizeof(vec2))
+    
+    , _summed_flags(BATCH_SIZE * sizeof(uvec2))
+    , _flag_total(sizeof(uvec2))
+    
     , _stack_height(0)
     , _init_ranges("init_ranges")
+    , _bound_n_split("bound_n_split")
     , _create_geometry_for_ranges("create_geometry_for_ranges")
 {
 }
@@ -30,9 +46,8 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
 
     _init_ranges.bind();
 
-    _stack_min.bind(GL_SHADER_STORAGE_BUFFER, 0);
-    _stack_max.bind(GL_SHADER_STORAGE_BUFFER, 1);
-    _stack_pid.bind(GL_SHADER_STORAGE_BUFFER, 2);
+    GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
+                         _stack_min, _stack_max, _stack_pid);
 
     _init_ranges.set_uniform("patch_count", (GLint)patch_count);
     _init_ranges.set_buffer("stack_min", _stack_min);
@@ -41,13 +56,23 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
     
     _init_ranges.dispatch((patch_count-1)/64 + 1);
 
-    _stack_min.unbind();
-    _stack_max.unbind();
-    _stack_pid.unbind();
+    GL::Buffer::unbind_all(_stack_min, _stack_max, _stack_pid);
     
     _init_ranges.unbind();
 
     _stack_height = patch_count;
+    
+    mat4 proj;
+    projection->calc_projection_with_aspect_correction(proj);
+    
+    _mvp = proj * matrix;
+
+    _framebuffer_matrix = mat3(glm::scale(vec3(config.window_size().x, config.window_size().y, 1))
+                               * glm::translate(vec3(0.5f,0.5f,0.5f))
+                               * glm::scale(vec3(0.5f,0.5f,0.5f)));
+    _screen_min = vec3(0,0,-1);
+    _screen_max = vec3(config.window_size().x, config.window_size().y, 1);
+
 }
 
 
@@ -61,13 +86,54 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
 {
     size_t batch_size = std::min(_stack_height, config.reyes_patches_per_pass());
     size_t batch_offset = _stack_height - batch_size;
+
+    GL::Tex& patches_texture = _patch_index->get_patch_texture(_active_handle);
+
+    // Apply Bound & Split
+    _bound_n_split.bind();
+
+
+    patches_texture.bind();
+    GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
+                         _stack_min, _stack_max, _stack_pid,
+                         _flag_pad, _split_pad_pid, _split_pad1_min, _split_pad1_max, _split_pad2_min, _split_pad2_max);
+
+
+    _bound_n_split.set_uniform("batch_size", (GLuint)batch_size);
+    _bound_n_split.set_uniform("batch_offset", (GLuint)batch_offset);
+    _bound_n_split.set_uniform("mvp", _mvp);
+    _bound_n_split.set_uniform("framebuffer_matrix", _framebuffer_matrix);
+    _bound_n_split.set_uniform("screen_min", _screen_min);
+    _bound_n_split.set_uniform("screen_max", _screen_max);
+    _bound_n_split.set_uniform("split_limit", config.bound_n_split_limit());
+    _bound_n_split.set_uniform("patches", patches_texture);
     
+    _bound_n_split.set_buffer("stack_min", _stack_min);
+    _bound_n_split.set_buffer("stack_max", _stack_max);
+    _bound_n_split.set_buffer("stack_pid", _stack_pid);
+    _bound_n_split.set_buffer("flag_pad", _flag_pad);
+    _bound_n_split.set_buffer("split_pad_pid", _split_pad_pid);
+    _bound_n_split.set_buffer("split_pad1_min", _split_pad1_min);
+    _bound_n_split.set_buffer("split_pad1_max", _split_pad1_max);
+    _bound_n_split.set_buffer("split_pad2_min", _split_pad2_min);
+    _bound_n_split.set_buffer("split_pad2_max", _split_pad2_max);
+    
+    _bound_n_split.dispatch((batch_size-1)/64 + 1);
+    
+    patches_texture.unbind();
+    
+    GL::Buffer::unbind_all(_stack_min, _stack_max, _stack_pid,
+                           _flag_pad, _split_pad_pid, _split_pad1_min, _split_pad1_max, _split_pad2_min, _split_pad2_max);    
+
+    // Apply Prefix Sum
+    _prefix_sum.apply(batch_size, _flag_pad, _summed_flags, _flag_total);
+    
+    // Create geometry
     _create_geometry_for_ranges.bind();
 
-    _stack_min.bind(GL_SHADER_STORAGE_BUFFER, 0);
-    _stack_max.bind(GL_SHADER_STORAGE_BUFFER, 1);
-    _stack_pid.bind(GL_SHADER_STORAGE_BUFFER, 2);
-    vbo.get_vertex_buffer().bind(GL_SHADER_STORAGE_BUFFER, 3);
+    GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
+                         _stack_min, _stack_max, _stack_pid,
+                         _flag_pad, _summed_flags, vbo.get_vertex_buffer());
 
     _create_geometry_for_ranges.set_uniform("batch_size", (int)batch_size);
     _create_geometry_for_ranges.set_uniform("batch_offset", (int)batch_offset);
@@ -78,14 +144,12 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
 
     _create_geometry_for_ranges.dispatch(1, (batch_size-1)/16 +1);
     
-    _stack_min.unbind();
-    _stack_max.unbind();
-    _stack_pid.unbind();
-    vbo.get_vertex_buffer().unbind();
+    GL::Buffer::unbind_all(_stack_min, _stack_max, _stack_pid,
+                           _flag_pad, _summed_flags, vbo.get_vertex_buffer());
 
     _create_geometry_for_ranges.unbind();
 
-    vbo.load_indirection(batch_size * 4, 1, 0, 0);
+    vbo.load_indirection(0, 1, 0, 0);
 
     _stack_height -= batch_size;
 

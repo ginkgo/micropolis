@@ -59,6 +59,34 @@ string with_commas(long n)
     return reverse(ss.str());
 }
 
+string memory_size(size_t size)
+{
+    const vector<string> units = {"B ", "KiB ", "MiB ", "GiB ", "Tib ", "PiB ", "EiB ", "ZiB "};
+    vector<size_t> values;
+
+    if (size == 0) return "0B ";
+    
+    while (size > 0) {
+        values.push_back(size % 1024);
+        size = size / 1024;
+    }
+    
+    std::stringstream ss;
+
+    // for (int i = values.size()-1; i >= 0; --i) {
+    //     if (values[i] > 0) {
+    //         ss << values[i] << units[i];
+    //     }
+    // }
+
+    size_t s = values.size();
+    
+    ss << values[s-1]
+       << units[s-1];
+
+    return ss.str();
+}
+
 string reverse (const string& s)
 {
     return string(s.rbegin(), s.rend());
@@ -150,7 +178,7 @@ GLvoid APIENTRY opengl_debug_callback(GLenum source,
     case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
         source_name = "Window System"; break;
     case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
-        source_name = "Shader Compiler"; break;
+        return; // The shader compiler log gives better feedback
     case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
         source_name = "External debuggers/middleware"; break;
     case GL_DEBUG_SOURCE_APPLICATION_ARB:

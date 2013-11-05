@@ -24,7 +24,7 @@
 
 #include "Config.h"
 
-
+#include <boost/format.hpp>
 
 GL::Shader::Shader()
     : _valid(false)
@@ -41,6 +41,10 @@ GL::Shader::Shader(const string& shader,
     _name(shader)
 {
 
+    if (config.verbosity_level() > 0) {
+        cout << boost::format("Compiling shader \"%1%\"...") % _name << endl;
+    }
+    
     // Load an compile shaders
     ShaderObject vertex_shader(shader, material, GL_VERTEX_SHADER);
     ShaderObject fragment_shader(shader, material, GL_FRAGMENT_SHADER);
@@ -93,7 +97,7 @@ void GL::Shader::link()
 
     glGetProgramiv(_program, GL_LINK_STATUS, &status);
     
-    if (status == GL_FALSE || config.verbose()) {
+    if (status == GL_FALSE || config.verbosity_level() > 0) {
         print_program_log(_program, _name);
     }
 
@@ -161,7 +165,13 @@ void GL::Shader::set_buffer(const string& buffer_name, const GL::Buffer& buffer)
 {
     GLuint storage_block = glGetProgramResourceIndex(_program, GL_SHADER_STORAGE_BLOCK, buffer_name.c_str());
 
-    if (storage_block == GL_INVALID_INDEX) return;
+    assert(buffer.get_target_index() >= 0);
+    if (storage_block == GL_INVALID_INDEX) {
+        if (config.verbosity_level() > 1) {
+            cout << "Couldn't find index for shader storage buffer \"" << buffer_name << "\"" << endl;
+        }
+        return;
+    }
     
     glShaderStorageBlockBinding(_program, storage_block, buffer.get_target_index());
 }

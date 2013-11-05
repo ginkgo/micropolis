@@ -74,8 +74,10 @@
       OpenCL device ID.
     </value>
 
-    <value name="verbose" type="bool" default="false">
-      Print more information.
+    <value name="verbosity_level" type="int" default="1">
+      0...(Almost) no output
+      1...Regular performance information and warnings posted
+      2...Lots of information posted, can be detrimental to render performance
     </value>
 
     <value name="disable_buffer_sharing" type="bool" default="true">
@@ -91,7 +93,7 @@
       single rendering pass together.
     </value>
 
-    <value name="bound_n_split_limit" type="size_t" default="100">
+    <value name="bound_n_split_limit" type="float" default="100">
       Maximum size for patches before they can be sent to the dicing stage.
     </value>
 

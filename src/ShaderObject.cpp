@@ -5,7 +5,7 @@
 
 #include <fstream>
 #include <boost/regex.hpp>
-
+#include <boost/format.hpp>
 
 
 GL::ShaderObject::ShaderObject(const string& shader, const string& material, GLenum shader_type)
@@ -55,7 +55,7 @@ bool GL::ShaderObject::load_shader_source(const string& shader,
 
 
     string shaderfile   = config.shader_dir() +"/"+shader  +file_extension;
-
+    
     std::ifstream is(shaderfile.c_str());
 
     if (!is) {
@@ -117,6 +117,10 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
         return 0;
     }
 
+    if (config.verbosity_level() > 0) {
+        cout << boost::format("\t %1%/%2%%3%") % config.shader_dir() % shader % file_extension << endl;
+    }
+    
     string source = ss.str();
 
     GLuint shader_handle = glCreateShader(type);
@@ -132,7 +136,7 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
 
     glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &status);
     
-    if (config.verbose() || status == GL_FALSE) {
+    if (config.verbosity_level() > 0 || status == GL_FALSE) {
         print_shader_log(shader_handle, config.shader_dir() +"/"+shader+file_extension);
     }
 

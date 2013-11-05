@@ -28,8 +28,46 @@
 
 #include "Statistics.h"
 
-//#include "TessellationGLRenderer.h"
+#include "PrefixSum.h"
+#include "Buffer.h"
 
+#include <boost/format.hpp>
+
+void mainloop(GLFWwindow* window);
+bool test_prefix_sum(const int N, bool print);
+void handle_arguments(int argc, char** argv);
+GLFWwindow* init_opengl(ivec2 window_size);
+
+int main(int argc, char** argv)
+{
+    handle_arguments(argc, argv);
+
+    ivec2 size = config.window_size();
+
+	GLFWwindow* window = init_opengl(size);
+	
+    if (window == NULL) {
+        return 1;
+    }
+    
+    cout << endl;
+    cout << "MICROPOLIS - A micropolygon rasterizer" << " (c) Thomas Weber 2012" << endl;
+    cout << endl;
+
+    glfwSetWindowTitle(window, config.window_title().c_str());
+
+    try {
+
+        mainloop(window);
+
+    } catch (CL::Exception& e) {
+
+        cerr << e.file() << ":" << e.line_no() << ": error: " <<  e.msg() << endl;
+
+    }
+
+    return 0;
+}
 
 void mainloop(GLFWwindow* window)
 {
@@ -51,6 +89,7 @@ void mainloop(GLFWwindow* window)
     
     switch (config.renderer_type()) {
     case Config::OPENCL:
+        // TODO
     case Config::GLTESS:
         renderer.reset(new Reyes::HWTessRenderer());
         break;
@@ -65,7 +104,7 @@ void mainloop(GLFWwindow* window)
 
     glm::dvec2 last_cursor_pos;
     glfwGetCursorPos(window, &(last_cursor_pos.x), &(last_cursor_pos.y));
-
+    
     bool in_wire_mode = false;
     bool last_f3_state = glfwGetKey(window, GLFW_KEY_F3);
     
@@ -104,16 +143,15 @@ void mainloop(GLFWwindow* window)
         
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL)) {
             translation *= 0.25f;
-            rotation    *= 0.5f;
-            zrotation   *= 0.5f;
-        }
-            
+            rotation    *= 0.50f;
+            zrotation   *= 0.50f;
+        }            
         
         scene.active_cam().transform = scene.active_cam().transform
             * glm::translate<float>(translation.x, translation.y, translation.z)
             * glm::rotate<float>(rotation.x, 0,1,0)
             * glm::rotate<float>(rotation.y, 1,0,0)
-            * glm::rotate<float>(zrotation, 0,0,1);
+            * glm::rotate<float>( zrotation, 0,0,1);
 
         // Wireframe toggle
         bool f3_state = glfwGetKey(window, GLFW_KEY_F3);
@@ -142,6 +180,75 @@ void mainloop(GLFWwindow* window)
     }
 }
 
+
+
+
+bool test_prefix_sum(const int N, bool print)
+{
+    bool retval = true;
+    
+    GL::PrefixSum prefix_sum(N);
+
+    GL::Buffer i_buffer(N * sizeof(ivec2));
+    GL::Buffer o_buffer(N * sizeof(ivec2));
+    GL::Buffer t_buffer(sizeof(ivec2));
+
+    vector<ivec2> i_vec(N);
+    vector<ivec2> o_vec(N);
+
+    srand(43);
+    if (print) cout << "INPUT: "; 
+    for (size_t i = 0; i < N; ++i) {
+        i_vec[i] = ivec2(1, rand()%8+1);
+        o_vec[i] = ivec2(0, 0);
+
+        if (print) cout << boost::format("(%1%, %2%) ") % i_vec[i].x % i_vec[i].y;
+    }
+    if (print) cout << endl;
+
+    i_buffer.bind(GL_ARRAY_BUFFER);
+    i_buffer.send_subdata(i_vec.data(), 0, N * sizeof(ivec2));
+    i_buffer.unbind();
+
+    o_buffer.bind(GL_ARRAY_BUFFER);
+    o_buffer.send_subdata(o_vec.data(), 0, N * sizeof(ivec2));
+    o_buffer.unbind();
+
+    prefix_sum.apply(N, i_buffer, o_buffer, t_buffer);
+
+    ivec2 total;
+
+    o_buffer.bind(GL_ARRAY_BUFFER);
+    o_buffer.read_data(o_vec.data(), N * sizeof(ivec2));
+    o_buffer.unbind();
+    
+    t_buffer.bind(GL_ARRAY_BUFFER);
+    t_buffer.read_data(&total, sizeof(ivec2));
+    t_buffer.unbind();
+    
+    ivec2 sum(0);
+    if (print) cout << "OUTPUT: "; 
+    for (size_t i = 0; i < N; ++i) {
+        sum += i_vec[i];
+
+        if (sum != o_vec[i]) {
+            retval = false;
+        }
+        
+        if (print) cout << boost::format("(%1%, %2%) ") % o_vec[i].x % o_vec[i].y;
+    }
+    if (print) cout << endl;
+
+    if (sum != total) {
+        retval = false;
+    }
+
+    if (print) cout << boost::format("TOTAL: (%1%, %2%)") % total.x % total.y << endl;
+    
+    return retval;
+}
+
+
 void handle_arguments(int argc, char** argv)
 {
     bool needs_resave;
@@ -151,7 +258,7 @@ void handle_arguments(int argc, char** argv)
     }
 
     if (needs_resave) {
-        if (config.verbose()) {
+        if (config.verbosity_level() > 0) {
             cout << "Config file out of date. Resaving." << endl;
         }
 
@@ -165,38 +272,6 @@ void handle_arguments(int argc, char** argv)
     
 }
 
-GLFWwindow* init_opengl(ivec2 window_size);
-
-int main(int argc, char** argv)
-{
-    handle_arguments(argc, argv);
-
-    ivec2 size = config.window_size();
-
-	GLFWwindow* window = init_opengl(size);
-	
-    if (window == NULL) {
-        return 1;
-    }
-    
-    cout << endl;
-    cout << "MICROPOLIS - A micropolygon rasterizer" << " (c) Thomas Weber 2012" << endl;
-    cout << endl;
-
-    glfwSetWindowTitle(window, config.window_title().c_str());
-
-    try {
-
-        mainloop(window);
-
-    } catch (CL::Exception& e) {
-
-        cerr << e.file() << ":" << e.line_no() << ": error: " <<  e.msg() << endl;
-
-    }
-
-    return 0;
-}
 
 /* 
  * Helper function that properly initializes the GLFW window before opening.

@@ -8,8 +8,8 @@ env['LINK'] = 'g++'
 env['CC'] = 'gcc'
 env['CXX'] = 'g++'
 env['LIBS'] = ['GL', 'glfw', 'boost_regex', 'IL', 'OpenCL', 'Xrandr', 'rt', 'capnp', 'kj']
-#env['CCFLAGS'] = ['-O0', '-ggdb']
-env['CCFLAGS'] = ['-O3', '-msse4']
+env['CCFLAGS'] = ['-O0', '-ggdb']
+#env['CCFLAGS'] = ['-O3', '-msse4']
 env['CXXFLAGS'] = ['-std=c++11']
 env['CFLAGS'] = ['-std=c99']
 env['LINKFLAGS'] = []

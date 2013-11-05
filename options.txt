@@ -25,42 +25,44 @@ platform_id = 0
 // OpenCL device ID.
 device_id = 0
 
-// Print more information.
-verbose = true
+// 0...(Almost) no output
+// 1...Regular performance information and warnings posted
+// 2...Lots of information posted, can be detrimental to render performance
+verbosity_level = 1
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
-disable_buffer_sharing = false
+disable_buffer_sharing = true
 
 // Size used for bounding and dicing.
-reyes_patch_size = 16
+reyes_patch_size = 128
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 1024
+reyes_patches_per_pass = 64
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 64
+bound_n_split_limit = 100
 
 // Maximum number of times a surface patch can be split.
 max_split_depth = 20
 
 // Width of the work-group for the dicing kernel.
-dice_group_width = 8
+dice_group_width = 32
 
 // Maximum number of framebuffer tiles, a block can be assigned to.
-max_block_assignments = 12
+max_block_assignments = 9
 
 // Number of sub-one bits for fixed precision pixel coordinates.
-subpixel_bits = 6
+subpixel_bits = 8
 
 // Clear color for framebuffer.
-clear_color = 0.025 0.05 0.2 0
+clear_color = 0.1 0.2 1 0
 
 // Patch data input file.
-input_file = mscene/teapots.mscene
+input_file = mscene/teapot.mscene
 
 // Create an OpenCL timing trace.
-create_trace = true
+create_trace = false
 
 // Target file for writing OpenCL trace to.
 trace_file = reyes.trace
@@ -91,4 +93,4 @@ cull_ribbon = 32
 
 
 
-#hash:-642071619790388316
+#hash:-6683750846311482333

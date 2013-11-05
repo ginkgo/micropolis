@@ -1,0 +1,23 @@
+#version 430
+
+layout (local_size_x = 128) in;
+
+uniform uint batch_size;
+
+layout (std430) buffer accumulated
+{
+    ivec2 accumulated[];
+};
+
+layout (std430) buffer reduced
+{
+    ivec2 reduced[];
+};
+
+
+void main (void)
+{
+    if (gl_GlobalInvocationID.x + 128 < batch_size) {
+        accumulated[gl_GlobalInvocationID.x + 128] += reduced[gl_WorkGroupID.x];
+    }
+}

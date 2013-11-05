@@ -161,7 +161,7 @@ namespace
 
         OPENCL_ASSERT(status);
 
-        if (config.verbose() || build_status != CL_BUILD_SUCCESS) {
+        if (config.verbosity_level() > 0 || build_status != CL_BUILD_SUCCESS) {
             size_t size = 16 * 1024;
             char *buffer = new char[size];
 
@@ -703,7 +703,7 @@ namespace CL
         _kernel = clCreateKernel(program, kernelname.c_str(), &status);
         OPENCL_ASSERT(status);   
 
-	if (config.verbose()) {
+	if (config.verbosity_level() > 0) {
 	    // Get kernel info
 
 	    size_t work_group_size;
@@ -956,7 +956,7 @@ namespace CL
         PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_NAME);
         PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_VERSION);
         PRINT_CL_DEVICE_INFO(char[1000], CL_DRIVER_VERSION);
-        if (config.verbose()) {
+        if (config.verbosity_level() > 0) {
             PRINT_CL_DEVICE_INFO(cl_uint, CL_DEVICE_ADDRESS_BITS);
             PRINT_CL_DEVICE_INFO(cl_bool, CL_DEVICE_AVAILABLE);
             PRINT_CL_DEVICE_INFO(cl_bool, CL_DEVICE_COMPILER_AVAILABLE);

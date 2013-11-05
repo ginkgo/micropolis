@@ -1,11 +1,13 @@
 #pragma once
 
 #include "common.h"
-#include "Projection.h"
-#include "VBO.h"
-#include "Patch.h"
-#include "Texture.h"
+
 #include "ComputeShader.h"
+#include "Patch.h"
+#include "PrefixSum.h"
+#include "Projection.h"
+#include "Texture.h"
+#include "VBO.h"
 
 namespace Reyes
 {
@@ -25,17 +27,31 @@ namespace Reyes
 
         void* _active_handle;
 
-        mat4 _mv;
         mat4 _mvp;
-        const Projection* _projection;
+        mat3 _framebuffer_matrix;
+        vec3 _screen_min;
+        vec3 _screen_max;
+
+        GL::PrefixSum _prefix_sum;
 
         GL::Buffer _stack_min;
         GL::Buffer _stack_max;
         GL::Buffer _stack_pid;
 
+        GL::Buffer _flag_pad;
+        GL::Buffer _split_pad_pid;
+        GL::Buffer _split_pad1_min;
+        GL::Buffer _split_pad1_max;
+        GL::Buffer _split_pad2_min;
+        GL::Buffer _split_pad2_max;
+
+        GL::Buffer _summed_flags;
+        GL::Buffer _flag_total;
+
         size_t _stack_height;
         
         GL::ComputeShader _init_ranges;
+        GL::ComputeShader _bound_n_split;
         GL::ComputeShader _create_geometry_for_ranges;
         
     public:

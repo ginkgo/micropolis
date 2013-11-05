@@ -114,7 +114,7 @@ void Statistics::reset_timer()
 
 void Statistics::print()
 {
-    if (config.verbose()) {
+    if (config.verbosity_level() > 0) {
 
         uint64_t quad_count = square(config.reyes_patch_size()) * patches_per_frame;
         double quads_per_second = quad_count * frames_per_second;
@@ -126,8 +126,8 @@ void Statistics::print()
              << patches_per_frame  << " bounded patches" << endl
              << with_commas(quad_count) << " polygons" << endl
              << with_commas((uint64_t)quads_per_second) << " polys/s" << endl
-             << (opencl_memory >> KIBI_SHIFT) << " KiB allocated on OpenCL device" << endl
-             << (opengl_memory >> KIBI_SHIFT) << " KiB allocated in OpenGL context" << endl;
+             << memory_size(opencl_memory) << "allocated on OpenCL device" << endl
+             << memory_size(opengl_memory) << "allocated in OpenGL context" << endl;
     } else {
         cout  << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl;
     }

@@ -29,9 +29,9 @@ class Image
     protected:
 
     int _dimensions; /**< The number of dimensions */
-    int _width, /**< Image width */
-        _height, /**< Image height */
-        _depth; /**< Image depth */
+    int _width; /**< Image width */
+    int _height; /**< Image height */
+    int _depth; /**< Image depth */
     void *_data; /**< Image data */
 
     GLenum _format; /**< Image format */
