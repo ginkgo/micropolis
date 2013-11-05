@@ -1,0 +1,77 @@
+#version 430
+
+layout (local_size_x = 64) in;
+
+uniform int batch_size;
+uniform int batch_offset;
+
+layout (std430) buffer stack_min
+{
+    vec2 smin[];
+};
+
+layout (std430) buffer stack_max
+{
+    vec2 smax[];
+};
+
+layout (std430) buffer stack_pid
+{
+    uint spid[];
+};
+
+
+layout (std430) buffer flag_pad
+{
+    ivec2 fpad[];
+};
+
+layout (std430) buffer summed_flags
+{
+    ivec2 fsum[];
+};
+
+
+// Pads for placing split patches 
+layout (std430) buffer split_pad_pid
+{
+    uint sp_pid[];
+};
+
+layout (std430) buffer split_pad1_min
+{
+    vec2 sp1_min[];
+};
+
+layout (std430) buffer split_pad1_max
+{
+    vec2 sp1_max[];
+};
+
+layout (std430) buffer split_pad2_min
+{
+    vec2 sp2_min[];
+};
+
+layout (std430) buffer split_pad2_max
+{
+    vec2 sp2_max[];
+};
+
+
+void main (void)
+{
+    uint bid = gl_GlobalInvocationID.x;
+    uint xid = batch_offset + (fsum[bid].x - 1) * 2;
+
+    if (bid < batch_size && fpad[bid].x == 1) {
+        
+        spid[xid+0] = sp_pid[bid];
+        smin[xid+0] = sp1_min[bid];
+        smax[xid+0] = sp1_max[bid];
+        
+        spid[xid+1] = sp_pid[bid];
+        smin[xid+1] = sp2_min[bid];
+        smax[xid+1] = sp2_max[bid];
+    }
+}

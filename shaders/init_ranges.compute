@@ -4,17 +4,17 @@ layout (local_size_x = 64) in;
 
 uniform int patch_count;
 
-buffer stack_min
+layout (std430) buffer stack_min
 {
     vec2 smin[];
 };
 
-buffer stack_max
+layout (std430) buffer stack_max
 {
     vec2 smax[];
 };
 
-buffer stack_pid
+layout (std430) buffer stack_pid
 {
     uint spid[];
 };

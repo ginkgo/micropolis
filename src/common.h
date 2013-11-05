@@ -72,10 +72,12 @@ using std::endl;
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/format.hpp>
 
 using boost::shared_ptr;
 using boost::scoped_ptr;
 using boost::noncopyable;
+using boost::format;
 
 template<typename T>
 using shared_vector = vector<shared_ptr<T> >;

@@ -9,7 +9,7 @@ uniform uint batch_offset;
 
 uniform mat4 mvp;
 
-uniform mat3 framebuffer_matrix;
+uniform mat4 framebuffer_matrix;
 uniform vec3 screen_min;
 uniform vec3 screen_max;
 
@@ -18,17 +18,17 @@ uniform float split_limit;
 uniform samplerBuffer patches;
 
 // Patch range stack arrays
-buffer stack_min
+layout (std430) buffer stack_min
 {
     vec2 smin[];
 };
 
-buffer stack_max
+layout (std430) buffer stack_max
 {
     vec2 smax[];
 };
 
-buffer stack_pid
+layout (std430) buffer stack_pid
 {
     uint spid[];
 };
@@ -36,34 +36,34 @@ buffer stack_pid
 // Array of packed flags
 // first component is set to 1 if patch is split
 // second component is set to 1 if patch is drawn
-buffer flag_pad
+layout (std430) buffer flag_pad
 {
     uvec2 fpad[];
 };
 
 // Pads for placing split patches 
 
-buffer split_pad_pid
+layout (std430) buffer split_pad_pid
 {
     uint sp_pid[];
 };
 
-buffer split_pad1_min
+layout (std430) buffer split_pad1_min
 {
     vec2 sp1_min[];
 };
 
-buffer split_pad1_max
+layout (std430) buffer split_pad1_max
 {
     vec2 sp1_max[];
 };
 
-buffer split_pad2_min
+layout (std430) buffer split_pad2_min
 {
     vec2 sp2_min[];
 };
 
-buffer split_pad2_max
+layout (std430) buffer split_pad2_max
 {
     vec2 sp2_max[];
 };
@@ -142,9 +142,9 @@ void main (void)
             vec2 lt = vec2(u / 3.0, v / 3.0);
             vec3 p = eval_patch(mix(rmin,rmax,lt), rpid);
 
-            vec4 pp = vec4(p,1) * mvp;
-
-            ppos[v][u] = (pp.xyz / pp.w) * framebuffer_matrix;
+            vec4 pp = vec4(p,1) * framebuffer_matrix * mvp;
+            
+            ppos[v][u] = (pp.xyz / pp.w);
 
             pmin = min(ppos[v][u], pmin);
             pmax = min(ppos[v][u], pmax);
@@ -186,7 +186,7 @@ void main (void)
             flag = uvec2(0,1); // DRAW
         } else {
             flag = uvec2(1,0); // SPLIT
-            vsplit = vlen > hlen;
+            vsplit = hlen > vlen;
         }
     }
 

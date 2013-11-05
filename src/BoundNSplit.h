@@ -28,7 +28,7 @@ namespace Reyes
         void* _active_handle;
 
         mat4 _mvp;
-        mat3 _framebuffer_matrix;
+        mat4 _framebuffer_matrix;
         vec3 _screen_min;
         vec3 _screen_max;
 
@@ -53,6 +53,10 @@ namespace Reyes
         GL::ComputeShader _init_ranges;
         GL::ComputeShader _bound_n_split;
         GL::ComputeShader _create_geometry_for_ranges;
+        GL::ComputeShader _copy_ranges;
+        GL::ComputeShader _setup_indirection;
+
+        bool _initial;
         
     public:
 

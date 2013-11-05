@@ -5,22 +5,32 @@ layout (local_size_x = 4, local_size_y = 16) in;
 uniform int batch_size;
 uniform int batch_offset;
 
-buffer stack_min
+layout (std430) buffer stack_min
 {
     vec2 smin[];
 };
 
-buffer stack_max
+layout (std430) buffer stack_max
 {
     vec2 smax[];
 };
 
-buffer stack_pid
+layout (std430) buffer stack_pid
 {
     uint spid[];
 };
 
-buffer vertex_buffer
+layout (std430) buffer flag_pad
+{
+    ivec2 fpad[];
+};
+
+layout (std430) buffer summed_flags
+{
+    ivec2 fsum[];
+};
+
+layout (std430) buffer vertex_buffer
 {
     vec4 vbuffer[];
 };
@@ -33,14 +43,16 @@ void main (void)
     uint bid = gl_GlobalInvocationID.y;
     uint sid = bid + uint(batch_offset);
 
-    if (bid < batch_size) {
+    if (bid < batch_size && fpad[bid].y == 1) {
         uint rpid = spid[sid];
         vec2 rmin = smin[sid];
         vec2 rmax = smax[sid];
 
         vec2 i = intp[vid];
         vec2 p = mix(rmin, rmax, i);
+
+        uint xid = fsum[bid].y - 1;
         
-        vbuffer[bid*4+vid] = vec4(p, float(rpid),1);
+        vbuffer[xid*4+vid] = vec4(p, float(rpid),1);
     }
 }
