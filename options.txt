@@ -59,7 +59,7 @@ subpixel_bits = 8
 clear_color = 0.1 0.2 1 0
 
 // Patch data input file.
-input_file = mscene/killeroo.mscene
+input_file = mscene/bigguy.mscene
 
 // Create an OpenCL timing trace.
 create_trace = false

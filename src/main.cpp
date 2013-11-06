@@ -151,7 +151,15 @@ void mainloop(GLFWwindow* window)
             translation *= 0.25f;
             rotation    *= 0.50f;
             zrotation   *= 0.50f;
-        }            
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_PAGE_UP)) {
+            config.set_bound_n_split_limit(config.bound_n_split_limit() * pow(0.75, -time_diff));
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN)) {
+            config.set_bound_n_split_limit(config.bound_n_split_limit() * pow(0.75, time_diff));
+        }
         
         scene.active_cam().transform = scene.active_cam().transform
             * glm::translate<float>(translation.x, translation.y, translation.z)
