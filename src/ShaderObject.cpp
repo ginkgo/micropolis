@@ -117,7 +117,7 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
         return 0;
     }
 
-    if (config.verbosity_level() > 0) {
+    if (config.verbosity_level() >= 2) {
         cout << boost::format("\t %1%/%2%%3%") % config.shader_dir() % shader % file_extension << endl;
     }
     

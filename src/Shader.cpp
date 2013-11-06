@@ -41,7 +41,7 @@ GL::Shader::Shader(const string& shader,
     _name(shader)
 {
 
-    if (config.verbosity_level() > 0) {
+    if (config.verbosity_level() >= 2) {
         cout << boost::format("Compiling shader \"%1%\"...") % _name << endl;
     }
     

@@ -105,8 +105,14 @@ void mainloop(GLFWwindow* window)
     glm::dvec2 last_cursor_pos;
     glfwGetCursorPos(window, &(last_cursor_pos.x), &(last_cursor_pos.y));
     
-    bool in_wire_mode = false;
+    bool in_wire_mode = true;
     bool last_f3_state = glfwGetKey(window, GLFW_KEY_F3);
+
+    // for (auto N : {2, 20, 100, 128, 200, 512, 800, 1000, 1024, 2048, 4096, 5000, 128*128, 128*128*128, 50000}) {
+    //     if (test_prefix_sum(N, false)) cout << format("Prefix sum on %1% items succeeded") % N << endl;
+    //     else                           cout << format("Prefix sum on %1% items failed") % N << endl;
+    // }    
+    // return;
     
     while (running) {
 

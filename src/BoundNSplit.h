@@ -27,8 +27,10 @@ namespace Reyes
 
         void* _active_handle;
 
-        mat4 _mvp;
-        mat4 _framebuffer_matrix;
+        mat4 _mv;
+        mat4 _proj;
+
+        mat3 _screen_matrix;
         vec3 _screen_min;
         vec3 _screen_max;
 

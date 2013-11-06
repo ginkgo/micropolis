@@ -61,7 +61,8 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
     _init_ranges.set_buffer("stack_pid", _stack_pid);
     
     _init_ranges.dispatch((patch_count-1)/64 + 1);
-
+    glFlush();
+    
     GL::Buffer::unbind_all(_stack_min, _stack_max, _stack_pid);
     
     _init_ranges.unbind();
@@ -69,18 +70,20 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
     _stack_height = patch_count;
     
     mat4 proj;
-    projection->calc_projection_with_aspect_correction(proj);
+    projection->calc_projection(proj);
+
+    vec2 hwin(config.window_size().x/2.0f, config.window_size().y/2.0f);
     
-    _mvp = proj * matrix;
+    _mv = matrix;
 
-    // _framebuffer_matrix = mat3();
-    // _screen_min = vec3(-1);
-    // _screen_max = vec3(1);
+    _proj = proj;
 
-    _framebuffer_matrix =
-        glm::scale(vec3(config.window_size().x/2.0f, config.window_size().y/2.0f, 1));
-    _screen_min = vec3(-config.window_size().x/2.0f,-config.window_size().y/2.0f,-1);
-    _screen_max = vec3( config.window_size().x/2.0f, config.window_size().y/2.0f,-1);
+    _screen_matrix = mat3(glm::scale(vec3(hwin.x, hwin.y, 1)));
+
+    //hwin = hwin * 0.75f;
+    
+    _screen_min = vec3(-hwin.x,-hwin.y,-1);
+    _screen_max = vec3( hwin.x, hwin.y, 1);
 
 }
 
@@ -101,7 +104,7 @@ bool Reyes::BoundNSplit::done()
         cout << format("%1% split, %2% drawn, stack_height: %3%") % total.x  % total.y % _stack_height << endl;
     }
     
-    return _stack_height == 0;
+    return false || _stack_height == 0;
 }
 
 
@@ -120,13 +123,16 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
     patches_texture.bind();
     GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
                          _stack_min, _stack_max, _stack_pid,
-                         _flag_pad, _split_pad_pid, _split_pad1_min, _split_pad1_max, _split_pad2_min, _split_pad2_max);
+                         _flag_pad, _split_pad_pid,
+                         _split_pad1_min, _split_pad1_max,
+                         _split_pad2_min, _split_pad2_max);
 
 
     _bound_n_split.set_uniform("batch_size", (GLuint)batch_size);
     _bound_n_split.set_uniform("batch_offset", (GLuint)batch_offset);
-    _bound_n_split.set_uniform("mvp", _mvp);
-    _bound_n_split.set_uniform("framebuffer_matrix", _framebuffer_matrix);
+    _bound_n_split.set_uniform("mv", _mv);
+    _bound_n_split.set_uniform("proj", _proj);
+    _bound_n_split.set_uniform("screen_matrix", _screen_matrix);
     _bound_n_split.set_uniform("screen_min", _screen_min);
     _bound_n_split.set_uniform("screen_max", _screen_max);
     _bound_n_split.set_uniform("split_limit", config.bound_n_split_limit());
@@ -147,7 +153,9 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
     patches_texture.unbind();
     
     GL::Buffer::unbind_all(_stack_min, _stack_max, _stack_pid,
-                           _flag_pad, _split_pad_pid, _split_pad1_min, _split_pad1_max, _split_pad2_min, _split_pad2_max);    
+                           _flag_pad, _split_pad_pid,
+                           _split_pad1_min, _split_pad1_max,
+                           _split_pad2_min, _split_pad2_max);    
 
     // Apply Prefix Sum
     _prefix_sum.apply(batch_size, _flag_pad, _summed_flags, _flag_total);
@@ -220,6 +228,7 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
     _setup_indirection.unbind();
     
     _stack_height -= batch_size;
+
 
 }
 

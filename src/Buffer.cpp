@@ -11,7 +11,7 @@ GL::Buffer::Buffer(size_t size)
     glGenBuffers(1, &_buffer);
 
     glBindBuffer(GL_ARRAY_BUFFER, _buffer);
-    glBufferData(GL_ARRAY_BUFFER, _size, NULL, GL_DYNAMIC_COPY);
+    glBufferData(GL_ARRAY_BUFFER, _size, NULL, GL_STREAM_COPY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     statistics.alloc_opengl_memory(_size);
@@ -112,7 +112,7 @@ void GL::Buffer::unbind() const
 void GL::Buffer::send_data(void* data, size_t size)
 {
     assert(_target != GL_FALSE);
-    glBufferData(_target, size, data, GL_DYNAMIC_COPY);
+    glBufferData(_target, size, data, GL_STREAM_COPY);
 
     _size = size;
 }

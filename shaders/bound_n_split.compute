@@ -2,14 +2,15 @@
 
 layout (local_size_x = 64) in;
 
-const float infinity = 10000000000.0;
+const float infinity = 999999999999.0;
 
 uniform uint batch_size;
 uniform uint batch_offset;
 
-uniform mat4 mvp;
+uniform mat4 mv;
+uniform mat4 proj;
+uniform mat3 screen_matrix;
 
-uniform mat4 framebuffer_matrix;
 uniform vec3 screen_min;
 uniform vec3 screen_max;
 
@@ -87,12 +88,12 @@ vec3 eval_patch(vec2 t, int patch_id)
 
 bool intersects (vec3 min1, vec3 max1, vec3 min2, vec3 max2)
 {
-    return all(greaterThan(max1, min2)) && all(lessThan(min1, max2));
+    return all(lessThan(min1, max2)) && all(lessThan(min2, max1));
 }
 
 void do_vsplit(uint bid, vec2 pmin, vec2 pmax, uint pid)
 {
-    float c = mix(pmin.x, pmax.y, 0.5);
+    float c = mix(pmin.y, pmax.y, 0.5);
 
     sp_pid[bid] = pid;
 
@@ -105,7 +106,7 @@ void do_vsplit(uint bid, vec2 pmin, vec2 pmax, uint pid)
 
 void do_hsplit(uint bid, vec2 pmin, vec2 pmax, uint pid)
 {
-    float c = mix(pmin.y, pmax.y, 0.5);
+    float c = mix(pmin.x, pmax.x, 0.5);
 
     sp_pid[bid] = pid;
 
@@ -129,43 +130,38 @@ void main (void)
     
     vec3 pmin = vec3( infinity);
     vec3 pmax = vec3(-infinity);
+    vec3 ppmin = vec3( infinity);
+    vec3 ppmax = vec3(-infinity);
 
     vec3 ppos[4][4];
-
-    int zcount = 0;
-
     bool row_homogeneous = true;
     
     for (int v = 0; v < 4; ++v) {
         int zrc = 0;
         for (int u = 0; u < 4; ++u) {
             vec2 lt = vec2(u / 3.0, v / 3.0);
-            vec3 p = eval_patch(mix(rmin,rmax,lt), rpid);
-
-            vec4 pp = vec4(p,1) * framebuffer_matrix * mvp;
+            vec4 p = mv * vec4(eval_patch(mix(rmin,rmax,lt), rpid),1);
             
-            ppos[v][u] = (pp.xyz / pp.w);
-
-            pmin = min(ppos[v][u], pmin);
-            pmax = min(ppos[v][u], pmax);
+            pmin = min(p.xyz, pmin);
+            pmax = max(p.xyz, pmax);            
             
-            zrc += (pp.w <= 0 ? 1 : 0);
+            vec4 pp = proj * p;
+
+            ppos[v][u] = screen_matrix * (pp.xyz / pp.w);
+
+            ppmin = min(ppos[v][u], ppmin);
+            ppmax = max(ppos[v][u], ppmax);
         }
-
-        zcount += zcount;
-
-        row_homogeneous = row_homogeneous && (zrc%4==0);
     }
 
     uvec2 flag;
     bool vsplit;
     
-    if (zcount == 16) {
+    if (ppmin.z >= 1 || ppmax.z <= -1) {
         flag = uvec2(0,0); // CULL
-    } else if (zcount > 0) {
-        flag = uvec2(1,0); // SPLIT
-        vsplit = row_homogeneous;
-    } else if (!intersects(pmin, pmax, screen_min, screen_max)) {
+    } else if (pmin.z < 0 && pmax.z > 0) {
+        flag = uvec2(0,0); // CULL (for now)
+    } else if (!intersects(ppmin, ppmax, screen_min, screen_max)) {
         flag = uvec2(0,0); // CULL
     } else {
         float hlen = 0;
@@ -174,8 +170,8 @@ void main (void)
             float ht = 0;
             float vt = 0;
             for (int j = 0; j < 3; ++j) {
-                ht += distance(ppos[i][j], ppos[i][j+1]);
-                vt += distance(ppos[j][i], ppos[j+1][i]);
+                ht += distance(ppos[i][j].xy, ppos[i][j+1].xy);
+                vt += distance(ppos[j][i].xy, ppos[j+1][i].xy);
             }
             
             hlen = max(ht, hlen);
@@ -186,7 +182,7 @@ void main (void)
             flag = uvec2(0,1); // DRAW
         } else {
             flag = uvec2(1,0); // SPLIT
-            vsplit = hlen > vlen;
+            vsplit = hlen < vlen;
         }
     }
 

@@ -30,13 +30,12 @@ void GL::PrefixSum::apply(size_t batch_size, GL::Buffer& input, GL::Buffer& outp
     
     int level = 0;
 
-    for (int i = max_input_items; i > batch_size; i = (i-1)/128+1) {
-        level++;
+    for (int i = (max_input_items-1)/128+1; i >= batch_size; i = (i-1)/128+1, level++) {
     }
 
-    do_reduce (batch_size, input, output, buffer_pyramid[level]);
+    do_reduce (batch_size, input, output, buffer_pyramid.at(level));
 
-    apply((batch_size-1)/128+1, buffer_pyramid[level], buffer_pyramid[level], total);
+    apply((batch_size-1)/128+1, buffer_pyramid.at(level), buffer_pyramid.at(level), total);
 
     do_accumulate(batch_size, buffer_pyramid[level], output);
 }
