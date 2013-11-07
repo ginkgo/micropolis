@@ -34,11 +34,11 @@ verbosity_level = 1
 disable_buffer_sharing = true
 
 // Size used for bounding and dicing.
-reyes_patch_size = 3
+reyes_patch_size = 8
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 4096
+reyes_patches_per_pass = 2048
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 8
@@ -59,7 +59,7 @@ subpixel_bits = 8
 clear_color = 0.1 0.2 1 0
 
 // Patch data input file.
-input_file = mscene/bigguy.mscene
+input_file = mscene/teapot.mscene
 
 // Create an OpenCL timing trace.
 create_trace = false

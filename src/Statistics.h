@@ -52,6 +52,7 @@ class Statistics
     void stop_bound_n_split();
 
     void inc_patch_count();
+    void add_patches(size_t patches);
 
     void alloc_opencl_memory(long mem_size);
     void free_opencl_memory(long mem_size);

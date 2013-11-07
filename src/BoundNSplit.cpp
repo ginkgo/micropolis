@@ -9,6 +9,7 @@
 using namespace Reyes;
 
 #define BATCH_SIZE config.reyes_patches_per_pass()
+#define MAX_SPLIT config.max_split_depth()
 
 Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchesIndex>& patch_index)
     : _patch_index(patch_index)
@@ -16,9 +17,9 @@ Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchesIndex>& patch_index)
 
     , _prefix_sum(BATCH_SIZE)
       
-    , _stack_min(BATCH_SIZE * config.max_split_depth() * sizeof(vec2))
-    , _stack_max(BATCH_SIZE * config.max_split_depth() * sizeof(vec2))
-    , _stack_pid(BATCH_SIZE * config.max_split_depth() * sizeof(GLuint))
+    , _stack_min(BATCH_SIZE * (MAX_SPLIT+1) * sizeof(vec2))
+    , _stack_max(BATCH_SIZE * (MAX_SPLIT+1) * sizeof(vec2))
+    , _stack_pid(BATCH_SIZE * (MAX_SPLIT+1) * sizeof(GLuint))
       
     , _flag_pad(BATCH_SIZE * sizeof(uvec2))
     , _split_pad_pid(BATCH_SIZE * sizeof(uint))
@@ -85,6 +86,14 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
     _screen_min = vec3(-hwin.x,-hwin.y,-1);
     _screen_max = vec3( hwin.x, hwin.y, 1);
 
+    _bound_n_split.bind();
+    _bound_n_split.set_uniform("near", projection->near());
+    _bound_n_split.set_uniform("far", projection->far());
+    _bound_n_split.set_uniform("proj_f", projection->f());
+    _bound_n_split.set_uniform("screen_size", projection->viewport());
+    _bound_n_split.set_uniform("cull_ribbon", (float)config.cull_ribbon());
+    _bound_n_split.unbind();
+
 }
 
 
@@ -100,11 +109,20 @@ bool Reyes::BoundNSplit::done()
 
     _stack_height += total.x * 2;
 
-    if (config.verbosity_level() == 2) {
+    if (false) {
         cout << format("%1% split, %2% drawn, stack_height: %3%") % total.x  % total.y % _stack_height << endl;
     }
+
+    statistics.add_patches((int)total.y);
+
+    if (_stack_height > BATCH_SIZE * MAX_SPLIT) {
+        cerr << "Stack overflow pending - ABORT" << endl;
+        return true;
+    }
+
+    //assert(_stack_height < BATCH_SIZE * MAX_SPLIT);
     
-    return false || _stack_height == 0;
+    return _stack_height == 0;
 }
 
 
@@ -135,6 +153,7 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
     _bound_n_split.set_uniform("screen_matrix", _screen_matrix);
     _bound_n_split.set_uniform("screen_min", _screen_min);
     _bound_n_split.set_uniform("screen_max", _screen_max);
+    _bound_n_split.set_uniform("max_split_depth", (GLuint)config.max_split_depth());
     _bound_n_split.set_uniform("split_limit", config.bound_n_split_limit());
     _bound_n_split.set_uniform("patches", patches_texture);
     

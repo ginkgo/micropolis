@@ -44,7 +44,7 @@ void main (void)
     uint sid = bid + uint(batch_offset);
 
     if (bid < batch_size && fpad[bid].y == 1) {
-        uint rpid = spid[sid];
+        uint rpid = spid[sid] & 0xffffff;
         vec2 rmin = smin[sid];
         vec2 rmax = smax[sid];
 

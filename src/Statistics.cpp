@@ -56,6 +56,11 @@ void Statistics::inc_patch_count()
     ++_patches_per_frame;
 }
 
+void Statistics::add_patches(size_t patches)
+{
+    _patches_per_frame += patches;
+}
+
 void Statistics::start_bound_n_split()
 {
     _last_bound_n_split = nanotime();
