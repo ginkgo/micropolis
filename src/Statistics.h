@@ -30,6 +30,9 @@ class Statistics
 
     uint64_t _last_bound_n_split;
     uint64_t _total_bound_n_split;
+    uint64_t _total_dice_n_raster;
+    
+    uint64_t _pass_count;
 
     public:
 
@@ -37,6 +40,7 @@ class Statistics
     float    ms_per_frame;
     float    ms_per_render_pass;
     float    ms_bound_n_split;
+    float    ms_dice_n_raster;
     int      patches_per_frame;
     uint64_t opencl_memory;
     uint64_t opengl_memory;
@@ -50,9 +54,14 @@ class Statistics
 
     void start_bound_n_split();
     void stop_bound_n_split();
+    
+    void add_bound_n_split_time(uint64_t ns);
+    void add_dice_n_raster_time(uint64_t ns);
 
     void inc_patch_count();
     void add_patches(size_t patches);
+
+    void inc_pass_count(uint64_t cnt);
 
     void alloc_opencl_memory(long mem_size);
     void free_opencl_memory(long mem_size);

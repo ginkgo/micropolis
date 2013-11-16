@@ -38,14 +38,23 @@ Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchesIndex>& patch_index)
     , _copy_ranges("copy_ranges")
     , _setup_indirection("setup_indirection")
 
-    , _initial(false)
+    , _bound_n_split_timer(0)
+    , _dice_n_raster_timer(0)
 {
+    glGenQueries(1, &_bound_n_split_timer);
+    glGenQueries(1, &_dice_n_raster_timer);
+}
+
+
+Reyes::BoundNSplit::~BoundNSplit()
+{
+    glDeleteQueries(1, &_bound_n_split_timer);
+    glDeleteQueries(1, &_dice_n_raster_timer);
 }
 
 
 void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
-    _initial = true;
     
     _active_handle = patches_handle;
 
@@ -80,8 +89,6 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
     _proj = proj;
 
     _screen_matrix = mat3(glm::scale(vec3(hwin.x, hwin.y, 1)));
-
-    //hwin = hwin * 0.75f;
     
     _screen_min = vec3(-hwin.x,-hwin.y,-1);
     _screen_max = vec3( hwin.x, hwin.y, 1);
@@ -99,7 +106,8 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
 
 bool Reyes::BoundNSplit::done()
 {
-    if (_initial) return false;
+    
+    glEndQuery(GL_TIME_ELAPSED); // dice_n_raster_timer
     
     ivec2 total;
 
@@ -120,7 +128,33 @@ bool Reyes::BoundNSplit::done()
         return true;
     }
 
-    //assert(_stack_height < BATCH_SIZE * MAX_SPLIT);
+    GLint result_available;
+    
+    glGetQueryObjectiv(_bound_n_split_timer, GL_QUERY_RESULT_AVAILABLE, &result_available);
+
+    if (result_available) {
+        GLuint64 ns_elapsed;
+        glGetQueryObjectui64v(_bound_n_split_timer, GL_QUERY_RESULT, &ns_elapsed);
+
+        statistics.add_bound_n_split_time(ns_elapsed);
+    } else {
+        cerr << "Timer query not ready" << endl;
+    }
+    
+    glGetQueryObjectiv(_dice_n_raster_timer, GL_QUERY_RESULT_AVAILABLE, &result_available);
+
+    if (result_available) {
+        GLuint64 ns_elapsed;
+        glGetQueryObjectui64v(_dice_n_raster_timer, GL_QUERY_RESULT, &ns_elapsed);
+
+        statistics.add_dice_n_raster_time(ns_elapsed);
+    } else {
+        cerr << "Timer query not ready" << endl;
+    }
+ 
+    statistics.inc_pass_count(1);   
+
+    assert(_stack_height < BATCH_SIZE * MAX_SPLIT);
     
     return _stack_height == 0;
 }
@@ -128,7 +162,7 @@ bool Reyes::BoundNSplit::done()
 
 void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
 {
-    _initial = false;
+    glBeginQuery(GL_TIME_ELAPSED, _bound_n_split_timer);
     
     size_t batch_size = std::min(_stack_height, config.reyes_patches_per_pass());
     size_t batch_offset = _stack_height - batch_size;
@@ -248,7 +282,8 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
     
     _stack_height -= batch_size;
 
-
+    glEndQuery(GL_TIME_ELAPSED); // bound_n_split_timer
+    glBeginQuery(GL_TIME_ELAPSED, _dice_n_raster_timer);
 }
 
 

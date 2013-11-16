@@ -77,6 +77,7 @@ void Reyes::HWTessRenderer::draw_patches(void* patches_handle,
 
     _shader.bind();
     _shader.set_uniform("color", color);
+    _shader.set_uniform("mv", matrix);
     _shader.set_uniform("mvp", proj * matrix);
     _shader.set_uniform("patches", patch_tex);
     _shader.set_uniform("dicing_rate", (GLint)config.reyes_patch_size());
@@ -84,14 +85,14 @@ void Reyes::HWTessRenderer::draw_patches(void* patches_handle,
 
     _bound_n_split->init(patches_handle, matrix, projection);
 
-    while (!_bound_n_split->done()) {
+    do {
             
         _bound_n_split->do_bound_n_split(_vbo);
 
         _shader.bind();
         _vbo.draw(GL_PATCHES, _shader);
         _shader.unbind();
-    }
+    } while (!_bound_n_split->done());
         
     patch_tex.unbind();
 }

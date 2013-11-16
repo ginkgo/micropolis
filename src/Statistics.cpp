@@ -40,6 +40,8 @@ void Statistics::start_render()
     _render_start_time = nanotime();
     _patches_per_frame = 0;
     _total_bound_n_split = 0;
+    _total_dice_n_raster = 0;
+    _pass_count = 0;
 }
 
 void Statistics::end_render()
@@ -48,6 +50,7 @@ void Statistics::end_render()
 
     ms_per_render_pass = dur * 0.000001f;
     ms_bound_n_split = _total_bound_n_split * 0.000001f;
+    ms_dice_n_raster = _total_dice_n_raster * 0.000001f;
     patches_per_frame = _patches_per_frame;
 }
 
@@ -61,6 +64,11 @@ void Statistics::add_patches(size_t patches)
     _patches_per_frame += patches;
 }
 
+void Statistics::inc_pass_count(uint64_t cnt)
+{
+    _pass_count += cnt;
+}
+
 void Statistics::start_bound_n_split()
 {
     _last_bound_n_split = nanotime();
@@ -72,6 +80,16 @@ void Statistics::stop_bound_n_split()
     uint64_t duration = now - _last_bound_n_split;
 
     _total_bound_n_split += duration;    
+}
+
+void Statistics::add_bound_n_split_time(uint64_t ns)
+{
+    _total_bound_n_split += ns;
+}
+
+void Statistics::add_dice_n_raster_time(uint64_t ns)
+{
+    _total_dice_n_raster += ns;
 }
 
 void Statistics::alloc_opencl_memory(long mem_size)
@@ -126,11 +144,13 @@ void Statistics::print()
         
         cout << endl
              << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl
-             << ms_per_render_pass << " ms/render pass" << endl
+             // << ms_per_render_pass << " ms/render pass" << endl
              << ms_bound_n_split << " ms spent on bound & split" << endl
+             << ms_dice_n_raster << " ms spent on dicing & rasterization" << endl
              << patches_per_frame  << " bounded patches" << endl
-             << with_commas(quad_count) << " polygons" << endl
-             << with_commas((uint64_t)quads_per_second) << " polys/s" << endl
+             << _pass_count << " render passes" << endl
+             // << with_commas(quad_count) << " polygons" << endl
+             // << with_commas((uint64_t)quads_per_second) << " polys/s" << endl
              << memory_size(opencl_memory) << "allocated on OpenCL device" << endl
              << memory_size(opengl_memory) << "allocated in OpenGL context" << endl;
     } else {

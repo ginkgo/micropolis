@@ -58,11 +58,13 @@ namespace Reyes
         GL::ComputeShader _copy_ranges;
         GL::ComputeShader _setup_indirection;
 
-        bool _initial;
+        GLuint _bound_n_split_timer;
+        GLuint _dice_n_raster_timer;
         
     public:
 
         BoundNSplit(shared_ptr<PatchesIndex>& patch_index);
+        ~BoundNSplit();
 
         void init(void* patches_handle, const mat4& matrix, const Projection* projection);
         bool done();

@@ -21,9 +21,16 @@
 
 uniform vec4 color;
 
+in vec3 p_eye;
+in vec3 n_eye;
+in vec3 tex_coord;
+
 out vec4 frag_color;
 
 void main()
 {
-	frag_color = color;
+    vec3 n = normalize(cross(dFdx(p_eye), dFdy(p_eye)));
+	frag_color = color * max(0, 0.15 + 0.85 * dot(n, vec3(0,0,1)));
+
+    // frag_color = color * max(0, dot(n_eye, vec3(0,0,1)));
 }

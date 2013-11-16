@@ -85,7 +85,7 @@ void Reyes::WireGLRenderer::draw_patches(void* patches_handle,
     
     _bound_n_split->init(patches_handle, matrix, projection);
 
-    while (!_bound_n_split->done()) {
+    do {
 
         _bound_n_split->do_bound_n_split(_vbo);
 
@@ -97,7 +97,7 @@ void Reyes::WireGLRenderer::draw_patches(void* patches_handle,
         _vbo.draw(GL_PATCHES, _shader);
         _shader.unbind();
 
-    }
+    } while (!_bound_n_split->done());
         
     patch_tex.unbind();
 }
