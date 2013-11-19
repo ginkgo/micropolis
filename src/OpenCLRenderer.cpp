@@ -125,7 +125,8 @@ void Reyes::OpenCLRenderer::prepare()
     e = _framebuffer.clear(_queue, e);
     _framebuffer_cleared = _queue.enq_kernel(*_clear_depth_buffer_kernel,
                                              _framebuffer.size().x * _framebuffer.size().y, 64,
-                                             "clear depthbuffer", e);    
+                                             "clear depthbuffer", e); 
+    
     statistics.start_render();
 }
 

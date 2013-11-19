@@ -168,26 +168,6 @@ int calc_color_grid_pos(int u, int v, int patch_id)
     return u + v * PATCH_SIZE + patch_id * (PATCH_SIZE*PATCH_SIZE);
 }
 
-int hash(int i)
-{
-    return (int)((i*2654435761L) & 0xffffffffffffffffL);
-}
-
-float fhash(int i)
-{
-    return (float)hash(i) * pow(2., -32.);
-}
-
-float4 chash(int i)
-{
-    float3 c = (float3)(fhash(i+0), fhash(i+1), fhash(i+2));
-
-    float3 ac = fabs(c);
-    
-    c = c / fmax(ac.x, fmax(ac.y, ac.z));
-
-    return (float4)(c.x,c.y,c.z,1);
-}
 
 __kernel void shade(const global float4* pos_grid,
                     const global int2* pxlpos_grid,

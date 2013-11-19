@@ -312,7 +312,7 @@ CL::Event::Event(const Event& event) :
 {
     assert(event._count < MAX_ID_COUNT);
 
-    for (int i = 0; i < _count; ++i) {
+    for (size_t i = 0; i < _count; ++i) {
         _ids[i] = event._ids[i];
     }
 }
@@ -346,7 +346,7 @@ CL::Event& CL::Event::operator = (const CL::Event& other)
 {
     _count = other._count;
 
-    for (int i = 0; i < _count; ++i) {
+    for (size_t i = 0; i < _count; ++i) {
         _ids[i] = other._ids[i];
     }
 
@@ -765,12 +765,7 @@ CL::Program::Program() :
     _program(0),
     _source_buffer(new std::stringstream())
 {        
-    *_source_buffer << std::setiosflags(std::ios::fixed) << std::setprecision(22);
-
-    // This is a hack to keep the NVidia OpenCL driver from (wrongly) 
-    // caching the program.
-    *_source_buffer << "constant long __DUMMY" 
-                    << nanotime() << " = " << nanotime() << ";" << endl;
+    *_source_buffer << std::setiosflags(std::ios::fixed) << std::setprecision(10);
 }
     
 
@@ -820,10 +815,17 @@ void CL::Program::compile(Device& device,  const string& filename)
 
 	_device = device.get_device();
 
-    *_source_buffer << "#include \"" << config.kernel_dir() << "/" << filename << "\"" << endl;
-
+    *_source_buffer << endl
+                    << "# 1 \"" << config.kernel_dir() << "/" << filename << "\"" << endl
+                    << read_file(config.kernel_dir() + "/" + filename);
+    
     string file_content = _source_buffer->str();
 
+    // {
+    //     std::ofstream fs(("/tmp/"+filename).c_str());
+    //     fs << file_content << endl;
+    // }
+    
     _program = compile_program(device, file_content, filename);
 
     delete _source_buffer;
@@ -924,7 +926,7 @@ void print_device_workgroup_size(cl_device_id device,
 
     cout << indent << "  CL_DEVICE_MAX_WORK_ITEM_SIZES:";
 
-    for (int i = 0; i < max_dim; ++i) {
+    for (size_t i = 0; i < max_dim; ++i) {
         cout << " " << sizes[i];
     }
 
