@@ -49,7 +49,6 @@ void Reyes::WireGLRenderer::prepare()
 void Reyes::WireGLRenderer::finish()
 {
     glfwSwapBuffers(glfwGetCurrentContext());
-    glfwPollEvents();
 }
 
 

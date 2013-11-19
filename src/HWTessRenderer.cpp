@@ -47,7 +47,6 @@ void Reyes::HWTessRenderer::prepare()
 void Reyes::HWTessRenderer::finish()
 {
     glfwSwapBuffers(glfwGetCurrentContext()); // TODO
-    glfwPollEvents();
 }
 
 

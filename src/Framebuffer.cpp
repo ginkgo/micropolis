@@ -138,8 +138,5 @@ namespace Reyes
         _shader.unbind();
         
         _tex_buffer.unbind();
-
-        glfwSwapBuffers(_glfw_window);
-		glfwPollEvents();
     }
 }

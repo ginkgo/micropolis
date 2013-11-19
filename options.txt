@@ -1,5 +1,5 @@
 // Size of the window in pixels.
-window_size = 1400 1050
+window_size = 800 600
 
 // Number of anti-aliasing samples. (0 means no AA)
 fsaa_samples = 0
@@ -31,7 +31,7 @@ device_id = 0
 verbosity_level = 1
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
-disable_buffer_sharing = true
+disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
 reyes_patch_size = 16

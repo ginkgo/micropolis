@@ -21,8 +21,6 @@
 #include "Patch.h"
 #include "Config.h"
 
-// #include "opengl_draw.h"
-
 #include "OpenCL.h"
 #include "Reyes.h"
 
@@ -76,11 +74,6 @@ void mainloop(GLFWwindow* window)
     // if (config.verbose()) {
     //     device.print_info();
     // }
-    
-    // if(config.verbose() || !device.share_gl()) {
-    //     cout << endl;
-    //     cout << "Device is" << (device.share_gl() ? " " : " NOT ") << "shared." << endl << endl;
-    // }
 
     Reyes::Scene scene(config.input_file());
     
@@ -89,7 +82,8 @@ void mainloop(GLFWwindow* window)
     
     switch (config.renderer_type()) {
     case Config::OPENCL:
-        // TODO
+        renderer.reset(new Reyes::OpenCLRenderer());
+        break;
     case Config::GLTESS:
         renderer.reset(new Reyes::HWTessRenderer());
         break;
@@ -190,7 +184,9 @@ void mainloop(GLFWwindow* window)
         running = running && !glfwGetKey( window, GLFW_KEY_ESCAPE );
         running = running && !glfwGetKey( window,  'Q' );
 		running = running && !glfwWindowShouldClose( window );
-		
+
+        
+        glfwPollEvents();		
     }
 }
 

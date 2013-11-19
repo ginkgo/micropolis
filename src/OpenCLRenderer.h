@@ -15,32 +15,61 @@
  * along with Micropolis.  If not, see <http://www.gnu.org/licenses/>.        *
 \******************************************************************************/
 
-
 #pragma once
 
-#include "BoundNSplit.h"
-#include "Patch.h"
+#include "Framebuffer.h"
+#include "OpenCL.h"
 #include "PatchDrawer.h"
 #include "PatchesIndex.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "VBO.h"
 
 namespace Reyes
 {
-        
-    class WireGLRenderer : public PatchDrawer
-    {
-		GL::Shader _shader;
-		GL::IndirectVBO _vbo;
 
-        shared_ptr<PatchesIndex> _patch_index;
-        shared_ptr<BoundNSplit> _bound_n_split;
+    class OpenCLRenderer : public PatchDrawer
+    {
+
+        struct PatchBuffer
+        {
+            CL::Buffer* buffer;
+            void* host;
+            CL::Event write_complete;
+        };
+        
+        CL::Device _device;
+        CL::CommandQueue _queue;
+        OGLSharedFramebuffer _framebuffer;
+
+        size_t _active_patch_buffer;
+        vector<PatchBuffer> _patch_buffers;
+        vec4* _back_buffer;
+
+        size_t _patch_count;
+        size_t _max_block_count;
+
+        CL::Buffer _pos_grid;
+        CL::Buffer _pxlpos_grid;
+        CL::Buffer _color_grid;
+        CL::Buffer _depth_grid;
+        CL::Buffer _block_index;
+        CL::Buffer _tile_locks;
+        CL::Buffer _depth_buffer;
+        
+        CL::Program _reyes_program;
+
+        scoped_ptr<CL::Kernel> _dice_kernel;
+        scoped_ptr<CL::Kernel> _shade_kernel;
+        scoped_ptr<CL::Kernel> _sample_kernel;
+        scoped_ptr<CL::Kernel> _init_tile_locks_kernel;
+        scoped_ptr<CL::Kernel> _clear_depth_buffer_kernel;
+
+        CL::Event _last_sample;
+        CL::Event _framebuffer_cleared;
+
 
     public:
 
-        WireGLRenderer();
-        ~WireGLRenderer() {};
+        OpenCLRenderer();
+        ~OpenCLRenderer();
 
         virtual void prepare();
         virtual void finish();
@@ -52,7 +81,6 @@ namespace Reyes
                                   const mat4& matrix,
                                   const Projection* projection,
                                   const vec4& color);
-    };
-    
-}
 
+    };
+}

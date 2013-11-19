@@ -20,10 +20,10 @@
 #define REYES_H
 
 #include "Framebuffer.h"
+#include "HWTessRenderer.h"
+#include "OpenCLRenderer.h"
 #include "Projection.h"
 #include "Scene.h"
-//#include "Renderer.h"
 #include "WireGLRenderer.h"
-#include "HWTessRenderer.h"
 
 #endif
