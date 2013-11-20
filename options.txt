@@ -64,6 +64,9 @@ input_file = mscene/teapot.mscene
 // Create an OpenCL timing trace.
 create_trace = false
 
+// Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
+dump_kernel_files = false
+
 // Target file for writing OpenCL trace to.
 trace_file = reyes.trace
 
@@ -93,4 +96,4 @@ cull_ribbon = 32
 
 
 
-#hash:-6683750846311482333
+#hash:3785853821376862049

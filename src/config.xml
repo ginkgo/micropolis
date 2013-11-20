@@ -125,6 +125,10 @@
       Create an OpenCL timing trace.
     </value>
 
+    <value name="dump_kernel_files" type="bool" default="false">
+      Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
+    </value>
+
     <value name="trace_file" type="string" default="reyes.trace">
       Target file for writing OpenCL trace to.
     </value>

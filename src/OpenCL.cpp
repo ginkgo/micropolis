@@ -821,10 +821,10 @@ void CL::Program::compile(Device& device,  const string& filename)
     
     string file_content = _source_buffer->str();
 
-    // {
-    //     std::ofstream fs(("/tmp/"+filename).c_str());
-    //     fs << file_content << endl;
-    // }
+    if (config.dump_kernel_files()) {
+        std::ofstream fs(("/tmp/"+filename).c_str());
+        fs << file_content << endl;
+    }
     
     _program = compile_program(device, file_content, filename);
 
