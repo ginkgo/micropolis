@@ -21,6 +21,7 @@ namespace Reyes
 
         bool _is_set_up;
         bool _load_as_texture;
+        bool _load_as_opencl_buffer;
         bool _retain_vector;
 
         
@@ -31,6 +32,7 @@ namespace Reyes
         ~PatchesIndex();
 
         void enable_load_texture();
+        void enable_load_opencl_buffer();
         void enable_retain_vector();
 
         bool are_patches_loaded(void* handle);

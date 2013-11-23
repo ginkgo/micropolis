@@ -3,13 +3,18 @@ import os
 
 env = Environment()
 
+warning_flags = ['-Wall', '-Wno-unknown-pragmas', '-Wno-unused-variable', '-Wno-unused-but-set-variable']
+optimization_flags = ['-O3', '-msse4']
+
+if False:
+    optimization_flags = ['-O0', '-ggdb']
+
 env['CPPPATH'] = ['#/external', '#/generated', '#src']
 env['LINK'] = 'g++'
 env['CC'] = 'gcc'
 env['CXX'] = 'g++'
 env['LIBS'] = ['GL', 'glfw', 'boost_regex', 'IL', 'OpenCL', 'Xrandr', 'rt', 'capnp', 'kj']
-env['CCFLAGS'] = ['-O0', '-ggdb', '-Wall', '-Wno-unknown-pragmas']
-#env['CCFLAGS'] = ['-O3', '-msse4', '-Wall', '-Wno-unknown-pragmas']
+env['CCFLAGS'] = optimization_flags + warning_flags 
 env['CXXFLAGS'] = ['-std=c++11']
 env['CFLAGS'] = ['-std=c99']
 env['LINKFLAGS'] = []

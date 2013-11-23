@@ -13,7 +13,7 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     , _queue(_device)
     , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
 
-
+    , _patch_index(new PatchesIndex())
       
     , _active_patch_buffer(0)
     , _patch_buffers(config.patch_buffer_count())
@@ -38,6 +38,9 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
 	, _depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_int), CL_MEM_READ_WRITE)
     , _reyes_program()
 {
+    //_patch_index->enable_load_opencl_buffer();
+    _patch_index->enable_retain_vector();
+    
     _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
     _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
     _reyes_program.set_constant("PATCH_SIZE", (int)config.reyes_patch_size());
@@ -133,8 +136,7 @@ void Reyes::OpenCLRenderer::prepare()
 
 void Reyes::OpenCLRenderer::finish()
 {
-    #warning TODO
-    //flush();
+    flush();
     
     _framebuffer.release(_queue, _last_sample);
     _framebuffer.show();
@@ -158,14 +160,13 @@ void Reyes::OpenCLRenderer::finish()
 
 bool Reyes::OpenCLRenderer::are_patches_loaded(void* patches_handle)
 {
-    //return _patch_index->are_patches_loaded(patches_handle);
-    return false;
+    return _patch_index->are_patches_loaded(patches_handle);
 }
 
 
 void Reyes::OpenCLRenderer::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
 {
-    //_patch_index->load_patches(patches_handle, patch_data);
+    _patch_index->load_patches(patches_handle, patch_data);
 }
 
 
@@ -174,5 +175,110 @@ void Reyes::OpenCLRenderer::draw_patches(void* patches_handle,
                                          const Projection* projection,
                                          const vec4& color)
 {
-    #warning TODO
+    set_projection(*projection);
+    
+    std::vector<BezierPatch> patch_stack = _patch_index->get_patch_vector(patches_handle);
+
+    for (BezierPatch& patch : patch_stack) {
+        transform_patch(patch, matrix, patch);
+    }   
+    
+    mat4 proj;
+    projection->calc_projection(proj);
+        
+    int s = config.bound_n_split_limit();
+        
+    while (patch_stack.size() > 0) {
+
+        BezierPatch patch = patch_stack.back();
+        patch_stack.pop_back();
+
+        BBox box;
+        calc_bbox(patch, box);
+
+        vec2 size;
+        bool cull;
+        projection->bound(box, size, cull);
+    
+        if (cull) continue;
+
+        if (box.min.z < 0 && size.x < s && size.y < s) {
+            draw_patch(patch);
+        } else {
+            BezierPatch p0, p1;
+            pisplit_patch(patch, p0, p1, proj);
+            patch_stack.push_back(p0);
+            patch_stack.push_back(p1);
+        }
+
+    }
+}
+
+
+
+void Reyes::OpenCLRenderer::set_projection(const Projection& projection)
+{
+    mat4 proj;
+    projection.calc_projection(proj);
+
+    _dice_kernel->set_arg(3, proj);
+}
+
+void Reyes::OpenCLRenderer::draw_patch (const BezierPatch& patch) 
+{
+    size_t cp_index = _patch_count * 16;
+
+    for     (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            assert(cp_index < config.reyes_patches_per_pass()  * 16);
+            _back_buffer[cp_index] = vec4(patch.P[i][j], 1);
+            ++cp_index;
+        }
+    }
+
+    _patch_count++;
+        
+    if (_patch_count >= config.reyes_patches_per_pass()) {
+        statistics.stop_bound_n_split();
+
+        flush();
+        _queue.wait_for_events(_patch_buffers.at(_active_patch_buffer).write_complete);
+
+        statistics.start_bound_n_split();
+    }
+    
+    statistics.inc_patch_count();
+}
+
+void Reyes::OpenCLRenderer::flush()
+{
+    if (_patch_count == 0) {
+        return;
+    }
+ 
+    PatchBuffer& active  = _patch_buffers.at(_active_patch_buffer);
+    _active_patch_buffer = (_active_patch_buffer+1) % config.patch_buffer_count();
+    _back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
+
+    CL::Event e, f;
+    e = _queue.enq_write_buffer(*(active.buffer), active.host, _patch_count * sizeof(vec4) * 16,
+                                "write patches", CL::Event());
+
+    int patch_size  = config.reyes_patch_size();
+    int group_width = config.dice_group_width();
+
+    _dice_kernel->set_arg_r(0, *(active.buffer));
+    e = _queue.enq_kernel(*_dice_kernel,
+                          ivec3(patch_size + group_width, patch_size + group_width, _patch_count),
+                          ivec3(group_width, group_width, 1),
+                          "dice", e | _last_sample);
+    e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, _patch_count),  ivec3(8, 8, 1),
+                          "shade", e);
+    e = _queue.enq_kernel(*_sample_kernel, ivec3(8,8,_patch_count * square(patch_size/8)), ivec3(8,8,1),
+                          "sample", _framebuffer_cleared | e);
+                        
+    active.write_complete = e;
+    _last_sample = e;
+    _patch_count = 0;
+        
 }

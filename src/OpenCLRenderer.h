@@ -39,6 +39,8 @@ namespace Reyes
         CL::CommandQueue _queue;
         OGLSharedFramebuffer _framebuffer;
 
+        shared_ptr<PatchesIndex> _patch_index;
+        
         size_t _active_patch_buffer;
         vector<PatchBuffer> _patch_buffers;
         vec4* _back_buffer;
@@ -81,6 +83,12 @@ namespace Reyes
                                   const mat4& matrix,
                                   const Projection* projection,
                                   const vec4& color);
+
+    private:
+
+        void set_projection(const Projection& projection);
+        void draw_patch(const BezierPatch& patch);
+        void flush();
 
     };
 }

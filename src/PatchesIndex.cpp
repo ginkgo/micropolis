@@ -7,6 +7,7 @@
 Reyes::PatchesIndex::PatchesIndex()
     : _is_set_up(false)
     , _load_as_texture(false)
+    , _load_as_opencl_buffer(false)
     , _retain_vector(false)
 {
         
@@ -23,6 +24,13 @@ void Reyes::PatchesIndex::enable_load_texture()
 {
     assert(!_is_set_up);
     _load_as_texture = true;
+}
+
+
+void Reyes::PatchesIndex::enable_load_opencl_buffer()
+{
+    assert(!_is_set_up);
+    _load_as_opencl_buffer = true;
 }
 
 
@@ -54,6 +62,10 @@ void Reyes::PatchesIndex::load_patches(void* handle, const vector<BezierPatch>& 
     if (_load_as_texture) {
         record.patch_texture.reset(new GL::TextureBuffer(patch_data.size() * sizeof(BezierPatch), GL_RGB32F));
         record.patch_texture->load((void*)patch_data.data());
+    }
+
+    if (_load_as_opencl_buffer) {
+        #warning TODO
     }
         
     _is_set_up = true;

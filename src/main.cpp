@@ -208,7 +208,7 @@ bool test_prefix_sum(const int N, bool print)
 
     srand(43);
     if (print) cout << "INPUT: "; 
-    for (size_t i = 0; i < N; ++i) {
+    for (size_t i = 0; i < (size_t)N; ++i) {
         i_vec[i] = ivec2(1, rand()%8+1);
         o_vec[i] = ivec2(0, 0);
 
@@ -238,7 +238,7 @@ bool test_prefix_sum(const int N, bool print)
     
     ivec2 sum(0);
     if (print) cout << "OUTPUT: "; 
-    for (size_t i = 0; i < N; ++i) {
+    for (size_t i = 0; i < (size_t)N; ++i) {
         sum += i_vec[i];
 
         if (sum != o_vec[i]) {

@@ -323,8 +323,8 @@ void Reyes::bound_patch_range (const PatchRange& r, const BezierPatch& p, const 
      
     box.clear();
         
-    for (int iu = 0; iu < RES; ++iu) {
-        for (int iv = 0; iv < RES; ++iv) {
+    for (size_t iu = 0; iu < RES; ++iu) {
+        for (size_t iv = 0; iv < RES; ++iv) {
             float u = r.range.min.x + (r.range.max.x - r.range.min.x) * iu * (1.0f / (RES-1));
             float v = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
 
@@ -342,9 +342,9 @@ void Reyes::bound_patch_range (const PatchRange& r, const BezierPatch& p, const 
     vlen = 0;
     hlen = 0;
 
-    for (int i = 0; i < RES; ++i) {
+    for (size_t i = 0; i < RES; ++i) {
         float h = 0, v = 0;
-        for (int j = 0; j < RES-1; ++j) {
+        for (size_t j = 0; j < RES-1; ++j) {
             // v += glm::distance(pp[j][i], pp[j+1][i]);
             // h += glm::distance(pp[i][j], pp[i][j+1]);
             v += glm::distance(ps[j][i], ps[j+1][i]);

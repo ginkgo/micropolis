@@ -34,11 +34,11 @@ verbosity_level = 1
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 16
+reyes_patch_size = 32
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 4096
+reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 32
@@ -47,7 +47,7 @@ bound_n_split_limit = 32
 max_split_depth = 20
 
 // Width of the work-group for the dicing kernel.
-dice_group_width = 32
+dice_group_width = 16
 
 // Maximum number of framebuffer tiles, a block can be assigned to.
 max_block_assignments = 9
@@ -59,7 +59,7 @@ subpixel_bits = 8
 clear_color = 0.1 0.2 1 0
 
 // Patch data input file.
-input_file = mscene/teapot.mscene
+input_file = mscene/teapots.mscene
 
 // Create an OpenCL timing trace.
 create_trace = false

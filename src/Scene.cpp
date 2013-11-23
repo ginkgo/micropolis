@@ -56,101 +56,99 @@ namespace {
 
 }
 
-namespace Reyes {
-    Scene::Scene (const string& filename) :
-        active_cam_id(0)
-    {
-        int fd = open(filename.c_str(), O_RDONLY);
+Reyes::Scene::Scene (const string& filename) :
+    active_cam_id(0)
+{
+    int fd = open(filename.c_str(), O_RDONLY);
 
-        capnp::PackedFdMessageReader message(fd);
+    capnp::PackedFdMessageReader message(fd);
 
-        ::Scene::Reader scene = message.getRoot<::Scene>();
+    ::Scene::Reader scene = message.getRoot<::Scene>();
 
-        for (auto c : scene.getCameras()) {
-            Camera* camera =
-                new Camera{c.getName(),
-                           transformToMatrix(c.getTransform()),
-                           shared_ptr<Projection>(new PerspectiveProjection(c.getFovy(),
-                                                                            c.getNear(),
-                                                                            config.window_size()))};
-            cameras.push_back(shared_ptr<Camera>(camera));
-        }
+    for (auto c : scene.getCameras()) {
+        Camera* camera =
+            new Camera{c.getName(),
+                       transformToMatrix(c.getTransform()),
+                       shared_ptr<Projection>(new PerspectiveProjection(c.getFovy(),
+                                                                        c.getNear(),
+                                                                        config.window_size()))};
+        cameras.push_back(shared_ptr<Camera>(camera));
+    }
 
-        for (auto l : scene.getLights()) {
-            assert(l.getType() == ::LightSource::Type::DIRECTIONAL);
+    for (auto l : scene.getLights()) {
+        assert(l.getType() == ::LightSource::Type::DIRECTIONAL);
             
-            DirectionalLight* light =
-                new DirectionalLight{l.getName(),
-                                     vec3(vec4(0,0,1,1) * transformToMatrix(l.getTransform())),
-                                     to_vec3(l.getColor()) * l.getIntensity()};
+        DirectionalLight* light =
+            new DirectionalLight{l.getName(),
+                                 vec3(vec4(0,0,1,1) * transformToMatrix(l.getTransform())),
+                                 to_vec3(l.getColor()) * l.getIntensity()};
 
-            lights.push_back(shared_ptr<DirectionalLight>(light));
-        }
+        lights.push_back(shared_ptr<DirectionalLight>(light));
+    }
 
-        map<string, shared_ptr<BezierMesh> > meshmap;
-        for (auto m : scene.getMeshes()) {
-            assert(c.getType() == ::Mesh::Type::BEZIER);
+    map<string, shared_ptr<BezierMesh> > meshmap;
+    for (auto m : scene.getMeshes()) {
+        assert(c.getType() == ::Mesh::Type::BEZIER);
 
-            BezierMesh* mesh = new BezierMesh{m.getName()};
+        BezierMesh* mesh = new BezierMesh{m.getName()};
 
-            int i = 0;
-            vec3 v;
-            BezierPatch patch;
-            for (float f : m.getPositions()) {
-                v[i%3] = f;
+        int i = 0;
+        vec3 v;
+        BezierPatch patch;
+        for (float f : m.getPositions()) {
+            v[i%3] = f;
 
-                if (i%3 == 2) {
-                    patch.P[0][(i/3)%16] = v;
-                }
+            if (i%3 == 2) {
+                patch.P[0][(i/3)%16] = v;
+            }
 
-                if (i%(3*16) == (3*16-1)) {
-                    mesh->patches.push_back(patch);
-                }
+            if (i%(3*16) == (3*16-1)) {
+                mesh->patches.push_back(patch);
+            }
                 
-                ++i;
-            }
-
-            meshes.push_back(shared_ptr<BezierMesh>(mesh));
-            meshmap[mesh->name] = meshes.back();
+            ++i;
         }
 
-        for (auto o : scene.getObjects()) {
+        meshes.push_back(shared_ptr<BezierMesh>(mesh));
+        meshmap[mesh->name] = meshes.back();
+    }
 
-            shared_ptr<BezierMesh> mesh = meshmap[o.getMeshname()];
-            Object* object = new Object{o.getName(),
-                                        transformToMatrix(o.getTransform()),
-                                        vec4(to_vec3(o.getColor()),1),
-                                        mesh};
+    for (auto o : scene.getObjects()) {
+
+        shared_ptr<BezierMesh> mesh = meshmap[o.getMeshname()];
+        Object* object = new Object{o.getName(),
+                                    transformToMatrix(o.getTransform()),
+                                    vec4(to_vec3(o.getColor()),1),
+                                    mesh};
             
-            objects.push_back(shared_ptr<Object>(object));
-        }
-
-        close(fd);
+        objects.push_back(shared_ptr<Object>(object));
     }
 
-    Scene::~Scene()
-    {
-    }
-     
-    void Scene::draw(PatchDrawer& renderer) const
-    {
-        renderer.prepare();
-
-        for (auto object : objects) {
-
-            // Load patch data on demand
-            if (!renderer.are_patches_loaded(object->mesh.get())) {
-                renderer.load_patches(object->mesh.get(), object->mesh->patches);
-            }
-
-            mat4 matrix(glm::inverse(active_cam().transform) * object->transform);
-
-
-            renderer.draw_patches(object->mesh.get(), matrix, active_cam().projection.get(), object->color);
-            
-        }
-        
-        renderer.finish();
-    }
-       
+    close(fd);
 }
+
+Reyes::Scene::~Scene()
+{
+}
+     
+void Reyes::Scene::draw(PatchDrawer& renderer) const
+{
+    renderer.prepare();
+
+    for (auto object : objects) {
+
+        // Load patch data on demand
+        if (!renderer.are_patches_loaded(object->mesh.get())) {
+            renderer.load_patches(object->mesh.get(), object->mesh->patches);
+        }
+
+        mat4 matrix(glm::inverse(active_cam().transform) * object->transform);
+
+
+        renderer.draw_patches(object->mesh.get(), matrix, active_cam().projection.get(), object->color);
+            
+    }
+        
+    renderer.finish();
+}
+       
