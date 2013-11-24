@@ -127,6 +127,7 @@ namespace Reyes
     void OGLSharedFramebuffer::show()
     {
         glEnable(GL_TEXTURE_2D);
+        glDisable(GL_DEPTH_TEST);
 
         _tex_buffer.bind();
         

@@ -151,8 +151,6 @@ void Reyes::OpenCLRenderer::finish()
     _active_patch_buffer = 0;
     _back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
         
-    glfwSwapBuffers(glfwGetCurrentContext());
-
     statistics.end_render();
 }
 
@@ -212,6 +210,7 @@ void Reyes::OpenCLRenderer::draw_patches(void* patches_handle,
         }
 
     }
+
 }
 
 
@@ -280,5 +279,6 @@ void Reyes::OpenCLRenderer::flush()
     active.write_complete = e;
     _last_sample = e;
     _patch_count = 0;
+
         
 }

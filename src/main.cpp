@@ -110,6 +110,8 @@ void mainloop(GLFWwindow* window)
     
     while (running) {
 
+        glfwPollEvents();
+        
         double now = glfwGetTime();
         double time_diff = now - last;
         last = now;
@@ -136,8 +138,7 @@ void mainloop(GLFWwindow* window)
         last_cursor_pos = cursor_pos;
 
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) {
-            translation *= 4.0f;
-            rotation    *= 2.0f;
+            translation *= 2.0f;
             zrotation   *= 2.0f;
         }
         
@@ -176,6 +177,8 @@ void mainloop(GLFWwindow* window)
         } else {
             scene.draw(*renderer);
         }
+        
+        glfwSwapBuffers(window);
         statistics.end_render();
 
         statistics.update();
@@ -185,8 +188,7 @@ void mainloop(GLFWwindow* window)
         running = running && !glfwGetKey( window,  'Q' );
 		running = running && !glfwWindowShouldClose( window );
 
-        
-        glfwPollEvents();		
+        		
     }
 }
 
