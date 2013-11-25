@@ -62,7 +62,7 @@ clear_color = 0.1 0.2 1 0
 input_file = mscene/teapots.mscene
 
 // Create an OpenCL timing trace.
-create_trace = false
+create_trace = true
 
 // Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
 dump_kernel_files = false
