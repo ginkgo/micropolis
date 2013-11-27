@@ -24,6 +24,9 @@
 
 namespace Reyes
 {
+    class Batch;
+    class PatchesIndex;
+    class OpenCLBoundNSplit;
 
     class OpenCLRenderer : public PatchDrawer
     {
@@ -40,6 +43,7 @@ namespace Reyes
         OGLSharedFramebuffer _framebuffer;
 
         shared_ptr<PatchesIndex> _patch_index;
+        shared_ptr<OpenCLBoundNSplit> _bound_n_split;
         
         size_t _active_patch_buffer;
         vector<PatchBuffer> _patch_buffers;
@@ -64,7 +68,7 @@ namespace Reyes
         scoped_ptr<CL::Kernel> _init_tile_locks_kernel;
         scoped_ptr<CL::Kernel> _clear_depth_buffer_kernel;
 
-        CL::Event _last_sample;
+        CL::Event _last_batch;
         CL::Event _framebuffer_cleared;
 
 
@@ -88,7 +92,7 @@ namespace Reyes
 
         void set_projection(const Projection& projection);
         void draw_patch(const BezierPatch& patch);
-        void flush();
+        CL::Event send_batch(Reyes::Batch& batch, const mat4& matrix, const mat4& proj, const vec4& color, const CL::Event& ready);
 
     };
 }

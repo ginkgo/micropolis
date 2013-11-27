@@ -60,23 +60,37 @@ namespace CL
         ImageBuffer(Device& device, GL::Texture& texture, cl_mem_flags flags);
         ~ImageBuffer();
 
-        cl_mem get() { return _buffer; }
+        cl_mem get() const { return _buffer; }
     };
 
     class Buffer : public noncopyable
     {
+    protected:
+        
         cl_mem _buffer;
 
-        public:
-
+    public:
+        
         Buffer(Device& device, size_t size, cl_mem_flags flags);
         Buffer(Device& device, size_t size, cl_mem_flags flags, void* host_ptr);
         Buffer(Device& device, CommandQueue& queue, size_t size, cl_mem_flags flags, void** host_ptr);
         Buffer(Device& device, GLuint GL_buffer);
         ~Buffer();
 
-        cl_mem get() { return _buffer; }
+        cl_mem get() const { return _buffer; }
         size_t get_size() const;
+    };
+
+    class TransferBuffer : public Buffer
+    {
+        void* _host_ptr;
+
+        public:
+
+        TransferBuffer(Device& device, CommandQueue& queue, size_t size, cl_mem_flags flags);
+        ~TransferBuffer();
+
+        void* host_ptr();
     };
 
     class Kernel : public noncopyable
@@ -90,10 +104,20 @@ namespace CL
         Kernel(cl_program program, cl_device_id device, const string& kernelname);
         ~Kernel();
 
-        template<typename T> void set_arg  (cl_uint arg_index, T buffer);
-        template<typename T> void set_arg_r(cl_uint arg_index, T& buffer);
+        template<typename T> void set_arg  (cl_uint arg_index, const T& buffer);
 
         cl_kernel get() { return _kernel;}
+
+        
+        template<typename T, typename ... Types> void set_args(cl_uint i, const T& value, Types && ... rest)
+        {
+            set_arg(i, value);
+            set_args(i+1, rest...);
+        }
+
+        
+        void set_args(cl_uint i) {}
+
     };
 
     class Program : public noncopyable
@@ -216,17 +240,9 @@ namespace CL
 
 namespace CL
 {
-    template<typename T> 
-    inline void Kernel::set_arg(cl_uint arg_index, T value) 
-    {
-        cl_int status;
-
-        status = clSetKernelArg(_kernel, arg_index, sizeof(T), &value);
-	OPENCL_ASSERT(status);
-    }
 
     template<typename T> 
-    inline void Kernel::set_arg_r(cl_uint arg_index, T& value) 
+    inline void Kernel::set_arg(cl_uint arg_index, const T& value) 
     {
         cl_int status;
 
@@ -235,14 +251,14 @@ namespace CL
     }
 
     template<>
-    inline void Kernel::set_arg_r<ImageBuffer>(cl_uint arg_index, ImageBuffer& value)
+    inline void Kernel::set_arg<ImageBuffer>(cl_uint arg_index, const ImageBuffer& value)
     {
         cl_mem mem = value.get();
         set_arg(arg_index, mem);
     }
 
     template<>
-    inline void Kernel::set_arg_r<Buffer>(cl_uint arg_index, Buffer& value)
+    inline void Kernel::set_arg<Buffer>(cl_uint arg_index, const Buffer& value)
     {
         cl_mem mem = value.get();
         set_arg(arg_index, mem);

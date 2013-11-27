@@ -79,15 +79,20 @@ size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
 }
 
 __kernel void dice (const global float4* patch_buffer,
+                    const global int* pid_buffer,
+                    const global float2* min_buffer,
+                    const global float2* max_buffer,
                     global float4* pos_grid,
                     global int2* pxlpos_grid,
-                    float16 proj,
-                    global float* depth_grid)
+                    global float* depth_grid,
+                    float16 modelview,
+                    float16 proj)
 {
     __local float4 patch[16];
 
     size_t nv = get_global_id(0), nu = get_global_id(1);
-    size_t patch_id = get_global_id(2);
+    size_t range_id = get_global_id(2);
+    size_t patch_id = pid_buffer[range_id];
 
     if (get_local_id(0) < 4 && get_local_id(1) < 4) {
         size_t i = get_local_id(0) * 4 + get_local_id(1);
@@ -101,7 +106,8 @@ __kernel void dice (const global float4* patch_buffer,
         return;
     }
     
-    float2 uv = (float2) (nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE);
+    float2 uv = (float2)(mix(min_buffer[range_id].x,max_buffer[range_id].x, nu/(float)PATCH_SIZE),
+                         mix(min_buffer[range_id].y,max_buffer[range_id].y, nv/(float)PATCH_SIZE));
 
     float4 P[4];
 
@@ -112,21 +118,7 @@ __kernel void dice (const global float4* patch_buffer,
                            patch[4 * i + 3], uv.y);
     }
 
-    float4 pos = eval_spline(P[0],P[1],P[2],P[3], uv.x);
-
-    // pos.x += native_sin(pos.y*3*5) * 0.04f;
-    // pos.y += native_sin(pos.x*3*5) * 0.04f;
-    // pos.z += native_sin(pos.y*3*5) * native_sin(pos.x*3*5) * 0.04f;
-
-    // pos.x += native_sin(pos.y*7*5) * 0.02f;
-    // pos.y += native_sin(pos.x*7*5) * 0.02f;
-    // pos.z += native_sin(pos.y*7*5) * native_sin(pos.x*7*5) * 0.02f;
-
-    // pos.x += native_sin(pos.y*13*5) * 0.01f;
-    // pos.y += native_sin(pos.x*13*5) * 0.01f;
-    // pos.z += native_sin(pos.y*13*5) * native_sin(pos.x*13*5) * 0.01f;
-
-    
+    float4 pos = mul_m44v4(modelview, eval_spline(P[0],P[1],P[2],P[3], uv.x));
     float4 p = mul_m44v4(proj, pos);
 
     int2 coord = (int2)((int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
@@ -469,9 +461,9 @@ __kernel void sample(global const int4* block_index,
             }
 	    
 
-            // blit tile
-            if (head) while (!atomic_xchg(&(tile_locks[tile_id]), 0));
-            barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+            // // blit tile
+            // if (head) while (!atomic_xchg(&(tile_locks[tile_id]), 0));
+            // barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
             int d = (int)(clamp(depths[l.y][l.x] / 200.0f , 0.0f, 1.0f) * 0x7fffffff);
             if (d < atomic_min(depth_buffer + fb_id, d)) {
@@ -479,8 +471,8 @@ __kernel void sample(global const int4* block_index,
                 color_buffer[fb_id] = colors[l.y][l.x];
             }
             
-            barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-            if (head) atomic_xchg(&(tile_locks[tile_id]), 1);
+            // barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+            // if (head) atomic_xchg(&(tile_locks[tile_id]), 1);
 
         }
     }    

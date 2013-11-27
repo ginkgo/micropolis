@@ -295,6 +295,24 @@ size_t CL::Buffer::get_size() const
     return size;
 }
 
+
+CL::TransferBuffer::TransferBuffer(Device& device, CL::CommandQueue& queue, size_t size, cl_mem_flags flags)
+    : CL::Buffer(device, queue, size, flags, &_host_ptr)
+{
+    
+}
+
+CL::TransferBuffer::~TransferBuffer()
+{
+
+}
+
+void* CL::TransferBuffer::host_ptr()
+{
+    return _host_ptr;
+}
+
+
 CL::Event::Event() :
     _count(0)
 {
@@ -358,7 +376,8 @@ CL::CommandQueue::CommandQueue(Device& device) :
 {
     cl_int status;
     _queue = clCreateCommandQueue(device.get_context(), device.get_device(),
-                                  CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, 
+                                  CL_QUEUE_PROFILING_ENABLE // | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
+                                  , 
                                   &status);
 
     OPENCL_ASSERT(status);
@@ -420,7 +439,6 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, int global_size, int loca
     status = clEnqueueNDRangeKernel(_queue, kernel.get(),
                                     1, offset, global, local,
                                     cnt, _event_pad_ptr, &e);
-    
     OPENCL_ASSERT(status);
 
     return insert_event(name, e);
@@ -480,6 +498,7 @@ CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t l
                                   offset, len, src,
                                   cnt, _event_pad_ptr, &e);
 
+    //cout << name << endl;
     OPENCL_ASSERT(status);
 
     return insert_event(name, e);

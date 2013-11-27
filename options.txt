@@ -1,5 +1,5 @@
 // Size of the window in pixels.
-window_size = 800 600
+window_size = 1024 768
 
 // Number of anti-aliasing samples. (0 means no AA)
 fsaa_samples = 0
@@ -20,7 +20,7 @@ kernel_dir = kernels
 max_anisotropy = 1
 
 // OpenCL platform ID.
-platform_id = 0
+platform_id = 1
 
 // OpenCL device ID.
 device_id = 0
@@ -74,7 +74,7 @@ trace_file = reyes.trace
 backface_culling = true
 
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = true
+do_event_polling = false
 
 // Number of patch buffers used for transferring patch data to device.
 patch_buffer_count = 3

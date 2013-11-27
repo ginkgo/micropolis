@@ -62,12 +62,12 @@ namespace Reyes
 
     CL::Event Framebuffer::clear(CL::CommandQueue& queue, const CL::Event& e)
     {
-        _clear_kernel->set_arg(0, _cl_buffer->get());
-        vec4 color = config.clear_color();
-        _clear_kernel->set_arg(1, vec4(powf(color.x, 2.2), 
-                                      powf(color.y, 2.2),
-                                      powf(color.z, 2.2), 1000));
-        return queue.enq_kernel(*_clear_kernel, _size.x * _size.y, 256,
+        vec4 clear_color = config.clear_color();
+        clear_color = vec4(powf(clear_color.x, 2.2), 
+                           powf(clear_color.y, 2.2),
+                           powf(clear_color.z, 2.2), 1000);
+        _clear_kernel->set_args(0, *_cl_buffer, clear_color);
+        return queue.enq_kernel(*_clear_kernel, _size.x * _size.y, 64,
                                 "clear framebuffer", e);
     }
 
@@ -118,6 +118,7 @@ namespace Reyes
             CL::Event e = queue.enq_read_buffer(*_cl_buffer, _local, _tex_buffer.get_size(),
                                                 "read framebuffer", evt);
             queue.wait_for_events(e);
+            // queue.finish();
 
             _tex_buffer.load(_local);
             return CL::Event();

@@ -5,6 +5,8 @@
 #include "Config.h"
 #include "Framebuffer.h"
 #include "OpenCL.h"
+#include "OpenCLBoundNSplit.h"
+#include "PatchesIndex.h"
 #include "Projection.h"
 #include "Statistics.h"
 
@@ -14,6 +16,7 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchesIndex())
+    , _bound_n_split(new OpenCLBoundNSplit(_device, _queue, _patch_index))
       
     , _active_patch_buffer(0)
     , _patch_buffers(config.patch_buffer_count())
@@ -38,9 +41,6 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
 	, _depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_int), CL_MEM_READ_WRITE)
     , _reyes_program()
 {
-    //_patch_index->enable_load_opencl_buffer();
-    _patch_index->enable_retain_vector();
-    
     _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
     _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
     _reyes_program.set_constant("PATCH_SIZE", (int)config.reyes_patch_size());
@@ -63,25 +63,6 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     _init_tile_locks_kernel.reset(_reyes_program.get_kernel("init_tile_locks"));
     _clear_depth_buffer_kernel.reset(_reyes_program.get_kernel("clear_depth_buffer"));
 
-    _dice_kernel->set_arg_r(1, _pos_grid);
-    _dice_kernel->set_arg_r(2, _pxlpos_grid);
-    _dice_kernel->set_arg_r(4, _depth_grid);
-
-    _shade_kernel->set_arg_r(0, _pos_grid);
-    _shade_kernel->set_arg_r(1, _pxlpos_grid);
-    _shade_kernel->set_arg_r(2, _block_index);
-    _shade_kernel->set_arg_r(3, _color_grid);
-
-    _sample_kernel->set_arg_r(0, _block_index);
-    _sample_kernel->set_arg_r(1, _pxlpos_grid);
-    _sample_kernel->set_arg_r(2, _color_grid);
-    _sample_kernel->set_arg_r(3, _depth_grid);
-    _sample_kernel->set_arg_r(4, _tile_locks);
-    _sample_kernel->set_arg_r(5, _framebuffer.get_buffer());
-    _sample_kernel->set_arg_r(6, _depth_buffer);
-
-    _clear_depth_buffer_kernel->set_arg_r(0, _depth_buffer);
-
     _patch_buffers.resize(config.patch_buffer_count());
 
     for (int i = 0; i < config.patch_buffer_count(); ++i) {
@@ -102,8 +83,8 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     }
 
     _back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
-	    
-    _init_tile_locks_kernel->set_arg_r(0, _tile_locks);
+
+    _init_tile_locks_kernel->set_args(0, _tile_locks);
     _queue.enq_kernel(*_init_tile_locks_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64, 
                       "init tile locks", CL::Event());
 }
@@ -126,26 +107,27 @@ void Reyes::OpenCLRenderer::prepare()
 {
     CL::Event e = _framebuffer.acquire(_queue, CL::Event());
     e = _framebuffer.clear(_queue, e);
+
+    _clear_depth_buffer_kernel->set_args(0,_depth_buffer);
     _framebuffer_cleared = _queue.enq_kernel(*_clear_depth_buffer_kernel,
                                              _framebuffer.size().x * _framebuffer.size().y, 64,
                                              "clear depthbuffer", e);
-    
     statistics.start_render();
 }
 
 
 void Reyes::OpenCLRenderer::finish()
 {
-    flush();
-    
-    _framebuffer.release(_queue, _last_sample);
+    _framebuffer.release(_queue, _last_batch);
     _framebuffer.show();
-        
+
+    _queue.finish();
+    
     for (int i = 0; i < config.patch_buffer_count(); ++i) {
         _patch_buffers.at(i).write_complete = CL::Event();
     }
 
-    _last_sample = CL::Event();
+    _last_batch = CL::Event();
     _framebuffer_cleared = CL::Event();
 
     _active_patch_buffer = 0;
@@ -173,112 +155,55 @@ void Reyes::OpenCLRenderer::draw_patches(void* patches_handle,
                                          const Projection* projection,
                                          const vec4& color)
 {
-    set_projection(*projection);
-    
-    std::vector<BezierPatch> patch_stack = _patch_index->get_patch_vector(patches_handle);
-
-    for (BezierPatch& patch : patch_stack) {
-        transform_patch(patch, matrix, patch);
-    }   
-    
     mat4 proj;
     projection->calc_projection(proj);
+
+    _bound_n_split->init(patches_handle, matrix, projection);
+
+    while (!_bound_n_split->done()) {
         
-    int s = config.bound_n_split_limit();
-        
-    while (patch_stack.size() > 0) {
+        Batch batch = _bound_n_split->do_bound_n_split(_last_batch);
 
-        BezierPatch patch = patch_stack.back();
-        patch_stack.pop_back();
+        _last_batch = send_batch(batch, matrix, proj, color,
+                                 batch.transfer_done);
+    }
+}
 
-        BBox box;
-        calc_bbox(patch, box);
 
-        vec2 size;
-        bool cull;
-        projection->bound(box, size, cull);
+CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
+                                            const mat4& matrix, const mat4& proj, const vec4& color,
+                                            const CL::Event& ready)
+{
+    int patch_count = batch.patch_count;
     
-        if (cull) continue;
-
-        if (box.min.z < 0 && size.x < s && size.y < s) {
-            draw_patch(patch);
-        } else {
-            BezierPatch p0, p1;
-            pisplit_patch(patch, p0, p1, proj);
-            patch_stack.push_back(p0);
-            patch_stack.push_back(p1);
-        }
-
+    if (patch_count == 0) {
+        return CL::Event();
     }
 
-}
-
-
-
-void Reyes::OpenCLRenderer::set_projection(const Projection& projection)
-{
-    mat4 proj;
-    projection.calc_projection(proj);
-
-    _dice_kernel->set_arg(3, proj);
-}
-
-void Reyes::OpenCLRenderer::draw_patch (const BezierPatch& patch) 
-{
-    size_t cp_index = _patch_count * 16;
-
-    for     (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            assert(cp_index < config.reyes_patches_per_pass()  * 16);
-            _back_buffer[cp_index] = vec4(patch.P[i][j], 1);
-            ++cp_index;
-        }
-    }
-
-    _patch_count++;
-        
-    if (_patch_count >= config.reyes_patches_per_pass()) {
-        statistics.stop_bound_n_split();
-
-        flush();
-        _queue.wait_for_events(_patch_buffers.at(_active_patch_buffer).write_complete);
-
-        statistics.start_bound_n_split();
-    }
+    CL::Event e;
     
-    statistics.inc_patch_count();
-}
-
-void Reyes::OpenCLRenderer::flush()
-{
-    if (_patch_count == 0) {
-        return;
-    }
- 
-    PatchBuffer& active  = _patch_buffers.at(_active_patch_buffer);
-    _active_patch_buffer = (_active_patch_buffer+1) % config.patch_buffer_count();
-    _back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
-
-    CL::Event e, f;
-    e = _queue.enq_write_buffer(*(active.buffer), active.host, _patch_count * sizeof(vec4) * 16,
-                                "write patches", CL::Event());
-
     int patch_size  = config.reyes_patch_size();
     int group_width = config.dice_group_width();
 
-    _dice_kernel->set_arg_r(0, *(active.buffer));
+    // DICE
+    _dice_kernel->set_args(0, batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
+                           _pos_grid, _pxlpos_grid, _depth_grid,
+                           matrix, proj);    
     e = _queue.enq_kernel(*_dice_kernel,
-                          ivec3(patch_size + group_width, patch_size + group_width, _patch_count),
+                          ivec3(patch_size + group_width, patch_size + group_width, patch_count),
                           ivec3(group_width, group_width, 1),
-                          "dice", e | _last_sample);
-    e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, _patch_count),  ivec3(8, 8, 1),
-                          "shade", e);
-    e = _queue.enq_kernel(*_sample_kernel, ivec3(8,8,_patch_count * square(patch_size/8)), ivec3(8,8,1),
-                          "sample", _framebuffer_cleared | e);
-                        
-    active.write_complete = e;
-    _last_sample = e;
-    _patch_count = 0;
+                          "dice", ready);
 
-        
+    // SHADE
+    _shade_kernel->set_args(0, _pos_grid, _pxlpos_grid, _block_index, _color_grid);
+    e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8, 8, 1),
+                          "shade", e);
+
+    // SAMPLE
+    _sample_kernel->set_args(0, _block_index, _pxlpos_grid, _color_grid, _depth_grid,
+                             _tile_locks, _framebuffer.get_buffer(), _depth_buffer);
+    e = _queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
+                          "sample", _framebuffer_cleared | e);
+
+    return e;
 }
