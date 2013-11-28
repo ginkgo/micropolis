@@ -290,6 +290,7 @@ void qsplit_patch(const BezierPatch& patch,
 }
 
 void calc_bbox(const BezierPatch& patch, BBox& box) {
+    box.clear();
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
             box.add_point(patch.P[i][j]);

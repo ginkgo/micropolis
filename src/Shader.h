@@ -27,29 +27,29 @@
 
 namespace GL
 {
+
+    class Buffer;
+    
 	/**
 	 * Represents a compiled GLSL shader.
 	 */
 	class Shader
 	{
+
+    protected:
+
 		bool _valid; /**< State variable for testing compilation success */
 
 		GLuint _program; /**< Shader program handle. */
-
-		GLuint _vertex_shader; /**< Vertex shader handle. */
-		GLuint _geometry_shader; /**< Geometry shader handle */
-		GLuint _fragment_shader; /**< Fragment shader handle */
-		GLuint _tess_ctrl_shader; /**< Tessellation control shader handle */
-		GLuint _tess_eval_shader; /**< Tessellation evaluation shader handle */
-
+        
 		string _name;
 
 		typedef boost::unordered_map<string, GLint> UniformMap;
 		UniformMap _uniform_map;
 
-		typedef boost::unordered_map<string, GLuint> UniformBlockMap;
-		UniformBlockMap _uniform_block_map;
 
+        Shader();
+        
     public:
     
 		/**
@@ -106,31 +106,13 @@ namespace GL
 		{
 			set_uniform(uniform_name, (Tex&) texture);
 		}
+        
 
 		bool has_uniform(const string& uniform_name) const {
 			return (_uniform_map.count(uniform_name) > 0);
 		}
 
-		// void set_uniform(const string& uniform_name, const TextureArray& texture)
-		// {
-		//     UniformMap::iterator it = _uniform_map.find(uniform_name);
-        
-		//     if (it == _uniform_map.end())
-		//         return;
-
-		//     gltype_info<GLint>::set_uniform(it->second, texture.get_unit_number());
-		// }
-
-		// void set_uniform_block(const string& block_name, 
-		//                        const UniformBuffer& UBO) 
-		// {
-		//     UniformBlockMap::iterator it = _uniform_block_map.find(block_name);
-        
-		//     if (it == _uniform_block_map.end())
-		//         return;
-
-		//     glUniformBlockBinding(_program, it->second, UBO.get_binding());
-		// };
+        void set_buffer(const string& buffer_name, const GL::Buffer& buffer);
 
 		/**
 		 * Return the location of an attrib.
@@ -160,10 +142,11 @@ namespace GL
 			return _valid;
 		}
     
-    private:
+    protected:
 
-		void clean_up();
+		void link();
 	};
+
 
 }
 #endif

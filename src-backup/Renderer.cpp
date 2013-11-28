@@ -141,7 +141,6 @@ namespace Reyes
         _framebuffer_cleared = _queue.enq_kernel(*_clear_depth_buffer_kernel, 
                                                  _framebuffer.size().x * _framebuffer.size().y, 64, 
                                                  "clear depthbuffer", e);
-
         statistics.start_render();
     }
 
@@ -151,7 +150,6 @@ namespace Reyes
         flush();
 
         _framebuffer.release(_queue, _last_sample);
-
         _framebuffer.show();
         
         for (int i = 0; i < config.patch_buffer_count(); ++i) {

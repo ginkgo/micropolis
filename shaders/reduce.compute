@@ -1,0 +1,68 @@
+#version 430
+
+layout (local_size_x = 64) in;
+
+uniform uint batch_size;
+
+layout (std430) buffer input_buffer
+{
+    ivec2 ibuf[];
+};
+
+layout (std430) buffer output_buffer
+{
+    ivec2 obuf[];
+};
+
+layout (std430) buffer reduced_buffer
+{
+    ivec2 rbuf[];
+};
+
+shared ivec2 tbuf[128];
+
+void main (void)
+{
+
+    uint lid = gl_LocalInvocationID.x;
+    uint wid = gl_WorkGroupID.x;
+    uint gid1 = wid*128 + lid;
+    uint gid2 = wid*128 + 64 + lid;    
+
+    tbuf[lid] = ivec2(0);
+    tbuf[lid+64] = ivec2(0);
+
+    // read input data into shared buffer
+    if (gid1 < batch_size) tbuf[lid]    = ibuf[gid1];
+    if (gid2 < batch_size) tbuf[lid+64] = ibuf[gid2];
+
+    // up-sweep
+    for (uint i = 1; i <= 64; i <<= 1) {
+        memoryBarrierShared();
+        
+        if (lid < 64/i) {
+            uint ai = (2*lid+1)*i-1;
+            uint bi = (2*lid+2)*i-1;
+            tbuf[bi] += tbuf[ai];
+        }
+    }
+
+    // down-sweep
+    for (uint i = 64; i >= 2; i >>= 1) {
+        memoryBarrierShared();
+                                                \
+        if (lid < 128/i-1) {
+            uint ai = i*(lid+1)-1;
+            uint bi = ai + i/2;
+
+            tbuf[bi] += tbuf[ai];
+        }
+    }
+
+    // write results back
+    memoryBarrierShared();
+    if (gid1 < batch_size) obuf[gid1] = tbuf[lid];
+    if (gid2 < batch_size) obuf[gid2] = tbuf[lid+64];
+
+    rbuf[wid] = tbuf[127];    
+}

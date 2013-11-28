@@ -26,17 +26,20 @@
 namespace Reyes
 {
 
-    Framebuffer::Framebuffer(CL::Device& device,
-                             const ivec2& size, int tile_size) :
+    Framebuffer::Framebuffer(CL::Device& device, const ivec2& size, int tile_size) :
         _size(size),
         _tile_size(tile_size),
         _grid_size(ceil((float)size.x/tile_size), ceil((float)size.y/tile_size)),
         _act_size(_grid_size * tile_size), 
         _shader("tex_draw"),
-        _clear_kernel(device, "framebuffer.cl", "clear"),
+        //_clear_kernel(device, "framebuffer.cl", "clear"),
         _cl_buffer(0),
 		_screen_quad(6)
     {
+        _framebuffer_program.compile(device, "framebuffer.cl");
+
+        _clear_kernel.reset(_framebuffer_program.get_kernel("clear"));
+        
         _screen_quad.vertex(-1,-1);
         _screen_quad.vertex( 1,-1);
         _screen_quad.vertex( 1, 1);
@@ -59,12 +62,12 @@ namespace Reyes
 
     CL::Event Framebuffer::clear(CL::CommandQueue& queue, const CL::Event& e)
     {
-        _clear_kernel.set_arg(0, _cl_buffer->get());
-        vec4 color = config.clear_color();
-        _clear_kernel.set_arg(1, vec4(powf(color.x, 2.2), 
-                                      powf(color.y, 2.2),
-                                      powf(color.z, 2.2), 1000));
-        return queue.enq_kernel(_clear_kernel, _size.x * _size.y, 256,
+        vec4 clear_color = config.clear_color();
+        clear_color = vec4(powf(clear_color.x, 2.2), 
+                           powf(clear_color.y, 2.2),
+                           powf(clear_color.z, 2.2), 1000);
+        _clear_kernel->set_args(0, *_cl_buffer, clear_color);
+        return queue.enq_kernel(*_clear_kernel, _size.x * _size.y, 64,
                                 "clear framebuffer", e);
     }
 
@@ -78,7 +81,7 @@ namespace Reyes
 		_glfw_window(window)
     {
         if (_shared) {
-            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_buffer());
+            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_buffer().get_id());
         } else {
             _cl_buffer = new CL::Buffer(device, _tex_buffer.get_size(), CL_MEM_READ_WRITE);
             _local = malloc(_tex_buffer.get_size());
@@ -115,7 +118,7 @@ namespace Reyes
             CL::Event e = queue.enq_read_buffer(*_cl_buffer, _local, _tex_buffer.get_size(),
                                                 "read framebuffer", evt);
             queue.wait_for_events(e);
-
+ 
             _tex_buffer.load(_local);
             return CL::Event();
         }
@@ -124,6 +127,7 @@ namespace Reyes
     void OGLSharedFramebuffer::show()
     {
         glEnable(GL_TEXTURE_2D);
+        glDisable(GL_DEPTH_TEST);
 
         _tex_buffer.bind();
         
@@ -138,8 +142,5 @@ namespace Reyes
         _shader.unbind();
         
         _tex_buffer.unbind();
-
-        glfwSwapBuffers(_glfw_window);
-		glfwPollEvents();
     }
 }

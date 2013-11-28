@@ -18,14 +18,16 @@
 
 /** @file Texture.h */
 
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#pragma once
 
 #include "common.h"
+
+#include "Buffer.h"
 
 class Image;
 
 namespace GL {
+    
     class Tex : boost::noncopyable
     {
         protected: 
@@ -144,9 +146,10 @@ namespace GL {
         Texture(int dimensions, int w, int h, int d,
                 GLenum format, GLenum internal_format,
                 GLenum mag_filter = GL_LINEAR,
-                GLenum min_filter = GL_LINEAR_MIPMAP_LINEAR,
+                GLenum min_filter = GL_LINEAR,
                 GLenum wrap_method = GL_REPEAT,
-                int samples = 0); 
+                int samples = 0,
+                float* data = nullptr); 
     
         //~Texture();
 
@@ -173,21 +176,21 @@ namespace GL {
 
     };
 
+    
     class TextureBuffer : public Tex
     {
-        GLuint _buffer;
-        GLuint _size;
-
+        Buffer _buffer;
+        
         public:
 
         TextureBuffer(GLuint size, GLenum internal_format);
         ~TextureBuffer();
 
-        GLuint get_buffer() const { return _buffer; };
-        GLuint get_size() const { return _size; };
+        const Buffer& get_buffer() const { return _buffer; };
+        size_t get_size() const  { return _buffer.get_size(); };
 
         void load(void* data);
     };
-
+    
+    
 }
-#endif

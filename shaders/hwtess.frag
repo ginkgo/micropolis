@@ -16,41 +16,21 @@
 \******************************************************************************/
 
 
-#version 420 compatibility
 
-uniform mat4 proj;
+#version 150
 
-layout (quads, equal_spacing, ccw) in;
-in vec3 cPos[];
-out vec3 pos;
+uniform vec4 color;
 
+in vec3 p_eye;
+in vec3 n_eye;
+in vec3 tex_coord;
 
-vec3 eval_spline(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t)
-{
-    float s = 1-t;
-    return s*s*s*p0 + 3*s*s*t*p1 + 3*s*t*t*p2 + t*t*t*p3;
-}
-
-
-vec3 eval_pos()
-{
-    vec3 p0 = eval_spline(cPos[ 0], cPos[ 1], cPos[ 2], cPos[ 3], gl_TessCoord.x);
-    vec3 p1 = eval_spline(cPos[ 4], cPos[ 5], cPos[ 6], cPos[ 7], gl_TessCoord.x);
-    vec3 p2 = eval_spline(cPos[ 8], cPos[ 9], cPos[10], cPos[11], gl_TessCoord.x);
-    vec3 p3 = eval_spline(cPos[12], cPos[13], cPos[14], cPos[15], gl_TessCoord.x);
-
-    return eval_spline(p0, p1, p2, p3, gl_TessCoord.y);
-}
-
+out vec4 frag_color;
 
 void main()
 {
-    pos = eval_pos();
+    vec3 n = normalize(cross(dFdx(p_eye), dFdy(p_eye)));
+	frag_color = color * max(0, 0.15 + 0.85 * dot(n, vec3(0,0,1)));
 
-    // Do some funky displacement
-    pos.x += sin(pos.y*15) * 0.04f;
-    pos.y += sin(pos.x*15) * 0.04f;
-    pos.z += sin(pos.x*15) * sin(pos.y*15) * 0.04f;
-
-    gl_Position = proj * vec4(pos,1);
+    // frag_color = color * max(0, dot(n_eye, vec3(0,0,1)));
 }

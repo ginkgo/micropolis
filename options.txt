@@ -1,6 +1,9 @@
 // Size of the window in pixels.
 window_size = 1024 768
 
+// Number of anti-aliasing samples. (0 means no AA)
+fsaa_samples = 0
+
 // Application window title.
 window_title = MICROPOLIS
 
@@ -22,39 +25,47 @@ platform_id = 0
 // OpenCL device ID.
 device_id = 0
 
-// Print more information.
-verbose = true
+// 0...(Almost) no output
+// 1...Regular performance information and warnings posted
+// 2...Lots of information posted, can be detrimental to render performance
+verbosity_level = 1
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 32
+reyes_patch_size = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
 reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 32
+bound_n_split_limit = 16
+
+// Maximum number of times a surface patch can be split.
+max_split_depth = 20
 
 // Width of the work-group for the dicing kernel.
 dice_group_width = 8
 
 // Maximum number of framebuffer tiles, a block can be assigned to.
-max_block_assignments = 12
+max_block_assignments = 9
 
 // Number of sub-one bits for fixed precision pixel coordinates.
-subpixel_bits = 6
+subpixel_bits = 8
 
 // Clear color for framebuffer.
-clear_color = 0.025 0.05 0.2 0
+clear_color = 0.1 0.2 1 0
 
 // Patch data input file.
-input_file = data/teapot
+input_file = mscene/teapots.mscene
 
 // Create an OpenCL timing trace.
 create_trace = true
+
+// Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
+dump_kernel_files = false
 
 // Target file for writing OpenCL trace to.
 trace_file = reyes.trace
@@ -62,15 +73,11 @@ trace_file = reyes.trace
 // Controls backface-culling.
 backface_culling = true
 
-// Flip surface order of patches while loading.
-// This may be necessary for inverted models.
-flip_surface = false
-
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = true
+do_event_polling = false
 
 // Number of patch buffers used for transferring patch data to device.
-patch_buffer_count = 8
+patch_buffer_count = 3
 
 // Allocation method of patch buffers. Either PINNED or UNPINNED.
 // PINNED should be a lot faster.
@@ -85,8 +92,8 @@ renderer_type = OPENCL
 shading_mode = FLAT
 
 // The number of pixels a surface can be outside of the viewport without being culled.
-cull_ribbon = 64
+cull_ribbon = 32
 
 
 
-#hash:5906972850566148891
+#hash:3785853821376862049

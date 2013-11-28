@@ -40,7 +40,8 @@ namespace Reyes
         ivec2 _act_size;
 
         GL::Shader _shader;
-        CL::Kernel _clear_kernel;
+        CL::Program _framebuffer_program;
+        scoped_ptr<CL::Kernel> _clear_kernel;
 
 
         CL::Buffer* _cl_buffer;

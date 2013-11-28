@@ -65,6 +65,26 @@ template<> struct gltype_info<GLint>
     }
 };
 
+template<> struct gltype_info<GLuint>
+{
+    static const GLenum type = GL_UNSIGNED_INT;
+    static const GLenum format = GL_RED_INTEGER;
+    static const GLenum internal_format = GL_R32UI;
+
+    static const GLint components = 1;
+
+    static void set_uniform(GLint location, GLuint value)
+    {
+        glUniform1ui(location, value);
+    }
+
+    static void set_memory_location(GLuint v, byte* location, 
+                                    size_t matrix_stride, bool row_major)
+    {
+        *((GLuint*)location) = v;
+    }
+};
+
 template <> struct gltype_info<GLfloat>
 {
     static const GLenum type = GL_FLOAT;

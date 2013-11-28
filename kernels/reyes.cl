@@ -79,15 +79,20 @@ size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
 }
 
 __kernel void dice (const global float4* patch_buffer,
+                    const global int* pid_buffer,
+                    const global float2* min_buffer,
+                    const global float2* max_buffer,
                     global float4* pos_grid,
                     global int2* pxlpos_grid,
-                    float16 proj,
-                    global float* depth_grid)
+                    global float* depth_grid,
+                    float16 modelview,
+                    float16 proj)
 {
     __local float4 patch[16];
 
     size_t nv = get_global_id(0), nu = get_global_id(1);
-    size_t patch_id = get_global_id(2);
+    size_t range_id = get_global_id(2);
+    size_t patch_id = pid_buffer[range_id];
 
     if (get_local_id(0) < 4 && get_local_id(1) < 4) {
         size_t i = get_local_id(0) * 4 + get_local_id(1);
@@ -96,12 +101,12 @@ __kernel void dice (const global float4* patch_buffer,
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    if (get_global_id(0) > PATCH_SIZE ||
-        get_global_id(1) > PATCH_SIZE) {
-        return;
-    }
+    if (nv > PATCH_SIZE || nu > PATCH_SIZE) return;
+        
+    float2 rmin = min_buffer[get_global_id(2)];
+    float2 rmax = max_buffer[get_global_id(2)];
     
-    float2 uv = (float2) (nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE);
+    float2 uv = (float2)(mix(rmin, rmax, (float2)(nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE)));
 
     float4 P[4];
 
@@ -112,19 +117,15 @@ __kernel void dice (const global float4* patch_buffer,
                            patch[4 * i + 3], uv.y);
     }
 
-    float4 pos = eval_spline(P[0],P[1],P[2],P[3], uv.x);
-
-    pos.x += native_sin(pos.y*15) * 0.04f;
-    pos.y += native_sin(pos.x*15) * 0.04f;
-    pos.z += native_sin(pos.x*15) * native_sin(pos.y*15) * 0.04f;
-    
+    float4 pos = mul_m44v4(modelview, eval_spline(P[0],P[1],P[2],P[3], uv.x));
     float4 p = mul_m44v4(proj, pos);
 
     int2 coord = (int2)((int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
                         (int)(p.y/p.w * VIEWPORT_SIZE.y/2 + VIEWPORT_SIZE.y/2));
 
 
-    int grid_index = calc_grid_pos(nu, nv, patch_id);
+    int grid_index = calc_grid_pos(nu, nv, range_id);
+    
     pos_grid[grid_index] = pos;
     pxlpos_grid[grid_index] = coord;
     depth_grid[grid_index] = p.z/p.w;
@@ -164,7 +165,8 @@ int calc_color_grid_pos(int u, int v, int patch_id)
 __kernel void shade(const global float4* pos_grid,
                     const global int2* pxlpos_grid,
                     global int4* block_index,
-                    global float4* color_grid)
+                    global float4* color_grid,
+                    float4 diffuse_color)
 {
     volatile local int x_min;
     volatile local int y_min;
@@ -245,7 +247,7 @@ __kernel void shade(const global float4* pos_grid,
 
     float4 ac = (float4)(0.005,0.005,0.005,1);
     //float4 dc = (float4)(0.9f, 0.9f, 0.9f, 1);
-    float4 dc = (float4)(0.9f, 0.02f, 0.01f, 1);
+    float4 dc = diffuse_color;
     float4 sc = (float4)(1, 1, 1, 1);
 
     //float4 ac = chash(patch_id) * 0.02;
@@ -374,7 +376,6 @@ __kernel void sample(global const int4* block_index,
 
     int head = all(l == 0);
     
-
     // Prepare local position
     float4 c;
     int4 Px, Py;

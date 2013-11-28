@@ -18,88 +18,84 @@
 
 #include "WireGLRenderer.h"
 
+
+#include "Config.h"
 #include "Projection.h"
+#include "Statistics.h"
 
-#define P(pi,pj) patch.P[pi][pj]
 
-namespace Reyes
+
+Reyes::WireGLRenderer::WireGLRenderer()
+    : _shader("wire")
+    , _vbo(4 * config.reyes_patches_per_pass())
+    , _patch_index(new PatchesIndex())
+    , _bound_n_split(new BoundNSplit(_patch_index))
 {
+    _patch_index->enable_load_texture();
+}
 
-	WireGLRenderer::WireGLRenderer():
-		_shader("wire"),
-		_vbo(64)
-	{
+void Reyes::WireGLRenderer::prepare()
+{
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glPatchParameteri(GL_PATCH_VERTICES, 4);
 
-	}
+}
 
-    void WireGLRenderer::prepare()
-    {
-        glDisable(GL_TEXTURE_2D);
-        glDisable(GL_BLEND);
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-		_shader.bind();
-    }
-
-    void WireGLRenderer::finish()
-    {
-
-		_shader.unbind();
-        glfwSwapBuffers(glfwGetCurrentContext());
-		glfwPollEvents();
-    }
-
-    void WireGLRenderer::set_projection(const Projection& projection)
-    {
-        mat4 proj;
-        projection.calc_projection(proj);
-                   
-		_shader.bind();
-		_shader.set_uniform("projection", proj);
-    }
-
-    void WireGLRenderer::draw_patch(const BezierPatch& patch)
-    {
-        vec3 p;
-
-		_vbo.clear();
-
-        int n = 16;
-
-        for (int i = 0; i < n; ++i) {
-            float t = float(i)/n;
-
-            eval_spline(P(0,0), P(1,0), P(2,0), P(3,0), t, p);
-            _vbo.vertex(p.x, p.y, p.z);
-        }
     
-        for (int i = 0; i < n; ++i) {
-            float t = float(i)/n;
+void Reyes::WireGLRenderer::finish()
+{
+}
 
-            eval_spline(P(3,0), P(3,1), P(3,2), P(3,3), t, p);
-            _vbo.vertex(p.x, p.y, p.z);
-        }
+
+bool Reyes::WireGLRenderer::are_patches_loaded(void* patches_handle)
+{
+    return _patch_index->are_patches_loaded(patches_handle);
+}
+
+
+void Reyes::WireGLRenderer::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
+{
+    _patch_index->load_patches(patches_handle, patch_data);
+}
+
+
+void Reyes::WireGLRenderer::draw_patches(void* patches_handle,
+                                         const mat4& matrix,
+                                         const Projection* projection,
+                                         const vec4& color)
+{
+    mat4 proj;
+    projection->calc_projection(proj);
+
+    GL::Tex& patch_tex = _patch_index->get_patch_texture(patches_handle);
+
+    patch_tex.bind();
+
+    _shader.bind();
+    _shader.set_uniform("color", color);
+    _shader.set_uniform("mvp", proj * matrix);
+    _shader.set_uniform("patches", patch_tex);
+    _shader.unbind();
     
-        for (int i = 0; i < n; ++i) {
-            float t = float(i)/n;
+    _bound_n_split->init(patches_handle, matrix, projection);
 
-            eval_spline(P(3,3), P(2,3), P(1,3), P(0,3), t, p);
-            _vbo.vertex(p.x, p.y, p.z);
-        }
-    
-        for (int i = 0; i < n; ++i) {
-            float t = float(i)/n;
+    do {
 
-            eval_spline(P(0,3), P(0,2), P(0,1), P(0,0), t, p);
-            _vbo.vertex(p.x, p.y, p.z);
-        }
+        _bound_n_split->do_bound_n_split(_vbo);
 
-        _vbo.send_data();
-		
-		
-		_vbo.draw(GL_LINE_LOOP, _shader);
-		
-    }
+        _shader.bind();
+        _shader.set_uniform("flip", GL_FALSE);
+        _vbo.draw(GL_PATCHES, _shader);
+            
+        _shader.set_uniform("flip", GL_TRUE);
+        _vbo.draw(GL_PATCHES, _shader);
+        _shader.unbind();
+
+    } while (!_bound_n_split->done());
+        
+    patch_tex.unbind();
 }

@@ -17,14 +17,11 @@
 
 
 
-#version 150
+#version 430
 
-uniform mat4 projection;
-
-in vec3 vertex;
-
+in vec4 vertex;
 
 void main()
 {
-	gl_Position  = projection * vec4(vertex,1);
+    gl_Position = vertex;
 }

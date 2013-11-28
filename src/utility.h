@@ -44,6 +44,8 @@ uint64_t nanotime();
 
 string with_commas(long n);
 
+string memory_size(size_t size);
+
 /**
  * Test if a file exists on the filesystem.
  * @param filename Name of the file
@@ -63,9 +65,20 @@ string read_file(const string &filename);
  * Check for OpenGL errors.
  * Prints a message to STDERR if an error has been found.
  */
-void get_errors(void);
+void get_errors();
+
+
+/**
+* Attempt to set ARB_debug_output callback.
+* This only does something when usign the Debug build.
+*/
+void set_GL_error_callbacks();
+
+
 
 string reverse (const string& s);
+
+vec2 project (const vec4& p);
 
 template <typename T> T minimum (T a, T b)
 {
@@ -109,20 +122,35 @@ class BBox
     vec3 center() const {
         return (max + min) * 0.5f;
     }
+
+    void clear() {
+        min = vec3( std::numeric_limits<float>::infinity(),
+                    std::numeric_limits<float>::infinity(),
+                    std::numeric_limits<float>::infinity());
+        max = vec3(-std::numeric_limits<float>::infinity(),
+                   -std::numeric_limits<float>::infinity(),
+                   -std::numeric_limits<float>::infinity());
+    }
 };
 
 class Bound
 {
+public:
+
+    
     vec2 min;
     vec2 max;
 
-    public:
 
-    Bound():
-        min(std::numeric_limits<float>::infinity(),
-            std::numeric_limits<float>::infinity()),
-        max(-std::numeric_limits<float>::infinity(),
-            -std::numeric_limits<float>::infinity()) {}
+    Bound()
+        : min( std::numeric_limits<float>::infinity(),
+               std::numeric_limits<float>::infinity())
+        , max(-std::numeric_limits<float>::infinity(),
+              -std::numeric_limits<float>::infinity()) {}
+
+    Bound(float xmin, float ymin, float xmax, float ymax)
+        : min(xmin, ymin)
+        , max(xmax, ymax) {}
 
     void add_point(const vec2& p) {
         min.x = minimum(p.x, min.x);
@@ -270,5 +298,20 @@ inline T square (T a)
 {
     return a*a;
 }
+
+
+template <typename T>
+void debug_print(const T& v)
+{
+    cout << v << endl;
+}
+
+template <typename T, typename ... Rest>
+void debug_print(const T& v, Rest&& ... rest)
+{
+    cout << v << "   --   ";
+    debug_print(rest...);
+}
+
 
 #endif

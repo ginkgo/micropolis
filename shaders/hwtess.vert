@@ -16,12 +16,12 @@
 \******************************************************************************/
 
 
-#version 420 compatibility
 
-in vec4 color;
-out vec4 frag_color;
+#version 430
 
-void main (void)
+in vec4 vertex;
+
+void main()
 {
-    frag_color = pow(color, vec4(1.0/2.2));
+    gl_Position = vertex;
 }

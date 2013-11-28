@@ -15,43 +15,29 @@
  * along with Micropolis.  If not, see <http://www.gnu.org/licenses/>.        *
 \******************************************************************************/
 
+#pragma once
 
-#ifndef RENDERER_H
-#define RENDERER_H
-
-#include "common.h"
-
-#include "Patch.h"
-#include "OpenCL.h"
-
-#include "PatchDrawer.h"
 #include "Framebuffer.h"
+#include "OpenCL.h"
+#include "PatchDrawer.h"
+#include "PatchesIndex.h"
 
 namespace Reyes
 {
+    class Batch;
+    class PatchesIndex;
+    class OpenCLBoundNSplit;
 
-    class Framebuffer;
-    class Statistics;
-    
-    class Renderer : public PatchDrawer
+    class OpenCLRenderer : public PatchDrawer
     {
-
-        struct PatchBuffer
-        {
-            CL::Buffer* buffer;
-            void* host;
-            CL::Event write_complete;
-        };
-
+        
         CL::Device _device;
         CL::CommandQueue _queue;
         OGLSharedFramebuffer _framebuffer;
 
-        size_t _active_patch_buffer;
-        vector<PatchBuffer> _patch_buffers;
-        vec4* _back_buffer;
-
-        size_t _patch_count;
+        shared_ptr<PatchesIndex> _patch_index;
+        shared_ptr<OpenCLBoundNSplit> _bound_n_split;
+        
         size_t _max_block_count;
 
         CL::Buffer _pos_grid;
@@ -60,36 +46,41 @@ namespace Reyes
         CL::Buffer _depth_grid;
         CL::Buffer _block_index;
         CL::Buffer _tile_locks;
-	CL::Buffer _depth_buffer;
+        CL::Buffer _depth_buffer;
         
         CL::Program _reyes_program;
 
         scoped_ptr<CL::Kernel> _dice_kernel;
         scoped_ptr<CL::Kernel> _shade_kernel;
         scoped_ptr<CL::Kernel> _sample_kernel;
-	scoped_ptr<CL::Kernel> _init_tile_locks_kernel;
-	scoped_ptr<CL::Kernel> _clear_depth_buffer_kernel;
+        scoped_ptr<CL::Kernel> _init_tile_locks_kernel;
+        scoped_ptr<CL::Kernel> _clear_depth_buffer_kernel;
 
-        CL::Event _last_sample;
+        CL::Event _last_batch;
         CL::Event _framebuffer_cleared;
 
-        public:
 
-        Renderer();
-        ~Renderer();
+    public:
+
+        OpenCLRenderer();
+        ~OpenCLRenderer();
 
         virtual void prepare();
         virtual void finish();
-
-        virtual void set_projection(const Projection& projection);
-        virtual void draw_patch (const BezierPatch& patch);
-
-        private:
-
-        void flush();
         
+        virtual bool are_patches_loaded(void* patches_handle);
+        virtual void load_patches(void* patches_handle, const vector<BezierPatch>& patch_data);
+        
+        virtual void draw_patches(void* patches_handle,
+                                  const mat4& matrix,
+                                  const Projection* projection,
+                                  const vec4& color);
+
+    private:
+
+        void set_projection(const Projection& projection);
+        void draw_patch(const BezierPatch& patch);
+        CL::Event send_batch(Reyes::Batch& batch, const mat4& matrix, const mat4& proj, const vec4& color, const CL::Event& ready);
+
     };
-
 }
-
-#endif

@@ -23,13 +23,14 @@
     
 Statistics statistics;
 
-Statistics::Statistics() :
-    _frames(0), 
-    frames_per_second(0.0f),
-    ms_per_frame(0.0f),
-    ms_per_render_pass(0.0f),
-    patches_per_frame(0),
-    opencl_memory(0)
+Statistics::Statistics()
+    : _frames(0)
+    , frames_per_second(0.0f)
+    , ms_per_frame(0.0f)
+    , ms_per_render_pass(0.0f)
+    , patches_per_frame(0)
+    , opencl_memory(0)
+    , opengl_memory(0)
 {
     _last_fps_calculation = nanotime();
 }
@@ -39,6 +40,8 @@ void Statistics::start_render()
     _render_start_time = nanotime();
     _patches_per_frame = 0;
     _total_bound_n_split = 0;
+    _total_dice_n_raster = 0;
+    _pass_count = 0;
 }
 
 void Statistics::end_render()
@@ -47,12 +50,23 @@ void Statistics::end_render()
 
     ms_per_render_pass = dur * 0.000001f;
     ms_bound_n_split = _total_bound_n_split * 0.000001f;
+    ms_dice_n_raster = _total_dice_n_raster * 0.000001f;
     patches_per_frame = _patches_per_frame;
 }
 
 void Statistics::inc_patch_count()
 {
     ++_patches_per_frame;
+}
+
+void Statistics::add_patches(size_t patches)
+{
+    _patches_per_frame += patches;
+}
+
+void Statistics::inc_pass_count(uint64_t cnt)
+{
+    _pass_count += cnt;
 }
 
 void Statistics::start_bound_n_split()
@@ -68,6 +82,16 @@ void Statistics::stop_bound_n_split()
     _total_bound_n_split += duration;    
 }
 
+void Statistics::add_bound_n_split_time(uint64_t ns)
+{
+    _total_bound_n_split += ns;
+}
+
+void Statistics::add_dice_n_raster_time(uint64_t ns)
+{
+    _total_dice_n_raster += ns;
+}
+
 void Statistics::alloc_opencl_memory(long mem_size)
 {
     opencl_memory += mem_size;
@@ -76,6 +100,16 @@ void Statistics::alloc_opencl_memory(long mem_size)
 void Statistics::free_opencl_memory(long mem_size)
 {
     opencl_memory -= mem_size;
+}
+
+void Statistics::alloc_opengl_memory(long mem_size)
+{
+    opengl_memory += mem_size;
+}
+
+void Statistics::free_opengl_memory(long mem_size)
+{
+    opengl_memory -= mem_size;
 }
 
 void Statistics::update()
@@ -103,19 +137,22 @@ void Statistics::reset_timer()
 
 void Statistics::print()
 {
-    if (config.verbose()) {
+    if (config.verbosity_level() > 0) {
 
         uint64_t quad_count = square(config.reyes_patch_size()) * patches_per_frame;
         double quads_per_second = quad_count * frames_per_second;
         
         cout << endl
              << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl
-             << ms_per_render_pass << " ms/render pass" << endl
+             // << ms_per_render_pass << " ms/render pass" << endl
              << ms_bound_n_split << " ms spent on bound & split" << endl
+             << ms_dice_n_raster << " ms spent on dicing & rasterization" << endl
              << patches_per_frame  << " bounded patches" << endl
-             << with_commas(quad_count) << " polygons" << endl
-             << with_commas((uint64_t)quads_per_second) << " polys/s" << endl
-             << (opencl_memory >> MEBI_SHIFT) << " MiB allocated on OpenCL device" << endl;
+             << _pass_count << " render passes" << endl
+             // << with_commas(quad_count) << " polygons" << endl
+             // << with_commas((uint64_t)quads_per_second) << " polys/s" << endl
+             << memory_size(opencl_memory) << "allocated on OpenCL device" << endl
+             << memory_size(opengl_memory) << "allocated in OpenGL context" << endl;
     } else {
         cout  << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl;
     }

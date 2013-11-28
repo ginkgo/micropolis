@@ -39,6 +39,11 @@ void Reyes::PerspectiveProjection::calc_projection(mat4& proj) const
     proj = glm::perspective<float>(_fovy, _aspect, _near, 1000);
 }
 
+void Reyes::PerspectiveProjection::calc_projection_with_aspect_correction(mat4& proj) const
+{
+    proj = glm::perspective<float>(_fovy, 1, _near, 1000);
+}
+
 ivec4 Reyes::PerspectiveProjection::get_viewport() const
 {
     return ivec4(0,0,_viewport.x, _viewport.y);
