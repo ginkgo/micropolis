@@ -325,8 +325,8 @@ void Reyes::bound_patch_range (const PatchRange& r, const BezierPatch& p, const 
         
     for (size_t iu = 0; iu < RES; ++iu) {
         for (size_t iv = 0; iv < RES; ++iv) {
-            float u = r.range.min.x + (r.range.max.x - r.range.min.x) * iu * (1.0f / (RES-1));
-            float v = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
+            float v = r.range.min.x + (r.range.max.x - r.range.min.x) * iu * (1.0f / (RES-1));
+            float u = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
 
             eval_patch(p, u, v, pos);
 

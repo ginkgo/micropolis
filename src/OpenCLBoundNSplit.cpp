@@ -125,9 +125,12 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
 
     // Transfer local data to OpenCL buffers
     CL::Event a,b,c;
-    a = _queue.enq_write_buffer(_patch_ids, pids, patch_count * sizeof(int), "write patch ids" , CL::Event());
-    b = _queue.enq_write_buffer(_patch_min, mins, patch_count * sizeof(vec2), "write patch mins", CL::Event());
-    c = _queue.enq_write_buffer(_patch_max, maxs, patch_count * sizeof(vec2), "write patch maxs", CL::Event());
+
+    if (patch_count > 0) {
+        a = _queue.enq_write_buffer(_patch_ids, pids, patch_count * sizeof(int), "write patch ids" , CL::Event());
+        b = _queue.enq_write_buffer(_patch_min, mins, patch_count * sizeof(vec2), "write patch mins", CL::Event());
+        c = _queue.enq_write_buffer(_patch_max, maxs, patch_count * sizeof(vec2), "write patch maxs", CL::Event());
+    }
     
     //_queue.wait_for_events(a|b|c);
     statistics.stop_bound_n_split();

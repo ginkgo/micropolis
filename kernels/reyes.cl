@@ -106,7 +106,6 @@ __kernel void dice (const global float4* patch_buffer,
     float2 rmin = min_buffer[get_global_id(2)];
     float2 rmax = max_buffer[get_global_id(2)];
     
-    //float2 uv = (float2)(nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE);
     float2 uv = (float2)(mix(rmin, rmax, (float2)(nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE)));
 
     float4 P[4];
@@ -376,7 +375,6 @@ __kernel void sample(global const int4* block_index,
 
     int head = all(l == 0);
     
-
     // Prepare local position
     float4 c;
     int4 Px, Py;
