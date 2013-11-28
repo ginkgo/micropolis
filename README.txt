@@ -8,7 +8,7 @@ Micropolis is a micropolygon rasterizer implemented in OpenCL.
 
 It uses the REYES[1] algorithm to rasterize curved surfaces. This is
 done by splitting the surface into sub-pixel sized polygons (micropolygons) 
-and rasterizing them. This allows the rendering of highly detailed, displaced 
+and rasterizing them. Doing so allows the rendering of highly detailed, displaced 
 surfaces.
 
 The dicing, shading and rasterization of the micropolygons is implemented in
@@ -21,8 +21,6 @@ Here is a video of it in action:
 
 http://www.youtube.com/watch?v=09ozb1ttgmA
 
-You can get a win32 build of the program under "Downloads" on Github.
-
 
 --- COMPILATION ---
 
@@ -30,12 +28,17 @@ You can get a win32 build of the program under "Downloads" on Github.
 You will need the following dependencies to build micropolis on Linux:
 
 SCons
-GLFW 2.7
+GLFW 3.0
 Boost
 OpenCL
 DevIL
 Python 2.7
-Cheetah template engine 
+Python 3.x
+Cheetah template engine
+Wheezy template
+
+The source uses C++11 features, so you need a version of GCC recent enough
+to support this.
 
 To build call:
 
@@ -53,22 +56,6 @@ programs(configGen and flextGLgen) in the tools directory. They reside
 in separate git submodules, so it is necessary to initialize and
 update them before compiling with SCons.
 
-To build on Windows you need:
-
-Visual Studio 2010
-OpenCL
-Python 2.7
-Cheetah template engine
-Boost (root at $BOOSTROOT environment variable)
-
-Update the submodules and call generate_source.bat to generate the
-config-loader and extension loaders.
-
-Open micropolis.vcxproj and compile.
-
-Like with the linux build, the Visual Studio project is set to look in
-$AMDAPPSDKROOT for OpenCL headers and libraries. Change if necessary.
-
 
 --- USAGE ---
 
@@ -77,13 +64,15 @@ Just call:
 
 >./micropolis
 
-on linux or press F5 to start in Visual Studio.
 
 You will see performance statistics on the command line.
 
 Q or ESC close the application
-UP and DOWN move the object along the Z axis
-F3 shows the object in wireframe mode after bound&split
+Use WASD to move the camera
+LMB+drag rotates the camera
+MMB+drag moves the camera on the eye plane
+RMB+drag rotates the camera along the z axis
+F3 toggles wireframe mode
 
 You can configure the program by modifying the options.txt
 configuration file. The file is pretty well-documented.
@@ -91,10 +80,8 @@ configuration file. The file is pretty well-documented.
 Interesting configuration-values are:
 
 input_file:
-    The model to render.
-    Look in the data/ dir for model files. The default teapot model
-    is the most interesting. You may have to set flip_surface=true if
-    models appear to be rendered inside-out
+    The scene to render.
+    Look in the mscene/ dir for scene files.
 
 renderer_type: 
     Switch between OpenCL rasterizer and hardware-tessellation backend
@@ -128,7 +115,7 @@ bound_n_split_limit:
 reyes_patch_size:
     The horizontal and vertical dicing rate of the split subpatches.
     Should ideally be the same as bound_n_split_limit to get
-    pixel-sized micropolygons. More is a waste. Use powers of two (min=16).
+    pixel-sized micropolygons. More is a waste. Needs to be divisible by 8.
     
 
 --- LIMITATIONS ---
@@ -156,6 +143,8 @@ Micropolis is very much a prototype. It is limited in several ways:
     have several advantages (f.i. occlusion culling using the depth-buffer 
     z-pyramid) but may need quite a lot of host-intervention and may have
     an unpredictable memory footprint.
+    The OpenGL backend uses GPU-based B&S implemented in OpenGL compute
+    shaders. I will port this to OpenCL soon.
 
 Solving these issues will be part of my master's thesis.
 
@@ -177,6 +166,6 @@ Further limitations are
 --- COPYRIGHT & LICENSE ---
 
 
-Copyright Thomas Weber 2011-2012
+Copyright Thomas Weber 2011-2013
 
 Micropolis is licensed under the GPLv3.
