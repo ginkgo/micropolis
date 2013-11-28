@@ -118,8 +118,7 @@ namespace Reyes
             CL::Event e = queue.enq_read_buffer(*_cl_buffer, _local, _tex_buffer.get_size(),
                                                 "read framebuffer", evt);
             queue.wait_for_events(e);
-            // queue.finish();
-
+ 
             _tex_buffer.load(_local);
             return CL::Event();
         }

@@ -30,13 +30,6 @@ namespace Reyes
 
     class OpenCLRenderer : public PatchDrawer
     {
-
-        struct PatchBuffer
-        {
-            CL::Buffer* buffer;
-            void* host;
-            CL::Event write_complete;
-        };
         
         CL::Device _device;
         CL::CommandQueue _queue;
@@ -45,11 +38,6 @@ namespace Reyes
         shared_ptr<PatchesIndex> _patch_index;
         shared_ptr<OpenCLBoundNSplit> _bound_n_split;
         
-        size_t _active_patch_buffer;
-        vector<PatchBuffer> _patch_buffers;
-        vec4* _back_buffer;
-
-        size_t _patch_count;
         size_t _max_block_count;
 
         CL::Buffer _pos_grid;

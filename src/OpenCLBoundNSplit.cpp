@@ -16,9 +16,9 @@ Reyes::OpenCLBoundNSplit::OpenCLBoundNSplit(CL::Device& device,
     , _patch_index(patch_index)
     , _active_handle(nullptr)
     , _active_patch_buffer(nullptr)
-    , _patch_ids(device, _queue, config.reyes_patches_per_pass() * sizeof(int), CL_MEM_READ_ONLY)
-    , _patch_min(device, _queue, config.reyes_patches_per_pass() * sizeof(vec2), CL_MEM_READ_ONLY)
-    , _patch_max(device, _queue, config.reyes_patches_per_pass() * sizeof(vec2), CL_MEM_READ_ONLY)
+    , _patch_ids(device, _queue, 2*config.reyes_patches_per_pass() * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _patch_min(device, _queue, 2*config.reyes_patches_per_pass() * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _patch_max(device, _queue, 2*config.reyes_patches_per_pass() * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
 {
     _patch_index->enable_retain_vector();
     _patch_index->enable_load_opencl_buffer(device, queue);
@@ -97,14 +97,14 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
             const size_t pid = r.patch_id;
 
             pids[patch_count] = pid;
-            mins[patch_count] = pr.min;
-            maxs[patch_count] = pr.max;
-
+            mins[patch_count] = r.range.min;
+            maxs[patch_count] = r.range.max;
+            
             ++patch_count;
             statistics.inc_patch_count();
             
             if (patch_count >= config.reyes_patches_per_pass()) {
-                break; // VBO full, end this batch
+                break; // buffer full, end this batch
             }
 
         } else if (r.depth > config.max_split_depth()) {
@@ -123,10 +123,13 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
 
     }
 
-    CL::Event a = _queue.enq_write_buffer(_patch_ids, pids, patch_count * sizeof(int), "write patch ids", CL::Event());
-    CL::Event b = _queue.enq_write_buffer(_patch_min, mins, patch_count * sizeof(vec2), "write patch mins", CL::Event());
-    CL::Event c = _queue.enq_write_buffer(_patch_max, maxs, patch_count * sizeof(vec2), "write patch maxs", CL::Event());
-
+    // Transfer local data to OpenCL buffers
+    CL::Event a,b,c;
+    a = _queue.enq_write_buffer(_patch_ids, pids, patch_count * sizeof(int), "write patch ids" , CL::Event());
+    b = _queue.enq_write_buffer(_patch_min, mins, patch_count * sizeof(vec2), "write patch mins", CL::Event());
+    c = _queue.enq_write_buffer(_patch_max, maxs, patch_count * sizeof(vec2), "write patch maxs", CL::Event());
+    
+    //_queue.wait_for_events(a|b|c);
     statistics.stop_bound_n_split();
     
     return {patch_count, *_active_patch_buffer, _patch_ids, _patch_min, _patch_max, a|b|c};

@@ -20,7 +20,7 @@ kernel_dir = kernels
 max_anisotropy = 1
 
 // OpenCL platform ID.
-platform_id = 1
+platform_id = 0
 
 // OpenCL device ID.
 device_id = 0
@@ -34,14 +34,14 @@ verbosity_level = 1
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 8
+reyes_patch_size = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
 reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 8
+bound_n_split_limit = 16
 
 // Maximum number of times a surface patch can be split.
 max_split_depth = 20

@@ -75,7 +75,7 @@ namespace CL
         Buffer(Device& device, size_t size, cl_mem_flags flags, void* host_ptr);
         Buffer(Device& device, CommandQueue& queue, size_t size, cl_mem_flags flags, void** host_ptr);
         Buffer(Device& device, GLuint GL_buffer);
-        ~Buffer();
+        virtual ~Buffer();
 
         cl_mem get() const { return _buffer; }
         size_t get_size() const;
@@ -88,7 +88,7 @@ namespace CL
         public:
 
         TransferBuffer(Device& device, CommandQueue& queue, size_t size, cl_mem_flags flags);
-        ~TransferBuffer();
+        virtual ~TransferBuffer();
 
         void* host_ptr();
     };

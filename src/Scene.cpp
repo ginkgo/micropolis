@@ -144,7 +144,6 @@ void Reyes::Scene::draw(PatchDrawer& renderer) const
 
         mat4 matrix(glm::inverse(active_cam().transform) * object->transform);
 
-
         renderer.draw_patches(object->mesh.get(), matrix, active_cam().projection.get(), object->color);
             
     }

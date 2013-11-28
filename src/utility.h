@@ -299,6 +299,19 @@ inline T square (T a)
     return a*a;
 }
 
-    
+
+template <typename T>
+void debug_print(const T& v)
+{
+    cout << v << endl;
+}
+
+template <typename T, typename ... Rest>
+void debug_print(const T& v, Rest&& ... rest)
+{
+    cout << v << "   --   ";
+    debug_print(rest...);
+}
+
 
 #endif

@@ -297,14 +297,15 @@ size_t CL::Buffer::get_size() const
 
 
 CL::TransferBuffer::TransferBuffer(Device& device, CL::CommandQueue& queue, size_t size, cl_mem_flags flags)
-    : CL::Buffer(device, queue, size, flags, &_host_ptr)
+    //: CL::Buffer(device, queue, size, flags, &_host_ptr)
+    : CL::Buffer(device, size, flags)
+    , _host_ptr(malloc(size))
 {
-    
 }
 
 CL::TransferBuffer::~TransferBuffer()
 {
-
+    free(_host_ptr);
 }
 
 void* CL::TransferBuffer::host_ptr()
@@ -376,7 +377,7 @@ CL::CommandQueue::CommandQueue(Device& device) :
 {
     cl_int status;
     _queue = clCreateCommandQueue(device.get_context(), device.get_device(),
-                                  CL_QUEUE_PROFILING_ENABLE // | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
+                                  CL_QUEUE_PROFILING_ENABLE  | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
                                   , 
                                   &status);
 
@@ -696,10 +697,10 @@ CL::ImageBuffer::ImageBuffer(Device& device, GL::Texture& texture, cl_mem_flags 
 {
     cl_int status;
 
-    _buffer = clCreateFromGLTexture2D(device.get_context(), flags,
-                                      GL_TEXTURE_2D, 0, 
-                                      texture.texture_name(),
-                                      &status);
+    _buffer = clCreateFromGLTexture(device.get_context(), flags,
+                                    GL_TEXTURE_2D, 0, 
+                                    texture.texture_name(),
+                                    &status);
 
     OPENCL_ASSERT(status);
 }

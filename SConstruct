@@ -6,7 +6,7 @@ env = Environment()
 warning_flags = ['-Wall', '-Wno-unknown-pragmas', '-Wno-unused-variable', '-Wno-unused-but-set-variable']
 optimization_flags = ['-O3', '-msse4']
 
-if True:
+if False:
     optimization_flags = ['-O0', '-ggdb']
 
 env['CPPPATH'] = ['#/external', '#/generated', '#src']

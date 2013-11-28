@@ -18,10 +18,6 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     , _patch_index(new PatchesIndex())
     , _bound_n_split(new OpenCLBoundNSplit(_device, _queue, _patch_index))
       
-    , _active_patch_buffer(0)
-    , _patch_buffers(config.patch_buffer_count())
-    , _back_buffer(0)
-    , _patch_count(0)
     , _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass())
     , _pos_grid(_device, 
                 config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
@@ -63,26 +59,6 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     _init_tile_locks_kernel.reset(_reyes_program.get_kernel("init_tile_locks"));
     _clear_depth_buffer_kernel.reset(_reyes_program.get_kernel("clear_depth_buffer"));
 
-    _patch_buffers.resize(config.patch_buffer_count());
-
-    for (int i = 0; i < config.patch_buffer_count(); ++i) {
-        PatchBuffer& buffer = _patch_buffers.at(i);
-
-        if (config.patch_buffer_mode() == Config::PINNED) {
-            buffer.host = NULL;
-            buffer.buffer = new CL::Buffer(_device, _queue, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
-                                           CL_MEM_READ_ONLY, &(buffer.host));
-        } else {
-            buffer.host = malloc(config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2);
-            buffer.buffer = new CL::Buffer(_device, config.reyes_patches_per_pass() * 16 * sizeof(vec4) * 2, 
-                                           CL_MEM_READ_ONLY, buffer.host);
-        }
-
-        assert (buffer.host != NULL);
-        buffer.write_complete = CL::Event();
-    }
-
-    _back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
 
     _init_tile_locks_kernel->set_args(0, _tile_locks);
     _queue.enq_kernel(*_init_tile_locks_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64, 
@@ -92,13 +68,6 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
 
 Reyes::OpenCLRenderer::~OpenCLRenderer()
 {
-    for (int i = 0; i < config.patch_buffer_count(); ++i) {
-        delete _patch_buffers.at(i).buffer;
-
-        if (config.patch_buffer_mode() == Config::UNPINNED) {
-            free(_patch_buffers.at(i).host);
-        }
-    }
 }
 
 
@@ -123,15 +92,8 @@ void Reyes::OpenCLRenderer::finish()
 
     _queue.finish();
     
-    for (int i = 0; i < config.patch_buffer_count(); ++i) {
-        _patch_buffers.at(i).write_complete = CL::Event();
-    }
-
     _last_batch = CL::Event();
     _framebuffer_cleared = CL::Event();
-
-    _active_patch_buffer = 0;
-    _back_buffer = (vec4*)(_patch_buffers.at(_active_patch_buffer).host);
         
     statistics.end_render();
 }
@@ -159,7 +121,7 @@ void Reyes::OpenCLRenderer::draw_patches(void* patches_handle,
     projection->calc_projection(proj);
 
     _bound_n_split->init(patches_handle, matrix, projection);
-
+    
     while (!_bound_n_split->done()) {
         
         Batch batch = _bound_n_split->do_bound_n_split(_last_batch);
@@ -177,13 +139,13 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
     int patch_count = batch.patch_count;
     
     if (patch_count == 0) {
-        return CL::Event();
+        return _last_batch;
     }
 
     CL::Event e;
     
-    int patch_size  = config.reyes_patch_size();
-    int group_width = config.dice_group_width();
+    const int patch_size  = config.reyes_patch_size();
+    const int group_width = config.dice_group_width();
 
     // DICE
     _dice_kernel->set_args(0, batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
@@ -195,7 +157,7 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
                           "dice", ready);
 
     // SHADE
-    _shade_kernel->set_args(0, _pos_grid, _pxlpos_grid, _block_index, _color_grid);
+    _shade_kernel->set_args(0, _pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
     e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8, 8, 1),
                           "shade", e);
 
