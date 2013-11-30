@@ -2,12 +2,12 @@
 
 #include "common.h"
 
-#include "ComputeShader.h"
+#include "GL/ComputeShader.h"
+#include "GL/PrefixSum.h"
+#include "GL/Texture.h"
+#include "GL/VBO.h"
 #include "Patch.h"
-#include "PrefixSum.h"
 #include "Projection.h"
-#include "Texture.h"
-#include "VBO.h"
 
 namespace Reyes
 {

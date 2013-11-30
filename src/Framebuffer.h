@@ -21,10 +21,10 @@
 
 #include "common.h"
 
-#include "Texture.h"
-#include "Shader.h"
-#include "OpenCL.h"
-#include "VBO.h"
+#include "CL/OpenCL.h"
+#include "GL/Shader.h"
+#include "GL/Texture.h"
+#include "GL/VBO.h"
 
 namespace Reyes
 {

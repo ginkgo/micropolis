@@ -17,8 +17,8 @@
 
 #pragma once
 
+#include "CL/OpenCL.h"
 #include "Framebuffer.h"
-#include "OpenCL.h"
 #include "PatchDrawer.h"
 #include "PatchesIndex.h"
 

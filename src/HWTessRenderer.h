@@ -4,12 +4,12 @@
 
 
 #include "BoundNSplit.h"
+#include "GL/Shader.h"
+#include "GL/Texture.h"
+#include "GL/VBO.h"
 #include "Patch.h"
 #include "PatchDrawer.h"
 #include "PatchesIndex.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "VBO.h"
 
 
 namespace Reyes

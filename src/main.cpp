@@ -18,16 +18,13 @@
 
 #include "common.h"
 
-#include "Patch.h"
+#include "CL/OpenCL.h"
 #include "Config.h"
-
-#include "OpenCL.h"
+#include "GL/Buffer.h"
+#include "GL/PrefixSum.h"
+#include "Patch.h"
 #include "Reyes.h"
-
 #include "Statistics.h"
-
-#include "PrefixSum.h"
-#include "Buffer.h"
 
 #include <boost/format.hpp>
 

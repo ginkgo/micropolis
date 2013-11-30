@@ -19,7 +19,7 @@
 #include "Framebuffer.h"
 
 
-#include "OpenCL.h"
+#include "CL/OpenCL.h"
 #include "Config.h"
 
 

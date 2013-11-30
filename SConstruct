@@ -1,6 +1,4 @@
 
-import os
-
 env = Environment()
 
 warning_flags = ['-Wall', '-Wno-unknown-pragmas', '-Wno-unused-variable', '-Wno-unused-but-set-variable']
@@ -41,7 +39,7 @@ env.Command(['#/generated/mscene.capnp.c++', '#/generated/mscene.capnp.h'],
             ['#/src/mscene.capnp'],
             'capnpc src/mscene.capnp --src-prefix=src -oc++:generated')
 
-env.Program('micropolis', Glob('src/*cpp') + 
+env.Program('micropolis', Glob('src/*cpp') + Glob('src/*/*cpp') + 
             ['generated/flextGL.c', 
              'generated/Config.cpp', 
              'generated/format_map.cpp',

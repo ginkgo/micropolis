@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
                                  MICROPOLIS
-               A micropolygon rasterizer (c) Thomas Weber 2012
+               A micropolygon rasterizer (c) Thomas Weber 2013
 --------------------------------------------------------------------------------
 
 
@@ -72,6 +72,7 @@ Use WASD to move the camera
 LMB+drag rotates the camera
 MMB+drag moves the camera on the eye plane
 RMB+drag rotates the camera along the z axis
+PGUP/PGDOWN controls target patch size for Bound&Split algorithm
 F3 toggles wireframe mode
 
 You can configure the program by modifying the options.txt

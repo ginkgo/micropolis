@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Patch.h"
-#include "Texture.h"
-#include "OpenCL.h"
+#include "GL/Texture.h"
+#include "CL/OpenCL.h"
 
 namespace Reyes
 {

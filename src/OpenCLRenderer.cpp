@@ -2,9 +2,9 @@
 
 #include "OpenCLRenderer.h"
 
+#include "CL/OpenCL.h"
 #include "Config.h"
 #include "Framebuffer.h"
-#include "OpenCL.h"
 #include "OpenCLBoundNSplit.h"
 #include "PatchesIndex.h"
 #include "Projection.h"

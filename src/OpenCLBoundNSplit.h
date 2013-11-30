@@ -3,11 +3,11 @@
 #include "common.h"
 
 #include "BoundNSplit.h"
-#include "OpenCL.h"
+#include "CL/OpenCL.h"
+#include "GL/Texture.h"
+#include "GL/VBO.h"
 #include "Patch.h"
 #include "Projection.h"
-#include "Texture.h"
-#include "VBO.h"
 
 namespace Reyes
 {

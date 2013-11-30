@@ -21,7 +21,7 @@
 
 #include "common.h"
 #include "CL/opencl.h"
-#include "Texture.h"
+#include "GL/Texture.h"
 
 #include <map>
 #include <sstream>
