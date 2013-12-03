@@ -1,7 +1,7 @@
 
 TODO:
 
-* Fix range_id/patch_id name inconsistencies
+* Make CL::TransferBuffer use pinned memory again
 * Refactor OpenCL wrappers
   * Split into individual files
   * Make Events shareable within device
@@ -31,6 +31,7 @@ TODO:
 
 DONE
 
+* Fix range_id/patch_id name inconsistencies
 * Rename PatchesIndex to PatchIndex
 * Fix configgen.py warning issues and switch to Python3+Wheezy
 * Switch formatMapGen to Python3+Wheezy

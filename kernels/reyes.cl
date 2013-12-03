@@ -150,14 +150,14 @@ int is_empty(int2 min, int2 max)
     return min.x >= max.x && min.y >= max.y;
 }
 
-int calc_block_pos(int u, int v, int patch_id)
+int calc_block_pos(int u, int v, int range_id)
 {
-    return u + v * BLOCKS_PER_LINE + patch_id * BLOCKS_PER_PATCH;
+    return u + v * BLOCKS_PER_LINE + range_id * BLOCKS_PER_PATCH;
 }
 
-int calc_color_grid_pos(int u, int v, int patch_id)
+int calc_color_grid_pos(int u, int v, int range_id)
 {
-    return u + v * PATCH_SIZE + patch_id * (PATCH_SIZE*PATCH_SIZE);
+    return u + v * PATCH_SIZE + range_id * (PATCH_SIZE*PATCH_SIZE);
 }
 
 
@@ -192,7 +192,7 @@ __kernel void shade(const global float4* pos_grid,
     int2 pxlpos[4];
 
     int nv = get_global_id(0), nu = get_global_id(1);
-    int patch_id = get_global_id(2);
+    int range_id = get_global_id(2);
 
     int2 pmin = VIEWPORT_MAX;
     int2 pmax = VIEWPORT_MIN;
@@ -200,8 +200,8 @@ __kernel void shade(const global float4* pos_grid,
     for     (int vi = 0; vi < 2; ++vi) {
         for (int ui = 0; ui < 2; ++ui) {
             int i = ui + vi * 2;
-            pos[i] = pos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
-            int2 p  = pxlpos_grid[calc_grid_pos(nu+ui, nv+vi, patch_id)];
+            pos[i] = pos_grid[calc_grid_pos(nu+ui, nv+vi, range_id)];
+            int2 p  = pxlpos_grid[calc_grid_pos(nu+ui, nv+vi, range_id)];
 
             pmin = min(pmin, p);
             pmax = max(pmax, p);
@@ -250,8 +250,8 @@ __kernel void shade(const global float4* pos_grid,
     float4 dc = diffuse_color;
     float4 sc = (float4)(1, 1, 1, 1);
 
-    //float4 ac = chash(patch_id) * 0.02;
-    //dc = 0.8 * dc + 0.2 * chash(patch_id);
+    //float4 ac = chash(range_id) * 0.02;
+    //dc = 0.8 * dc + 0.2 * chash(range_id);
     
     
     float3 h = normalize(l+v);
@@ -260,7 +260,7 @@ __kernel void shade(const global float4* pos_grid,
 
     float4 c = ac + max(dot(n,l),0.0f) * dc + pow(max(dot(n,h), 0.0f), sh) * sc;
 
-    color_grid[calc_color_grid_pos(nu, nv, patch_id)] = c;
+    color_grid[calc_color_grid_pos(nu, nv, range_id)] = c;
 
 
 }
@@ -386,13 +386,13 @@ __kernel void sample(global const int4* block_index,
     	int Pxa[4], Pya[4];
     	float da[4];
 
-    	size_t patch_id, u, v;
-        recover_patch_pos(block_id, l.x, l.y,  &u, &v, &patch_id);
+    	size_t range_id, u, v;
+        recover_patch_pos(block_id, l.x, l.y,  &u, &v, &range_id);
 	
-    	c = color_grid[calc_color_grid_pos(u, v, patch_id)];
+    	c = color_grid[calc_color_grid_pos(u, v, range_id)];
 
         for (size_t idx = 0; idx < 4; ++idx) {
-            size_t p = calc_grid_pos(u+(idx&1), v+(idx>>1), patch_id);
+            size_t p = calc_grid_pos(u+(idx&1), v+(idx>>1), range_id);
 
             int2 pxlpos = pxlpos_grid[p];
             Pxa[idx] = pxlpos.x;
