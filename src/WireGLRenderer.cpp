@@ -28,7 +28,7 @@
 Reyes::WireGLRenderer::WireGLRenderer()
     : _shader("wire")
     , _vbo(4 * config.reyes_patches_per_pass())
-    , _patch_index(new PatchesIndex())
+    , _patch_index(new PatchIndex())
     , _bound_n_split(new BoundNSplit(_patch_index))
 {
     _patch_index->enable_load_texture();

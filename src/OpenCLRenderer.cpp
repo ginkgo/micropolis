@@ -6,7 +6,7 @@
 #include "Config.h"
 #include "Framebuffer.h"
 #include "OpenCLBoundNSplit.h"
-#include "PatchesIndex.h"
+#include "PatchIndex.h"
 #include "Projection.h"
 #include "Statistics.h"
 
@@ -15,7 +15,7 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     , _queue(_device)
     , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
 
-    , _patch_index(new PatchesIndex())
+    , _patch_index(new PatchIndex())
     , _bound_n_split(new OpenCLBoundNSplit(_device, _queue, _patch_index))
       
     , _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass())

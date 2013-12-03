@@ -9,7 +9,7 @@
 #include "GL/VBO.h"
 #include "Patch.h"
 #include "PatchDrawer.h"
-#include "PatchesIndex.h"
+#include "PatchIndex.h"
 
 
 namespace Reyes
@@ -20,7 +20,7 @@ namespace Reyes
 		GL::Shader _shader;
 		GL::IndirectVBO _vbo;
         
-        shared_ptr<PatchesIndex> _patch_index;
+        shared_ptr<PatchIndex> _patch_index;
         shared_ptr<BoundNSplit> _bound_n_split;
 
     public:

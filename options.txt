@@ -38,7 +38,7 @@ reyes_patch_size = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 1024
+reyes_patches_per_pass = 4096
 
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 16

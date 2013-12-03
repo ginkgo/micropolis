@@ -22,14 +22,14 @@ namespace Reyes
         CL::Event transfer_done;
     };
     
-    class PatchesIndex;    
+    class PatchIndex;    
 
     class OpenCLBoundNSplit
     {
 
         CL::CommandQueue& _queue;
         
-        shared_ptr<PatchesIndex> _patch_index;
+        shared_ptr<PatchIndex> _patch_index;
 
         void* _active_handle;
         CL::Buffer* _active_patch_buffer;
@@ -47,7 +47,7 @@ namespace Reyes
     public:
 
         
-        OpenCLBoundNSplit(CL::Device& device, CL::CommandQueue& queue, shared_ptr<PatchesIndex>& patch_index);
+        OpenCLBoundNSplit(CL::Device& device, CL::CommandQueue& queue, shared_ptr<PatchIndex>& patch_index);
 
         void init(void* patches_handle, const mat4& matrix, const Projection* projection);
         bool done();

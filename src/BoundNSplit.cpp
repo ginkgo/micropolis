@@ -1,7 +1,7 @@
 #include "BoundNSplit.h"
 
 
-#include "PatchesIndex.h"
+#include "PatchIndex.h"
 #include "Config.h"
 #include "Statistics.h"
 
@@ -11,7 +11,7 @@ using namespace Reyes;
 #define BATCH_SIZE config.reyes_patches_per_pass()
 #define MAX_SPLIT config.max_split_depth()
 
-Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchesIndex>& patch_index)
+Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchIndex>& patch_index)
     : _patch_index(patch_index)
     , _active_handle(nullptr)
 

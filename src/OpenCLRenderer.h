@@ -20,12 +20,12 @@
 #include "CL/OpenCL.h"
 #include "Framebuffer.h"
 #include "PatchDrawer.h"
-#include "PatchesIndex.h"
+#include "PatchIndex.h"
 
 namespace Reyes
 {
     class Batch;
-    class PatchesIndex;
+    class PatchIndex;
     class OpenCLBoundNSplit;
 
     class OpenCLRenderer : public PatchDrawer
@@ -35,7 +35,7 @@ namespace Reyes
         CL::CommandQueue _queue;
         OGLSharedFramebuffer _framebuffer;
 
-        shared_ptr<PatchesIndex> _patch_index;
+        shared_ptr<PatchIndex> _patch_index;
         shared_ptr<OpenCLBoundNSplit> _bound_n_split;
         
         size_t _max_block_count;

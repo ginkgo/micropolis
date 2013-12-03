@@ -18,12 +18,12 @@ namespace Reyes
         size_t patch_id;
     };
 
-    class PatchesIndex;    
+    class PatchIndex;    
 
     class BoundNSplit
     {
 
-        shared_ptr<PatchesIndex> _patch_index;
+        shared_ptr<PatchIndex> _patch_index;
 
         void* _active_handle;
 
@@ -63,7 +63,7 @@ namespace Reyes
         
     public:
 
-        BoundNSplit(shared_ptr<PatchesIndex>& patch_index);
+        BoundNSplit(shared_ptr<PatchIndex>& patch_index);
         ~BoundNSplit();
 
         void init(void* patches_handle, const mat4& matrix, const Projection* projection);

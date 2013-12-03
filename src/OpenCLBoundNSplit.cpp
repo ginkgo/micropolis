@@ -1,7 +1,7 @@
 #include "OpenCLBoundNSplit.h"
 
 
-#include "PatchesIndex.h"
+#include "PatchIndex.h"
 #include "Config.h"
 #include "Statistics.h"
 
@@ -11,7 +11,7 @@ using namespace Reyes;
 
 Reyes::OpenCLBoundNSplit::OpenCLBoundNSplit(CL::Device& device,
                                             CL::CommandQueue& queue,
-                                            shared_ptr<PatchesIndex>& patch_index)
+                                            shared_ptr<PatchIndex>& patch_index)
     : _queue(queue)
     , _patch_index(patch_index)
     , _active_handle(nullptr)

@@ -1,10 +1,10 @@
 
-#include "PatchesIndex.h"
+#include "PatchIndex.h"
 
 #include "common.h"
 
 
-Reyes::PatchesIndex::PatchesIndex()
+Reyes::PatchIndex::PatchIndex()
     : _is_set_up(false)
     , _load_as_texture(false)
     , _load_as_opencl_buffer(false)
@@ -16,20 +16,20 @@ Reyes::PatchesIndex::PatchesIndex()
 }
 
 
-Reyes::PatchesIndex::~PatchesIndex()
+Reyes::PatchIndex::~PatchIndex()
 {
 
 }
 
 
-void Reyes::PatchesIndex::enable_load_texture()
+void Reyes::PatchIndex::enable_load_texture()
 {
     assert(!_is_set_up);
     _load_as_texture = true;
 }
 
 
-void Reyes::PatchesIndex::enable_load_opencl_buffer(CL::Device& opencl_device, CL::CommandQueue& opencl_queue)
+void Reyes::PatchIndex::enable_load_opencl_buffer(CL::Device& opencl_device, CL::CommandQueue& opencl_queue)
 {
     assert(!_is_set_up);
 
@@ -41,20 +41,20 @@ void Reyes::PatchesIndex::enable_load_opencl_buffer(CL::Device& opencl_device, C
 }
 
 
-void Reyes::PatchesIndex::enable_retain_vector()
+void Reyes::PatchIndex::enable_retain_vector()
 {
     assert(!_is_set_up);
     _retain_vector = true;
 }
 
 
-bool Reyes::PatchesIndex::are_patches_loaded(void* handle)
+bool Reyes::PatchIndex::are_patches_loaded(void* handle)
 {
     return _index.count(handle) > 0;
 }
 
 
-void Reyes::PatchesIndex::load_patches(void* handle, const vector<BezierPatch>& patch_data)
+void Reyes::PatchIndex::load_patches(void* handle, const vector<BezierPatch>& patch_data)
 {
     assert(handle != nullptr);
     
@@ -97,7 +97,7 @@ void Reyes::PatchesIndex::load_patches(void* handle, const vector<BezierPatch>& 
 }
 
 
-void Reyes::PatchesIndex::delete_patches(void* handle)
+void Reyes::PatchIndex::delete_patches(void* handle)
 {
     assert(are_patches_loaded(handle));
 
@@ -105,7 +105,7 @@ void Reyes::PatchesIndex::delete_patches(void* handle)
 }
 
 
-const vector<BezierPatch>& Reyes::PatchesIndex::get_patch_vector(void* handle)
+const vector<BezierPatch>& Reyes::PatchIndex::get_patch_vector(void* handle)
 {
     assert(_retain_vector);
         
@@ -113,7 +113,7 @@ const vector<BezierPatch>& Reyes::PatchesIndex::get_patch_vector(void* handle)
 }
 
 
-GL::TextureBuffer& Reyes::PatchesIndex::get_patch_texture(void* handle)
+GL::TextureBuffer& Reyes::PatchIndex::get_patch_texture(void* handle)
 {
     assert(_load_as_texture);
 
@@ -121,7 +121,7 @@ GL::TextureBuffer& Reyes::PatchesIndex::get_patch_texture(void* handle)
 }
 
 
-CL::Buffer* Reyes::PatchesIndex::get_opencl_buffer(void* handle)
+CL::Buffer* Reyes::PatchIndex::get_opencl_buffer(void* handle)
 {
     assert(_load_as_opencl_buffer);
 
@@ -130,7 +130,7 @@ CL::Buffer* Reyes::PatchesIndex::get_opencl_buffer(void* handle)
 
 
 
-size_t Reyes::PatchesIndex::get_patch_count(void* handle)
+size_t Reyes::PatchIndex::get_patch_count(void* handle)
 {
     return _index[handle].patch_count;
 }

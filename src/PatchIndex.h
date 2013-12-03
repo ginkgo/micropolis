@@ -7,7 +7,7 @@
 namespace Reyes
 {
 
-    class PatchesIndex
+    class PatchIndex
     {
         
 
@@ -32,8 +32,8 @@ namespace Reyes
     public:
         
 
-        PatchesIndex();
-        ~PatchesIndex();
+        PatchIndex();
+        ~PatchIndex();
 
         void enable_load_texture();
         void enable_load_opencl_buffer(CL::Device& opencl_device, CL::CommandQueue& opencl_queue);
