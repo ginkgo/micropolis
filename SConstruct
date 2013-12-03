@@ -29,7 +29,7 @@ env.Command(['#/generated/flextGL.c', '#/generated/flextGL.h'],
              
 env.Command(['#/generated/Config.cpp', '#/generated/Config.h'],
             ['#/src/config.xml', Glob('#/tools/configGen/*')],
-            python27+' tools/configGen/configGen.py src/config.xml -Dgenerated -Hh -Ccpp')
+            python3+' tools/configGen/configGen.py src/config.xml -Dgenerated -Hh -Ccpp')
              
 env.Command(['#/generated/format_map.cpp', '#/generated/format_map.h'],
             Glob('tools/format*'),
