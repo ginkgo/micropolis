@@ -32,9 +32,7 @@ GLFW 3.0
 Boost
 OpenCL
 DevIL
-Python 2.7
 Python 3.x
-Cheetah template engine
 Wheezy template
 
 The source uses C++11 features, so you need a version of GCC recent enough

@@ -19,7 +19,6 @@ env['LINKFLAGS'] = []
 
 env['CPPDEFINES'] = ['linux', 'NDEBUG']
 
-python27 = 'python2.7'
 python3 = 'python3'
 
 env.Command(['#/generated/flextGL.c', '#/generated/flextGL.h'],
@@ -33,7 +32,7 @@ env.Command(['#/generated/Config.cpp', '#/generated/Config.h'],
              
 env.Command(['#/generated/format_map.cpp', '#/generated/format_map.h'],
             Glob('tools/format*'),
-            python27+' tools/formatMapGen.py -Dgenerated -Hh -Ccpp')
+            python3+' tools/formatMapGen.py -Dgenerated -Hh -Ccpp')
 
 env.Command(['#/generated/mscene.capnp.c++', '#/generated/mscene.capnp.h'],
             ['#/src/mscene.capnp'],

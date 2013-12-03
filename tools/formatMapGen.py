@@ -5,7 +5,9 @@ import os.path
 
 import copy
 
-from Cheetah.Template import Template
+from wheezy.template.engine import Engine
+from wheezy.template.ext.core import CoreExtension
+from wheezy.template.loader import FileLoader
 
 script_dir = os.path.dirname(__file__) + os.sep
 
@@ -33,10 +35,10 @@ format_dic = {'RED' : 'R',
 format_map = {}
 int_format_map = {}
 
-for format, iformat in format_dic.iteritems():
-    for type_, itype in type_dic.iteritems():
+for format, iformat in format_dic.items():
+    for type_, itype in type_dic.items():
         format_map[(format, type_)] = iformat + itype
-    for type_, itype in int_type_dic.iteritems():
+    for type_, itype in int_type_dic.items():
         int_format_map[(format, type_)] = iformat + itype
 
 format_map[ ('DEPTH_COMPONENT', 'SHORT') ] = 'DEPTH_COMPONENT16'
@@ -59,11 +61,11 @@ format_map[ ('BGRA' , 'UNSIGNED_BYTE' ) ] = 'SRGB8_ALPHA8'
 
 reverse_map = {}
 
-for (format, type_), iformat in linear_format_map.iteritems():
+for (format, type_), iformat in linear_format_map.items():
     reverse_map[iformat] = (format, type_)
-for (format, type_), iformat in format_map.iteritems():
+for (format, type_), iformat in format_map.items():
     reverse_map[iformat] = (format, type_)
-for (format, type_), iformat in int_format_map.iteritems():
+for (format, type_), iformat in int_format_map.items():
     reverse_map[iformat] = (format, type_)
 
 header_content = \
@@ -96,7 +98,6 @@ parser.add_option("-D", "--dir", dest="output_dir",
 
 (options, args) = parser.parse_args()
 
-
 namespace = {'type_dic' : type_dic,
              'int_type_dic' : int_type_dic,
              'format_dic' : format_dic,
@@ -105,18 +106,16 @@ namespace = {'type_dic' : type_dic,
              'int_format_map' : int_format_map,
              'reverse_map' : reverse_map}
 
-source_template = Template(open(script_dir+'format_map_template.cc', 'r').read(),
-                           namespace)
+generated_warning = '/* WARNING: This file was automatically generated */\n/* Do not edit. */\n'
+    
+with open('%s/format_map.%s' % (options.output_dir, options.source_ext), 'w') as source_file:
+    source_file.write(generated_warning)
+    engine = Engine(loader=FileLoader([script_dir]), extensions=[CoreExtension()])
+    template = engine.get_template(os.path.basename('%s/format_map_template.cc' % script_dir))
+    source_file.write(template.render(namespace))
+    
+with open('%s/format_map.%s' % (options.output_dir, options.header_ext), 'w') as header_file:
+    header_file.write(generated_warning)
+    header_file.write(header_content)
 
 
-header_file = open('%s/format_map.%s' % (options.output_dir,
-                                 options.header_ext),
-                   'w')
-
-source_file = open('%s/format_map.%s' % (options.output_dir,
-                                 options.source_ext),
-                   'w')
-
-
-header_file.write(header_content)
-source_file.write(str(source_template))
