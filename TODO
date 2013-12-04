@@ -1,9 +1,8 @@
 
 TODO:
 
-* Make CL::TransferBuffer use pinned memory again
 * Refactor OpenCL wrappers
-  * Split into individual files
+  * Add set_args intermediate in CL::Kernel
   * Make Events shareable within device
   * Add device-level trace generation
   * Dump trace when pressing button
@@ -17,8 +16,13 @@ TODO:
 * Implement dynamic-rate dicing
 * Switch readme to markdown/textile or something like that
 * Add SCons build dir and config-option
+* Make CL::TransferBuffer use pinned memory again
 
-* Read 'Fast GPU-based Adaptive Tessellation with CUDA'
+* Read:
+  'Fast GPU-based Adaptive Tessellation with CUDA'
+  'Fragment-Parallel Composite and Filter'
+  '3D Rasterization: A Bridge between Rasterization and Ray Casting'
+  'Task Management for Irregular-Parallel Workloads on the GPU'
 
 * Shader system
   * Use Python for generation/compilation
@@ -31,6 +35,8 @@ TODO:
 
 DONE
 
+* Refactor OpenCL wrappers
+  * Split into individual files
 * Fix range_id/patch_id name inconsistencies
 * Rename PatchesIndex to PatchIndex
 * Fix configgen.py warning issues and switch to Python3+Wheezy

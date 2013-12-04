@@ -121,16 +121,21 @@ void mainloop(GLFWwindow* window)
         glm::dvec2 cursor_pos;
         glfwGetCursorPos(window, &(cursor_pos.x), &(cursor_pos.y));
 
+        glm::dvec2  mouse_movement = cursor_pos - last_cursor_pos;
+        if (abs(mouse_movement.x) > 100 || abs(mouse_movement.y) > 100) {
+            mouse_movement = vec2(0,0);
+        }
+        
         vec2 rotation(0,0);
         float zrotation = 0.0f;
 
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-            rotation = (cursor_pos - last_cursor_pos) * 0.1;
+            rotation = mouse_movement * 0.1;
         } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-            zrotation = (cursor_pos.x - last_cursor_pos.x) * 0.4f;
+            zrotation = mouse_movement.x * 0.4f;
         } else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
-            translation.x += (cursor_pos.x - last_cursor_pos.x) * -0.01;
-            translation.y += (cursor_pos.y - last_cursor_pos.y) * 0.01;
+            translation.x += mouse_movement.x * -0.01;
+            translation.y += mouse_movement.y * 0.01;
         }
         last_cursor_pos = cursor_pos;
 
