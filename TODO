@@ -1,8 +1,9 @@
 
 TODO:
 
+* Check out default framebuffer properties with glGetFramebufferAttachmentParameteriv 
+
 * Refactor OpenCL wrappers
-  * Add set_args intermediate in CL::Kernel
   * Make Events shareable within device
   * Add device-level trace generation
   * Dump trace when pressing button
@@ -37,6 +38,7 @@ DONE
 
 * Refactor OpenCL wrappers
   * Split into individual files
+  * Add set_args intermediate in CL::Kernel
 * Fix range_id/patch_id name inconsistencies
 * Rename PatchesIndex to PatchIndex
 * Fix configgen.py warning issues and switch to Python3+Wheezy
@@ -48,7 +50,6 @@ DONE
 * Read DiagSplit paper
 * Make SCons react to changes in tools dir
 * Freecam
-* Make flextgl support an external template
 * Rework Bound & Split dataflow
 * Load Killeroo
 * More complex scene format

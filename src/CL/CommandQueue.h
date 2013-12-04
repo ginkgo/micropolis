@@ -24,7 +24,7 @@ namespace CL
 
         cl_command_queue _queue;
 
-        std::map<long, EventIndex> _events;
+        std::unordered_map<long, EventIndex> _events;
         std::vector<cl_event> _event_pad;
         cl_event* _event_pad_ptr;
         long _id_count;

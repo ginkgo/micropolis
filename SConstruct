@@ -3,9 +3,11 @@ env = Environment()
 
 warning_flags = ['-Wall', '-Wno-unknown-pragmas', '-Wno-unused-variable', '-Wno-unused-but-set-variable']
 optimization_flags = ['-O3', '-msse4']
+defines = ['linux', 'NDEBUG']
 
 if False:
     optimization_flags = ['-O0', '-ggdb']
+    defines = ['linux']
 
 env['CPPPATH'] = ['#/external', '#/generated', '#src']
 env['LINK'] = 'g++'
@@ -17,7 +19,7 @@ env['CXXFLAGS'] = ['-std=c++11']
 env['CFLAGS'] = ['-std=c99']
 env['LINKFLAGS'] = []
 
-env['CPPDEFINES'] = ['linux', 'NDEBUG']
+env['CPPDEFINES'] = defines
 
 python3 = 'python3'
 

@@ -14,8 +14,7 @@ CL::CommandQueue::CommandQueue(Device& device) :
 {
     cl_int status;
     _queue = clCreateCommandQueue(device.get_context(), device.get_device(),
-                                  CL_QUEUE_PROFILING_ENABLE  | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
-                                  , 
+                                  CL_QUEUE_PROFILING_ENABLE  | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, 
                                   &status);
 
     OPENCL_ASSERT(status);
@@ -180,19 +179,19 @@ void CL::CommandQueue::finish()
     if (config.create_trace() && rand() % 1000 == 0) {
         std::ofstream fs(config.trace_file().c_str());
 
-        for (std::map<long, EventIndex>::iterator i = _events.begin(); i != _events.end(); ++i) {
-            const EventIndex* idx = &i->second;
+        for (auto i : _events) {
+            const EventIndex& idx = i.second;
             
             cl_ulong queued, submit, start, end;
 
-            clGetEventProfilingInfo(idx->event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
-            clGetEventProfilingInfo(idx->event, CL_PROFILING_COMMAND_SUBMIT, sizeof(submit), &submit, NULL);
-            clGetEventProfilingInfo(idx->event, CL_PROFILING_COMMAND_START, sizeof(start), &start, NULL);
-            clGetEventProfilingInfo(idx->event, CL_PROFILING_COMMAND_END, sizeof(end), &end, NULL);
+            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
+            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_SUBMIT, sizeof(submit), &submit, NULL);
+            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_START, sizeof(start), &start, NULL);
+            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_END, sizeof(end), &end, NULL);
     
-            fs << idx->name << ":" << queued << ":" << submit << ":" << start << ":" << end << endl;
+            fs << idx.name << ":" << queued << ":" << submit << ":" << start << ":" << end << endl;
 
-            status = clReleaseEvent(idx->event);
+            status = clReleaseEvent(idx.event);
 
             OPENCL_ASSERT(status);
         }
@@ -202,10 +201,10 @@ void CL::CommandQueue::finish()
         cout << endl << "OpenCL trace dumped." << endl << endl;
             
     } else {
-        for (std::map<long, EventIndex>::iterator i = _events.begin(); i != _events.end(); ++i) {
-            const EventIndex* idx = &i->second;
+        for (auto i : _events) {
+            const EventIndex& idx = i.second;
                 
-            status = clReleaseEvent(idx->event);
+            status = clReleaseEvent(idx.event);
 
             OPENCL_ASSERT(status);
         }

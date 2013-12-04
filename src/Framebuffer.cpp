@@ -66,7 +66,7 @@ namespace Reyes
         clear_color = vec4(powf(clear_color.x, 2.2), 
                            powf(clear_color.y, 2.2),
                            powf(clear_color.z, 2.2), 1000);
-        _clear_kernel->set_args(0, *_cl_buffer, clear_color);
+        _clear_kernel->set_args(*_cl_buffer, clear_color);
         return queue.enq_kernel(*_clear_kernel, _size.x * _size.y, 64,
                                 "clear framebuffer", e);
     }

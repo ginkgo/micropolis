@@ -60,7 +60,7 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     _clear_depth_buffer_kernel.reset(_reyes_program.get_kernel("clear_depth_buffer"));
 
 
-    _init_tile_locks_kernel->set_args(0, _tile_locks);
+    _init_tile_locks_kernel->set_args(_tile_locks);
     _queue.enq_kernel(*_init_tile_locks_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64, 
                       "init tile locks", CL::Event());
 }
@@ -77,7 +77,7 @@ void Reyes::OpenCLRenderer::prepare()
     CL::Event e = _framebuffer.acquire(_queue, CL::Event());
     e = _framebuffer.clear(_queue, e);
 
-    _clear_depth_buffer_kernel->set_args(0,_depth_buffer);
+    _clear_depth_buffer_kernel->set_args(_depth_buffer);
     _framebuffer_cleared = _queue.enq_kernel(*_clear_depth_buffer_kernel,
                                              _framebuffer.size().x * _framebuffer.size().y, 64,
                                              "clear depthbuffer", e);
@@ -148,7 +148,7 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
     const int group_width = config.dice_group_width();
 
     // DICE
-    _dice_kernel->set_args(0, batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
+    _dice_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
                            _pos_grid, _pxlpos_grid, _depth_grid,
                            matrix, proj);    
     e = _queue.enq_kernel(*_dice_kernel,
@@ -157,12 +157,12 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
                           "dice", ready);
 
     // SHADE
-    _shade_kernel->set_args(0, _pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
+    _shade_kernel->set_args(_pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
     e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8, 8, 1),
                           "shade", e);
 
     // SAMPLE
-    _sample_kernel->set_args(0, _block_index, _pxlpos_grid, _color_grid, _depth_grid,
+    _sample_kernel->set_args(_block_index, _pxlpos_grid, _color_grid, _depth_grid,
                              _tile_locks, _framebuffer.get_buffer(), _depth_buffer);
     e = _queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
                           "sample", _framebuffer_cleared | e);

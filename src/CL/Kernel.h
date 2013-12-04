@@ -24,15 +24,20 @@ namespace CL
 
         cl_kernel get() { return _kernel; }
 
+
+        template<typename ... Types> void set_args(Types && ... values)
+        {
+            set_args_from(0, values...);
+        }
         
-        template<typename T, typename ... Types> void set_args(cl_uint i, const T& value, Types && ... rest)
+        template<typename T, typename ... Types> void set_args_from(cl_uint i, const T& value, Types && ... rest)
         {
             set_arg(i, value);
-            set_args(i+1, rest...);
+            set_args_from(i+1, rest...);
         }
 
         
-        void set_args(cl_uint i) {}
+        void set_args_from(cl_uint i) {}
 
     };
 

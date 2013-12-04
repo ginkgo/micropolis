@@ -88,7 +88,7 @@ Reyes::Scene::Scene (const string& filename) :
 
     map<string, shared_ptr<BezierMesh> > meshmap;
     for (auto m : scene.getMeshes()) {
-        assert(c.getType() == ::Mesh::Type::BEZIER);
+        assert(m.getType() == ::Mesh::Type::BEZIER);
 
         BezierMesh* mesh = new BezierMesh{m.getName()};
 

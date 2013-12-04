@@ -26,5 +26,4 @@ namespace CL
         const long* get_ids() const;        
     };
 
-    
 }
