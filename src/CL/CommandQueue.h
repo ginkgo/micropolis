@@ -14,27 +14,18 @@ namespace CL
 
     class CommandQueue : public noncopyable
     {
-        struct EventIndex
-        {
-            long id;
-            string name;
-            cl_event event;
-        };
 
+        Device& _parent_device;
 
         cl_command_queue _queue;
+        const string _name;
 
-        std::unordered_map<long, EventIndex> _events;
-        std::vector<cl_event> _event_pad;
+        vector<cl_event> _event_pad;
         cl_event* _event_pad_ptr;
-        long _id_count;
 
-        Event insert_event(const string& name, cl_event event);
-        size_t init_event_pad(const Event& event);
+    public:
 
-        public:
-
-        CommandQueue(Device& device);
+        CommandQueue(Device& device, const string& name="unknown");
         ~CommandQueue();
         
         Event enq_kernel(Kernel& kernel, int global_size, int local_size,
@@ -66,6 +57,7 @@ namespace CL
 
         void finish();
         void flush();
+        
     };
     
 }

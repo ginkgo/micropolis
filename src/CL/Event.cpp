@@ -28,7 +28,7 @@ const size_t CL::Event::get_id_count() const
     return _count;
 }
 
-const long* CL::Event::get_ids() const
+const int* CL::Event::get_ids() const
 {
     return _ids;
 }

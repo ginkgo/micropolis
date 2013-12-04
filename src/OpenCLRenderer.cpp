@@ -90,7 +90,7 @@ void Reyes::OpenCLRenderer::finish()
     _framebuffer.release(_queue, _last_batch);
     _framebuffer.show();
 
-    _queue.finish();
+    _device.release_events();
     
     _last_batch = CL::Event();
     _framebuffer_cleared = CL::Event();
@@ -158,7 +158,7 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
 
     // SHADE
     _shade_kernel->set_args(_pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
-    e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8, 8, 1),
+    e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8,8,1),
                           "shade", e);
 
     // SAMPLE

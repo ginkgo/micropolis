@@ -7,10 +7,9 @@
 #include "Exception.h"
 #include "Kernel.h"
 
-#include <fstream>
 
-CL::CommandQueue::CommandQueue(Device& device) :
-    _id_count(0)
+CL::CommandQueue::CommandQueue(Device& device, const string& name)
+    : _parent_device(device)
 {
     cl_int status;
     _queue = clCreateCommandQueue(device.get_context(), device.get_device(),
@@ -26,41 +25,6 @@ CL::CommandQueue::~CommandQueue()
     clReleaseCommandQueue(_queue);
 }
 
-CL::Event CL::CommandQueue::insert_event(const string& name, cl_event event)
-{
-    long id = _id_count;
-    ++_id_count;
-
-    EventIndex& idx = _events[id];
-
-    idx.id = id;
-    idx.name = name;
-    idx.event =  event;
-
-    return CL::Event(id);
-}
-
-size_t CL::CommandQueue::init_event_pad(const CL::Event& event)
-{
-    const long* ids = event.get_ids();
-    size_t cnt = event.get_id_count();
-
-    if (_event_pad.size() < cnt) {
-        _event_pad.resize(cnt);
-    }
-
-    for (size_t i = 0; i < cnt; ++i) {
-        _event_pad[i] = _events.at(ids[i]).event;
-    }
-        
-    if (cnt == 0) {
-        _event_pad_ptr = 0;
-    } else {
-        _event_pad_ptr = _event_pad.data();
-    }
-        
-    return cnt;
-}
 
 CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, int global_size, int local_size,
                                        const string& name, const CL::Event& events)
@@ -69,7 +33,7 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, int global_size, int loca
     size_t global[] = {(size_t)global_size};
     size_t local[]  = {(size_t)local_size};
         
-    size_t cnt = init_event_pad(events);
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
     cl_event e;
 
     cl_int status;
@@ -78,7 +42,7 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, int global_size, int loca
                                     cnt, _event_pad_ptr, &e);
     OPENCL_ASSERT(status);
 
-    return insert_event(name, e);
+    return _parent_device.insert_event(name, _name, e);
 }
 
 
@@ -89,7 +53,7 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 
     size_t global[] = {(size_t)global_size.x, (size_t)global_size.y};
     size_t local[]  = {(size_t)local_size.x, (size_t)local_size.y};
         
-    size_t cnt = init_event_pad(events);
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
     cl_event e;        
 
     cl_int status;
@@ -99,7 +63,7 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 
 
     OPENCL_ASSERT(status);
 
-    return insert_event(name, e);
+    return _parent_device.insert_event(name, _name, e);
 }
 
 CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size,
@@ -109,7 +73,7 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 
     size_t global[] = {(size_t)global_size.x, (size_t)global_size.y, (size_t)global_size.z};
     size_t local[]  = {(size_t)local_size.x, (size_t)local_size.y, (size_t)local_size.z};
         
-    size_t cnt = init_event_pad(events);
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
     cl_event e;        
 
     cl_int status;
@@ -119,14 +83,14 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 
 
     OPENCL_ASSERT(status);
 
-    return insert_event(name, e);
+    return _parent_device.insert_event(name, _name, e);
 }
 
 CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t len, size_t offset,
                                              const string& name, const CL::Event& events)
 {
         
-    size_t cnt = init_event_pad(events);
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
     cl_event e;
 
     cl_int status;
@@ -138,7 +102,7 @@ CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t l
     //cout << name << endl;
     OPENCL_ASSERT(status);
 
-    return insert_event(name, e);
+    return _parent_device.insert_event(name, _name, e);
 }
 
 CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t len,
@@ -152,7 +116,7 @@ CL::Event CL::CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t le
 {
     cl_int status;
         
-    size_t cnt = init_event_pad(events);
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
     cl_event e;
 
     status = clEnqueueReadBuffer(_queue, buffer.get(), CL_FALSE, 
@@ -160,7 +124,7 @@ CL::Event CL::CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t le
 
     OPENCL_ASSERT(status);
 
-    return insert_event(name, e);
+    return _parent_device.insert_event(name, _name, e);
 }
 
 
@@ -175,42 +139,6 @@ void CL::CommandQueue::finish()
     cl_int status = clFinish(_queue);
 
     OPENCL_ASSERT(status);
-
-    if (config.create_trace() && rand() % 1000 == 0) {
-        std::ofstream fs(config.trace_file().c_str());
-
-        for (auto i : _events) {
-            const EventIndex& idx = i.second;
-            
-            cl_ulong queued, submit, start, end;
-
-            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
-            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_SUBMIT, sizeof(submit), &submit, NULL);
-            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_START, sizeof(start), &start, NULL);
-            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_END, sizeof(end), &end, NULL);
-    
-            fs << idx.name << ":" << queued << ":" << submit << ":" << start << ":" << end << endl;
-
-            status = clReleaseEvent(idx.event);
-
-            OPENCL_ASSERT(status);
-        }
-
-        config.set_create_trace(false);
-
-        cout << endl << "OpenCL trace dumped." << endl << endl;
-            
-    } else {
-        for (auto i : _events) {
-            const EventIndex& idx = i.second;
-                
-            status = clReleaseEvent(idx.event);
-
-            OPENCL_ASSERT(status);
-        }
-    }
-
-    _events.clear();
 }
 
 void CL::CommandQueue::flush()
@@ -222,7 +150,7 @@ void CL::CommandQueue::flush()
 
 void CL::CommandQueue::wait_for_events(const CL::Event& events)
 {
-    size_t num_events = init_event_pad(events);
+    size_t num_events = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
 
     if (num_events == 0) return;
 
@@ -251,27 +179,27 @@ void CL::CommandQueue::wait_for_events(const CL::Event& events)
 CL::Event CL::CommandQueue::enq_GL_acquire(cl_mem mem, const string& name, const CL::Event& events)
 {
         
-    size_t cnt = init_event_pad(events);
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
     cl_event e;
 
     cl_int status = clEnqueueAcquireGLObjects(_queue, 1, &mem, cnt, _event_pad_ptr, &e);
 
     OPENCL_ASSERT(status);
 
-    return insert_event(name, e);
+    return _parent_device.insert_event(name, _name, e);
 }
 
 CL::Event CL::CommandQueue::enq_GL_release(cl_mem mem, const string& name, const CL::Event& events)
 {
         
-    size_t cnt = init_event_pad(events);
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
     cl_event e;
 
     cl_int status = clEnqueueReleaseGLObjects(_queue, 1, &mem, cnt, _event_pad_ptr, &e);
 
     OPENCL_ASSERT(status);
 
-    return insert_event(name, e);
+    return _parent_device.insert_event(name, _name, e);
 }
 
 void* CL::CommandQueue::map_buffer(Buffer& buffer)

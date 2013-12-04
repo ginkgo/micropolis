@@ -4,8 +4,6 @@ TODO:
 * Check out default framebuffer properties with glGetFramebufferAttachmentParameteriv 
 
 * Refactor OpenCL wrappers
-  * Make Events shareable within device
-  * Add device-level trace generation
   * Dump trace when pressing button
   * User-events
 * Rename OpenCL{Renderer,BoundNSplit}
@@ -37,6 +35,8 @@ TODO:
 DONE
 
 * Refactor OpenCL wrappers
+  * Make Events shareable within device
+  * Add device-level trace generation
   * Split into individual files
   * Add set_args intermediate in CL::Kernel
 * Fix range_id/patch_id name inconsistencies

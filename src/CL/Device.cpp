@@ -4,7 +4,7 @@
 #include "Exception.h"
 
 #include <CL/cl_gl.h>
-
+#include <fstream>
 
 #ifdef linux
 #include "GL/glx.h"
@@ -28,7 +28,9 @@ namespace
 
 
 
-CL::Device::Device(int platform_index, int device_index) 
+CL::Device::Device(int platform_index, int device_index)
+    : _id_count(0)
+    , _dump_trace(false)
 {
     cl_platform_id platform;
 
@@ -127,6 +129,98 @@ void CL::Device::print_info()
         PRINT_CL_DEVICE_INFO(char[1000], CL_DEVICE_EXTENSIONS);
     }
 }
+
+
+
+CL::Event CL::Device::insert_event(const string& name, const string& queue_name, cl_event event)
+{
+    int id = _id_count;
+    ++_id_count;
+
+    EventIndex& idx = _events[id];
+
+    idx.id = id;
+    idx.name = name;
+    idx.queue_name = queue_name;
+    idx.event =  event;
+
+    return CL::Event(id);
+}
+
+size_t CL::Device::setup_event_pad(const CL::Event& event, vector<cl_event>& event_pad, cl_event*& event_pad_ptr)
+{
+    const int* ids = event.get_ids();
+    size_t cnt = event.get_id_count();
+
+    if (event_pad.size() < cnt) {
+        event_pad.resize(cnt);
+    }
+
+    for (size_t i = 0; i < cnt; ++i) {
+        event_pad[i] = _events.at(ids[i]).event;
+    }
+        
+    if (cnt == 0) {
+        event_pad_ptr = 0;
+    } else {
+        event_pad_ptr = event_pad.data();
+    }
+        
+    return cnt;
+}
+
+
+void CL::Device::dump_trace()
+{
+    _dump_trace = true;
+}
+
+
+void CL::Device::release_events()
+{
+    cl_int status;
+    
+    if (_dump_trace) {
+        _dump_trace = false;
+        
+        std::ofstream fs(config.trace_file().c_str());
+
+        for (auto i : _events) {
+            const EventIndex& idx = i.second;
+            
+            cl_ulong queued, submit, start, end;
+
+            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
+            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_SUBMIT, sizeof(submit), &submit, NULL);
+            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_START, sizeof(start), &start, NULL);
+            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_END, sizeof(end), &end, NULL);
+    
+            fs << idx.name << "@" << idx.queue_name << ":"
+               << queued << ":"
+               << submit << ":"
+               << start << ":"
+               << end << endl;
+        }
+
+        config.set_create_trace(false);
+
+        cout << endl << "OpenCL trace dumped." << endl << endl;
+            
+    }
+
+    
+    for (auto i : _events) {
+        const EventIndex& idx = i.second;
+                
+        status = clReleaseEvent(idx.event);
+
+        OPENCL_ASSERT(status);
+    }
+  
+    _events.clear();
+    _id_count = 0;
+}
+
 
 namespace
 {

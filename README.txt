@@ -34,6 +34,7 @@ OpenCL
 DevIL
 Python 3.x
 Wheezy template
+Cap'n Proto
 
 The source uses C++11 features, so you need a version of GCC recent enough
 to support this.
@@ -43,10 +44,6 @@ To build call:
 > git submodule init
 > git submodule update
 > scons
-
-The SConstruct file is configured to look in AMDAPPROOTSDK for the OpenCL
-headers. If you're using another OpenCL vendor, you should set the
-include dir accordingly.
 
 The build-system uses code-generation for creating the config-file
 parser and the OpenGL extension loader. This is done by two python
