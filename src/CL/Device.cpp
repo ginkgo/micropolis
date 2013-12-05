@@ -7,7 +7,11 @@
 #include <fstream>
 
 #ifdef linux
-#include "GL/glx.h"
+#define GLFW_EXPOSE_NATIVE_X11
+#define GLFW_EXPOSE_NATIVE_GLX
+#include <GLFW/glfw3native.h>
+#else
+#error TODO
 #endif
 
 
@@ -247,8 +251,6 @@ void CL::Device::release_events()
                << end << endl;
         }
 
-        config.set_create_trace(false);
-
         cout << endl << "OpenCL trace dumped." << endl << endl;
             
     }
@@ -322,14 +324,8 @@ namespace
 #ifdef linux
         cl_context_properties props[] = 
             {CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 
-             CL_GL_CONTEXT_KHR,   (cl_context_properties)glXGetCurrentContext(),
-             CL_GLX_DISPLAY_KHR,  (cl_context_properties)glXGetCurrentDisplay(),
-             0};
-#else
-        cl_context_properties props[] = 
-            {CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 
-             CL_GL_CONTEXT_KHR,   (intptr_t)wglGetCurrentContext(),
-             CL_WGL_HDC_KHR,  (cl_context_properties)wglGetCurrentDC(),
+             CL_GL_CONTEXT_KHR,   (cl_context_properties)glfwGetGLXContext(glfwGetCurrentContext()),
+             CL_GLX_DISPLAY_KHR,  (cl_context_properties)glfwGetX11Display(),
              0};
 #endif
         

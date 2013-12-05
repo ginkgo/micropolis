@@ -98,8 +98,7 @@ namespace Reyes
     CL::Event OGLSharedFramebuffer::acquire(CL::CommandQueue& queue, const CL::Event& e)
     {
         if (_shared) {
-            return queue.enq_GL_acquire(_cl_buffer->get(),
-                                        "acquire framebuffer", e);
+            return queue.enq_GL_acquire(_cl_buffer->get(), "acquire framebuffer", e);
         } else {
             return e;
         }

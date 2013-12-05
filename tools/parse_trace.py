@@ -10,7 +10,7 @@ import cairo
 import random
 
 def parse(file):
-    pattern = re.compile("(.*):(\d+):(\d+):(\d+):(\d+)")
+    pattern = re.compile("([^@:]*)(@[^@:]*):(\d+):(\d+):(\d+):(\d+)")
 
     items = []
 
@@ -21,11 +21,13 @@ def parse(file):
             print('Input file format mismatch.')
             exit(1)
         
-        item = (match.group(1), 
-                int(match.group(2)), 
+        item = (match.group(1),
+                match.group(2),
                 int(match.group(3)), 
                 int(match.group(4)), 
-                int(match.group(5)))
+                int(match.group(5)), 
+                int(match.group(6)))
+            
         items.append(item)
     
     return items
@@ -36,17 +38,17 @@ def microseconds(nanoseconds):
     return nanoseconds / 1000.0
 
 def duration(item):
-    return item[4] - item[3]
+    return item[5] - item[4]
 
 def min_time(items):
-    return min([i[3] for i in items])
+    return min([i[4] for i in items])
 
 def max_time(items):
-    return max([i[4] for i in items])
+    return max([i[5] for i in items])
 
 def offset_time(item, o):
-    n,a,b,c,d = item
-    return n,a-o,b-o,c-o,d-o
+    n,q,a,b,c,d = item
+    return n,q,a-o,b-o,c-o,d-o
 
 
 color_index = {}
@@ -106,7 +108,7 @@ HEIGHT_PER_BAR = 2.5*mm
 LEN_PER_MS = 20*mm
 
 item_names = []
-[item_names.append(n) for n,_,_,_,_ in items if not item_names.count(n)]
+[item_names.append(n) for n,_,_,_,_,_ in items if not item_names.count(n)]
 BAR_CNT = len(item_names)
 
 VHEIGHT, VWIDTH = BAR_CNT * HEIGHT_PER_BAR,  LEN_PER_MS * length
@@ -127,7 +129,6 @@ ctx.set_font_size(0.05)
 ctx.select_font_face('FreeSans')
 
 for t in range(0, int(length*10)):
-
 
     ctx.stroke()
     if t == 166:
@@ -173,7 +174,7 @@ ctx.rel_line_to(length, 0)
 ctx.stroke()
 
 for v in items:
-    n,a,b,c,d = v
+    n,q,a,b,c,d = v
 
     i = item_names.index(n)
 

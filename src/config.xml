@@ -121,10 +121,6 @@
       Patch data input file.
     </value>
 
-    <value name="create_trace" type="bool" default="false">
-      Create an OpenCL timing trace.
-    </value>
-
     <value name="dump_kernel_files" type="bool" default="false">
       Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
     </value>

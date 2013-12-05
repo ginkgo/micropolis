@@ -27,11 +27,14 @@
 #include "Statistics.h"
 
 #include <boost/format.hpp>
+#include <algorithm>
+#include <GL/glx.h>
 
 void mainloop(GLFWwindow* window);
 bool test_prefix_sum(const int N, bool print);
 void handle_arguments(int argc, char** argv);
 GLFWwindow* init_opengl(ivec2 window_size);
+void get_framebuffer_info();
 
 int main(int argc, char** argv)
 {
@@ -40,7 +43,7 @@ int main(int argc, char** argv)
     ivec2 size = config.window_size();
 
 	GLFWwindow* window = init_opengl(size);
-	
+    
     if (window == NULL) {
         return 1;
     }
@@ -333,4 +336,79 @@ GLFWwindow* init_opengl(ivec2 size)
     set_GL_error_callbacks();
     
     return window;
+}
+
+
+/**
+ * Query properties of attached OpenGL Framebuffer
+ */
+void get_framebuffer_info()
+{
+    cout << endl << endl;
+    cout << "--------------------------------------------------------------------------------" << endl;
+    cout << " Framebuffer info...                                                            " << endl;
+    cout << "--------------------------------------------------------------------------------" << endl;
+    cout << endl;
+    GLint params[10];
+    
+    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, params);
+    switch(params[0]) {
+    case GL_NONE:
+        cout << "Attachment type: NONE" << endl; break;
+    case GL_FRAMEBUFFER_DEFAULT:
+        cout << "Attachment type: default framebuffer" << endl; break;
+    case GL_RENDERBUFFER:
+        cout << "Attachment type: renderbuffer" << endl; break;
+    case GL_TEXTURE:
+        cout << "Attachment type: texture" << endl; break;
+    default:
+        cout << "Attachment type: unknown" << endl; break;
+    }
+
+    std::fill(params, params+10, -1);
+    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, params);
+    cout << "Attachment object name: " << params[0] << endl;
+
+    GLint object_name = params[0];
+    
+    if (glIsRenderbuffer(object_name)) {
+        cout << "Object name is a renderbuffer" << endl;
+        
+        std::fill(params, params+10, -1);
+        glBindRenderbuffer(GL_RENDERBUFFER, object_name);
+        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, params+0);
+        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, params+1);
+        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_SAMPLES, params+2);
+
+        cout << "Format: " << params[0] << "x" << params[1] << " @ " << params[2] << " samples" << endl;
+    } else {
+        cout << "Object name NOT a renderbuffer" << endl;
+    }
+
+    if (glIsBuffer(object_name)) {
+        cout << "Object name is a buffer" << endl;
+    } else {
+        cout << "Object name NOT a buffer" << endl;
+    }
+
+    if (glIsTexture(object_name)) {
+        cout << "Object name is a texture" << endl;
+    } else {
+        cout << "Object name NOT a texture" << endl;
+    }
+
+    if (glIsFramebuffer(object_name)) {
+        cout << "Object name is a framebuffer" << endl;
+    } else {
+        cout << "Object name NOT a framebuffer" << endl;
+    }
+
+    GLXDrawable  drawable = glXGetCurrentDrawable();
+    cout << "Current GLXDrawable: " << drawable << endl;
+
+    cout << endl;
+    cout << "--------------------------------------------------------------------------------" << endl;
+    cout << " Framebuffer info... done                                                       " << endl;
+    cout << "--------------------------------------------------------------------------------" << endl;
+    cout << endl << endl;
 }

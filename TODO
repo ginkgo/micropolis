@@ -1,8 +1,7 @@
 
 TODO:
 
-* Check out default framebuffer properties with glGetFramebufferAttachmentParameteriv 
-
+* Find source for FPS-counter/trace time discrepancy
 * Rename OpenCL{Renderer,BoundNSplit} & PatchDrawer
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
@@ -13,6 +12,8 @@ TODO:
 * Switch readme to markdown/textile or something like that
 * Add SCons build dir and config-option
 * Make CL::TransferBuffer use pinned memory again
+
+* Check for potential ways to get direct access to default framebuffer
 
 * Read:
   'Fast GPU-based Adaptive Tessellation with CUDA'
@@ -31,6 +32,8 @@ TODO:
 
 DONE
 
+* Use glfwGetGLXContext() etc. to get context/display in shared CL/GL device setup
+* Check out default framebuffer properties with glGetFramebufferAttachmentParameteriv() 
 * Refactor OpenCL wrappers
   * User-events
   * Dump trace when pressing button
