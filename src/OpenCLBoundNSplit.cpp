@@ -16,9 +16,10 @@ Reyes::OpenCLBoundNSplit::OpenCLBoundNSplit(CL::Device& device,
     , _patch_index(patch_index)
     , _active_handle(nullptr)
     , _active_patch_buffer(nullptr)
-    , _patch_ids(device, _queue, 2*config.reyes_patches_per_pass() * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
-    , _patch_min(device, _queue, 2*config.reyes_patches_per_pass() * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
-    , _patch_max(device, _queue, 2*config.reyes_patches_per_pass() * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _patch_ids(device, _queue, config.reyes_patches_per_pass() * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _patch_min(device, _queue, config.reyes_patches_per_pass() * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _patch_max(device, _queue, config.reyes_patches_per_pass() * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _bound_n_split_event(device, "CPU bound & split")
 {
     _patch_index->enable_retain_vector();
     _patch_index->enable_load_opencl_buffer(device, queue);
@@ -61,6 +62,7 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
 {
     _queue.wait_for_events(ready);
     
+    _bound_n_split_event.begin();
     statistics.start_bound_n_split();
     
     const vector<BezierPatch>& patches = _patch_index->get_patch_vector(_active_handle);
@@ -134,6 +136,7 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
     
     //_queue.wait_for_events(a|b|c);
     statistics.stop_bound_n_split();
+    _bound_n_split_event.end();
     
     return {patch_count, *_active_patch_buffer, _patch_ids, _patch_min, _patch_max, a|b|c};
 }

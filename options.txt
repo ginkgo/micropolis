@@ -34,14 +34,14 @@ verbosity_level = 1
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 32
+reyes_patch_size = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
 reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 32
+bound_n_split_limit = 16
 
 // Maximum number of times a surface patch can be split.
 max_split_depth = 20
@@ -71,7 +71,7 @@ trace_file = reyes.trace
 backface_culling = true
 
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = true
+do_event_polling = false
 
 // Number of patch buffers used for transferring patch data to device.
 patch_buffer_count = 3

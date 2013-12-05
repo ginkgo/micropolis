@@ -10,13 +10,18 @@
 #include "Projection.h"
 #include "Statistics.h"
 
+#define _framebuffer_queue _rasterization_queue
+#define _bound_n_split_queue _rasterization_queue
+
 Reyes::OpenCLRenderer::OpenCLRenderer()
     : _device(config.platform_id(), config.device_id())
-    , _queue(_device, "rasterization")
+    // , _framebuffer_queue(_device, "framebuffer")
+    // , _bound_n_split_queue(_device, "bound & split")
+    , _rasterization_queue(_device, "rasterization")
     , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
-    , _bound_n_split(new OpenCLBoundNSplit(_device, _queue, _patch_index))
+    , _bound_n_split(new OpenCLBoundNSplit(_device, _bound_n_split_queue, _patch_index))
       
     , _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass())
     , _pos_grid(_device, 
@@ -62,8 +67,8 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
 
 
     _init_tile_locks_kernel->set_args(_tile_locks);
-    _queue.enq_kernel(*_init_tile_locks_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64, 
-                      "init tile locks", CL::Event());
+    _rasterization_queue.enq_kernel(*_init_tile_locks_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64, 
+                                    "init tile locks", CL::Event());
 }
 
 
@@ -77,13 +82,13 @@ void Reyes::OpenCLRenderer::prepare()
 {
     _frame_event.begin();
     
-    CL::Event e = _framebuffer.acquire(_queue, CL::Event());
-    e = _framebuffer.clear(_queue, e);
+    CL::Event e = _framebuffer.acquire(_rasterization_queue, CL::Event());
+    e = _framebuffer.clear(_framebuffer_queue, e);
 
     _clear_depth_buffer_kernel->set_args(_depth_buffer);
-    _framebuffer_cleared = _queue.enq_kernel(*_clear_depth_buffer_kernel,
-                                             _framebuffer.size().x * _framebuffer.size().y, 64,
-                                             "clear depthbuffer", e);
+    _framebuffer_cleared = _framebuffer_queue.enq_kernel(*_clear_depth_buffer_kernel,
+                                                         _framebuffer.size().x * _framebuffer.size().y, 64,
+                                                         "clear depthbuffer", e);
     statistics.start_render();
 
 }
@@ -91,7 +96,7 @@ void Reyes::OpenCLRenderer::prepare()
 
 void Reyes::OpenCLRenderer::finish()
 {
-    _framebuffer.release(_queue, _last_batch);
+    _framebuffer.release(_framebuffer_queue, _last_batch);
     _framebuffer.show();
 
     _frame_event.end();
@@ -156,20 +161,20 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
     _dice_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
                            _pos_grid, _pxlpos_grid, _depth_grid,
                            matrix, proj);    
-    e = _queue.enq_kernel(*_dice_kernel,
+    e = _rasterization_queue.enq_kernel(*_dice_kernel,
                           ivec3(patch_size + group_width, patch_size + group_width, patch_count),
                           ivec3(group_width, group_width, 1),
                           "dice", ready);
 
     // SHADE
     _shade_kernel->set_args(_pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
-    e = _queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8,8,1),
+    e = _rasterization_queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8,8,1),
                           "shade", e);
 
     // SAMPLE
     _sample_kernel->set_args(_block_index, _pxlpos_grid, _color_grid, _depth_grid,
                              _tile_locks, _framebuffer.get_buffer(), _depth_buffer);
-    e = _queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
+    e = _rasterization_queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
                           "sample", _framebuffer_cleared | e);
 
     return e;

@@ -32,7 +32,10 @@ namespace Reyes
     {
         
         CL::Device _device;
-        CL::CommandQueue _queue;
+        // CL::CommandQueue _framebuffer_queue;
+        // CL::CommandQueue _bound_n_split_queue;
+        CL::CommandQueue _rasterization_queue;
+        
         OGLSharedFramebuffer _framebuffer;
 
         shared_ptr<PatchIndex> _patch_index;

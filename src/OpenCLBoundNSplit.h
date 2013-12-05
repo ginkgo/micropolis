@@ -43,6 +43,8 @@ namespace Reyes
         CL::TransferBuffer _patch_ids;
         CL::TransferBuffer _patch_min;
         CL::TransferBuffer _patch_max;
+
+        CL::UserEvent _bound_n_split_event;
         
     public:
 

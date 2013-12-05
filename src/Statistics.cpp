@@ -118,7 +118,7 @@ void Statistics::update()
     uint64_t now = nanotime();
     uint64_t dur = now - _last_fps_calculation;
 
-    if (dur > 5 * BILLION) {
+    if (dur > 1 * BILLION) {
         frames_per_second = (float)_frames * BILLION / dur;
         ms_per_frame = dur / ((float)_frames * MILLION);
 

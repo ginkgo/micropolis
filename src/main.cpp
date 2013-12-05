@@ -59,9 +59,8 @@ int main(int argc, char** argv)
         mainloop(window);
 
     } catch (CL::Exception& e) {
-
         cerr << e.file() << ":" << e.line_no() << ": error: " <<  e.msg() << endl;
-
+        return 1;
     }
 
     return 0;
