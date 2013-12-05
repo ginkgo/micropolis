@@ -58,6 +58,7 @@ namespace Reyes
 
         CL::Event _last_batch;
         CL::Event _framebuffer_cleared;
+        CL::UserEvent _frame_event;
 
 
     public:
@@ -75,6 +76,8 @@ namespace Reyes
                                   const mat4& matrix,
                                   const Projection* projection,
                                   const vec4& color);
+
+        virtual void dump_trace() { _device.dump_trace(); }
 
     private:
 

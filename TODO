@@ -3,10 +3,7 @@ TODO:
 
 * Check out default framebuffer properties with glGetFramebufferAttachmentParameteriv 
 
-* Refactor OpenCL wrappers
-  * Dump trace when pressing button
-  * User-events
-* Rename OpenCL{Renderer,BoundNSplit}
+* Rename OpenCL{Renderer,BoundNSplit} & PatchDrawer
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
 * Pipeline drawcalls over several command-queues
@@ -35,6 +32,8 @@ TODO:
 DONE
 
 * Refactor OpenCL wrappers
+  * User-events
+  * Dump trace when pressing button
   * Make Events shareable within device
   * Add device-level trace generation
   * Split into individual files

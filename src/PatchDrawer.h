@@ -40,6 +40,8 @@ namespace Reyes
                                   const mat4& matrix,
                                   const Projection* projection,
                                   const vec4& color) = 0;
+
+        virtual void dump_trace() {};
     };
 
 }

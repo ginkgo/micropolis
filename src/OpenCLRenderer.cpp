@@ -12,7 +12,7 @@
 
 Reyes::OpenCLRenderer::OpenCLRenderer()
     : _device(config.platform_id(), config.device_id())
-    , _queue(_device)
+    , _queue(_device, "rasterization")
     , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
@@ -36,6 +36,7 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
                   _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE)
 	, _depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_int), CL_MEM_READ_WRITE)
     , _reyes_program()
+    , _frame_event(_device, "frame")
 {
     _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
     _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
@@ -74,6 +75,8 @@ Reyes::OpenCLRenderer::~OpenCLRenderer()
 
 void Reyes::OpenCLRenderer::prepare()
 {
+    _frame_event.begin();
+    
     CL::Event e = _framebuffer.acquire(_queue, CL::Event());
     e = _framebuffer.clear(_queue, e);
 
@@ -82,6 +85,7 @@ void Reyes::OpenCLRenderer::prepare()
                                              _framebuffer.size().x * _framebuffer.size().y, 64,
                                              "clear depthbuffer", e);
     statistics.start_render();
+
 }
 
 
@@ -90,6 +94,7 @@ void Reyes::OpenCLRenderer::finish()
     _framebuffer.release(_queue, _last_batch);
     _framebuffer.show();
 
+    _frame_event.end();
     _device.release_events();
     
     _last_batch = CL::Event();

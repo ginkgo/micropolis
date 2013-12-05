@@ -143,9 +143,11 @@ CL::Event CL::Device::insert_event(const string& name, const string& queue_name,
     idx.name = name;
     idx.queue_name = queue_name;
     idx.event =  event;
+    idx.is_user = false;
 
     return CL::Event(id);
 }
+
 
 size_t CL::Device::setup_event_pad(const CL::Event& event, vector<cl_event>& event_pad, cl_event*& event_pad_ptr)
 {
@@ -170,6 +172,34 @@ size_t CL::Device::setup_event_pad(const CL::Event& event, vector<cl_event>& eve
 }
 
 
+
+
+int CL::Device::insert_user_event(const string& name, cl_event event)
+{
+    int id = _id_count;
+    ++_id_count;
+
+    EventIndex& idx = _events[id];
+
+    idx.id = id;
+    idx.name = name;
+    idx.queue_name = "user";
+    idx.event =  event;
+    idx.is_user = true;
+    idx.user_begin = nanotime();
+
+    return id;    
+}
+
+
+void CL::Device::end_user_event(int id)
+{
+    _events[id].user_end = nanotime();
+}
+
+
+
+
 void CL::Device::dump_trace()
 {
     _dump_trace = true;
@@ -190,11 +220,26 @@ void CL::Device::release_events()
             
             cl_ulong queued, submit, start, end;
 
-            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
-            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_SUBMIT, sizeof(submit), &submit, NULL);
-            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_START, sizeof(start), &start, NULL);
-            clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_END, sizeof(end), &end, NULL);
-    
+            if (idx.is_user) {
+                queued = idx.user_begin;
+                submit = idx.user_begin;
+                start = idx.user_begin;
+                end = idx.user_end;
+
+            } else {
+                status = clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
+                OPENCL_ASSERT(status);
+            
+                status = clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_SUBMIT, sizeof(submit), &submit, NULL);
+                OPENCL_ASSERT(status);
+            
+                status = clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_START, sizeof(start), &start, NULL);
+                OPENCL_ASSERT(status);
+            
+                status = clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_END, sizeof(end), &end, NULL);
+                OPENCL_ASSERT(status);
+            }
+            
             fs << idx.name << "@" << idx.queue_name << ":"
                << queued << ":"
                << submit << ":"

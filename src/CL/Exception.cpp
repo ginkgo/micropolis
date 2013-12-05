@@ -22,6 +22,7 @@ CL::Exception::Exception(cl_int err_code, const string& file, int line_no):
     case CL_INVALID_CONTEXT:                     _msg = "Invalid context";                       break;
     case CL_INVALID_DEVICE:                      _msg = "Invalid device";                        break;
     case CL_INVALID_EVENT_WAIT_LIST:             _msg = "Invalid event wait list";               break;
+    case CL_INVALID_EVENT:                       _msg = "Invalid event";
     case CL_INVALID_GLOBAL_OFFSET:               _msg = "Invalid global offset";                 break;
     case CL_INVALID_GLOBAL_WORK_SIZE:            _msg = "Invalid global work size";              break;
     case CL_INVALID_GL_OBJECT:                   _msg = "Invalid OpenGL object";                 break;
@@ -31,8 +32,8 @@ CL::Exception::Exception(cl_int err_code, const string& file, int line_no):
     case CL_INVALID_KERNEL_ARGS:                 _msg = "(Some) kernel args not specified";      break;
     case CL_INVALID_KERNEL_DEFINITION:           _msg = "Invalid kernel definition";             break;
     case CL_INVALID_KERNEL_NAME:                 _msg = "Kernel name not found in program";      break;
-    case CL_INVALID_MIP_LEVEL:                   _msg = "Invalid miplevel";                      break;
     case CL_INVALID_MEM_OBJECT:                  _msg = "Invalid mem object";                    break;
+    case CL_INVALID_MIP_LEVEL:                   _msg = "Invalid miplevel";                      break;
     case CL_INVALID_OPERATION:                   _msg = "Invalid operation";                     break;
     case CL_INVALID_PROGRAM:                     _msg = "Invalid program";                       break;
     case CL_INVALID_PROGRAM_EXECUTABLE:          _msg = "Program not built successfully";        break;
@@ -46,6 +47,7 @@ CL::Exception::Exception(cl_int err_code, const string& file, int line_no):
     case CL_MISALIGNED_SUB_BUFFER_OFFSET:        _msg = "Misaligned sub-buffer offset";          break;
     case CL_OUT_OF_HOST_MEMORY:                  _msg = "Out of host memory";                    break;
     case CL_OUT_OF_RESOURCES:                    _msg = "Out of resources";                      break;
+    case CL_PROFILING_INFO_NOT_AVAILABLE:        _msg = "Profiling info not available";          break;
     case -1001:                                  _msg = "Vendor ICD not correctly installed(?)"; break;
     default:                                     _msg = "Unknown error: " + to_string(err_code);
     }

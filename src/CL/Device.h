@@ -40,6 +40,10 @@ namespace CL
             string name;
             string queue_name;
             cl_event event;
+            
+            bool is_user;
+            cl_ulong user_begin;
+            cl_ulong user_end;
         };
 
         std::unordered_map<int, EventIndex> _events;
@@ -53,6 +57,9 @@ namespace CL
         Event insert_event(const string& name, const string& queue_name, cl_event event);
         size_t setup_event_pad(const Event& event, vector<cl_event>& event_pad, cl_event*& event_pad_ptr);
 
+        int insert_user_event(const string& name, cl_event event);
+        void end_user_event(int id);
+        
         void dump_trace();
         void release_events();
 

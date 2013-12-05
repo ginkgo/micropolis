@@ -6,8 +6,9 @@
 
 namespace CL
 {
+    class Device;
 
-    class Event : public noncopyable
+    class Event
     {
         static const int MAX_ID_COUNT = 16;
         
@@ -17,13 +18,36 @@ namespace CL
         public:
 
         Event();
-        Event(long id);
+        Event(int id);
         Event(const Event& event);
 
         Event operator | (const Event& other) const;
         Event& operator = (const Event& other);
         const size_t get_id_count() const;
         const int* get_ids() const;        
+    };
+
+
+    class UserEvent : noncopyable
+    {
+
+        Device& _device;
+        string _name;
+        cl_event _event;
+        int _id;
+        bool _active;
+        
+    public:
+
+
+        UserEvent(Device& device, const string& name);
+        ~UserEvent();
+
+        void begin();
+        void end();
+        
+        Event event() const { return Event(_id); }
+        
     };
 
 }

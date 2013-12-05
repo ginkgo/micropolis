@@ -25,7 +25,7 @@ namespace CL
 
     public:
 
-        CommandQueue(Device& device, const string& name="unknown");
+        CommandQueue(Device& device, const string& name);
         ~CommandQueue();
         
         Event enq_kernel(Kernel& kernel, int global_size, int local_size,

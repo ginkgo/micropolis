@@ -10,6 +10,7 @@
 
 CL::CommandQueue::CommandQueue(Device& device, const string& name)
     : _parent_device(device)
+    , _name(name)
 {
     cl_int status;
     _queue = clCreateCommandQueue(device.get_context(), device.get_device(),
