@@ -16,7 +16,7 @@
 \******************************************************************************/
 
 
-#include "PatchDrawer.h"
+#include "Renderer.h"
 
 #include "Projection.h"
 #include "Config.h"
@@ -26,7 +26,7 @@
 namespace Reyes
 {
     // void bound_n_split_old(const BezierPatch& patch, const Projection& projection,
-    //                    PatchDrawer& patch_drawer)
+    //                    Renderer& patch_drawer)
     // {
     //     BBox box;
 
@@ -54,7 +54,7 @@ namespace Reyes
     // }
     
     // void bound_n_split_new(const BezierPatch& start_patch, const Projection& projection,
-    //                    PatchDrawer& patch_drawer)
+    //                    Renderer& patch_drawer)
     // {
     //     std::vector<BezierPatch> patches;
     //     patches.push_back(start_patch);

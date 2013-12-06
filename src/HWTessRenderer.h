@@ -1,6 +1,5 @@
 
-#ifndef HWTESSRENDERER_H
-#define HWTESSRENDERER_H
+#pragma once
 
 
 #include "BoundNSplit.h"
@@ -8,14 +7,14 @@
 #include "GL/Texture.h"
 #include "GL/VBO.h"
 #include "Patch.h"
-#include "PatchDrawer.h"
+#include "Renderer.h"
 #include "PatchIndex.h"
 
 
 namespace Reyes
 {
         
-    class HWTessRenderer : public PatchDrawer
+    class HWTessRenderer : public Renderer
     {
 		GL::Shader _shader;
 		GL::IndirectVBO _vbo;
@@ -42,4 +41,3 @@ namespace Reyes
     
 }
 
-#endif

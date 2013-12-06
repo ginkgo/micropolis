@@ -23,13 +23,13 @@
 #include "GL/Texture.h"
 #include "GL/VBO.h"
 #include "Patch.h"
-#include "PatchDrawer.h"
 #include "PatchIndex.h"
+#include "Renderer.h"
 
 namespace Reyes
 {
         
-    class WireGLRenderer : public PatchDrawer
+    class WireGLRenderer : public Renderer
     {
 		GL::Shader _shader;
 		GL::IndirectVBO _vbo;

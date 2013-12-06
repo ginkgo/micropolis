@@ -77,7 +77,7 @@ void mainloop(GLFWwindow* window)
     Reyes::Scene scene(config.input_file());
     
     Reyes::WireGLRenderer wire_renderer;
-    shared_ptr<Reyes::PatchDrawer> renderer;
+    shared_ptr<Reyes::Renderer> renderer;
     
     switch (config.renderer_type()) {
     case Config::OPENCL:

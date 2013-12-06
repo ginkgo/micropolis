@@ -19,8 +19,8 @@
 
 #include "CL/OpenCL.h"
 #include "Framebuffer.h"
-#include "PatchDrawer.h"
 #include "PatchIndex.h"
+#include "Renderer.h"
 
 namespace Reyes
 {
@@ -28,7 +28,7 @@ namespace Reyes
     class PatchIndex;
     class OpenCLBoundNSplit;
 
-    class OpenCLRenderer : public PatchDrawer
+    class OpenCLRenderer : public Renderer
     {
         
         CL::Device _device;

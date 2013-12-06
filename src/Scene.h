@@ -26,7 +26,7 @@
 namespace Reyes
 {
     class Projection;
-    class PatchDrawer;
+    class Renderer;
 
     
     struct DirectionalLight
@@ -78,7 +78,7 @@ namespace Reyes
         const Camera& active_cam() const { return *cameras[active_cam_id]; }
         Camera& active_cam() { return *cameras[active_cam_id]; }
 
-        void draw(PatchDrawer& renderer) const;
+        void draw(Renderer& renderer) const;
     };
 }
 

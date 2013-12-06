@@ -20,7 +20,7 @@ kernel_dir = kernels
 max_anisotropy = 1
 
 // OpenCL platform ID.
-platform_id = 0
+platform_id = 2
 
 // OpenCL device ID.
 device_id = 0

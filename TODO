@@ -1,7 +1,6 @@
 
 TODO:
 
-* Find source for FPS-counter/trace time discrepancy
 * Rename OpenCL{Renderer,BoundNSplit} & PatchDrawer
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
@@ -13,6 +12,7 @@ TODO:
 * Add SCons build dir and config-option
 * Make CL::TransferBuffer use pinned memory again
 
+* Find source for FPS-counter/trace time discrepancy
 * Check for potential ways to get direct access to default framebuffer
 
 * Read:

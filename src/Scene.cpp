@@ -21,7 +21,7 @@
 #include "Scene.h"
 
 #include "Projection.h"
-#include "PatchDrawer.h"
+#include "Renderer.h"
 #include "Patch.h"
 
 #include "Config.h"
@@ -131,7 +131,7 @@ Reyes::Scene::~Scene()
 {
 }
      
-void Reyes::Scene::draw(PatchDrawer& renderer) const
+void Reyes::Scene::draw(Renderer& renderer) const
 {
     renderer.prepare();
 

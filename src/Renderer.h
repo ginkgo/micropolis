@@ -16,8 +16,7 @@
 \******************************************************************************/
 
 
-#ifndef PATCHDRAWER_H
-#define PATCHDRAWER_H
+#pragma once
 
 #include "Patch.h"
 
@@ -26,9 +25,9 @@ namespace Reyes
 
     class Projection;
 
-    struct PatchDrawer
+    struct Renderer
     {
-        virtual ~PatchDrawer() {};
+        virtual ~Renderer() {};
 
         virtual void prepare() = 0;
         virtual void finish() = 0;
@@ -45,5 +44,3 @@ namespace Reyes
     };
 
 }
-
-#endif
