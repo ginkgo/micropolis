@@ -332,22 +332,6 @@ int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
 }
 
 
-__kernel void init_tile_locks (global int* tile_locks)
-{
-    // Mark all as unlocked. We only have to call this once.
-    int pos = get_global_id(0);
-    tile_locks[pos] = 1;
-}
-
-
-__kernel void clear_depth_buffer (global int* depth_buffer)
-{
-    // Mark all as unlocked. We only have to call this once.
-    int pos = get_global_id(0);
-    depth_buffer[pos] = 0x7fffffff;
-}
-
-
 #define MAX_LOCAL_COORD  ((8<<PXLCOORD_SHIFT) - 1)
 
 __kernel void sample(global const int4* block_index,

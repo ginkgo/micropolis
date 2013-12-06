@@ -1,9 +1,14 @@
 #pragma once
 
 #include "common.h"
-#include <CL/opencl.h>
 
+#include "Buffer.h"
+#include "Device.h"
+#include "Exception.h"
+
+#include <CL/opencl.h>
 #include <map>
+
 
 namespace CL
 {
@@ -53,11 +58,38 @@ namespace CL
         Event enq_read_buffer (Buffer& buffer, void* dst, size_t length,
                                const string& name, const Event& events);
 
+        template<typename T>
+        Event enq_fill_buffer(Buffer& buffer, const T& pattern, size_t length,
+                              const string& name, const Event& events);
+        
         void wait_for_events (const Event& events);
 
         void finish();
         void flush();
         
     };
+
+
+    // --- Template implementation
+
+    
+    template<typename T>
+    Event CommandQueue::enq_fill_buffer(Buffer& buffer, const T& pattern, size_t length,
+                                        const string& name, const Event& events)
+    {
+        size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
+        cl_event e;
+        cl_int status;
+
+        status = clEnqueueFillBuffer(_queue, buffer.get(),
+                                     &pattern, sizeof(T),
+                                     0, length * sizeof(T),
+                                     cnt, _event_pad_ptr, &e);
+
+        //cout << name << endl;
+        OPENCL_ASSERT(status);
+
+        return _parent_device.insert_event(name, _name, e);
+    }
     
 }

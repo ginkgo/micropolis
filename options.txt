@@ -34,14 +34,14 @@ verbosity_level = 1
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 16
+reyes_patch_size = 32
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
 reyes_patches_per_pass = 1024
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 16
+bound_n_split_limit = 32
 
 // Maximum number of times a surface patch can be split.
 max_split_depth = 20

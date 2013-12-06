@@ -62,13 +62,11 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     _dice_kernel.reset(_reyes_program.get_kernel("dice"));
     _shade_kernel.reset(_reyes_program.get_kernel("shade"));
     _sample_kernel.reset(_reyes_program.get_kernel("sample"));
-    _init_tile_locks_kernel.reset(_reyes_program.get_kernel("init_tile_locks"));
-    _clear_depth_buffer_kernel.reset(_reyes_program.get_kernel("clear_depth_buffer"));
 
 
-    _init_tile_locks_kernel->set_args(_tile_locks);
-    _rasterization_queue.enq_kernel(*_init_tile_locks_kernel, _framebuffer.size().x/8 * _framebuffer.size().y/8, 64, 
-                                    "init tile locks", CL::Event());
+    _rasterization_queue.enq_fill_buffer<cl_int>(_tile_locks,
+                                                 1, _framebuffer.size().x/8 * _framebuffer.size().y/8,
+                                                 "tile lock init", CL::Event());
 }
 
 
@@ -85,10 +83,10 @@ void Reyes::OpenCLRenderer::prepare()
     CL::Event e = _framebuffer.acquire(_rasterization_queue, CL::Event());
     e = _framebuffer.clear(_framebuffer_queue, e);
 
-    _clear_depth_buffer_kernel->set_args(_depth_buffer);
-    _framebuffer_cleared = _framebuffer_queue.enq_kernel(*_clear_depth_buffer_kernel,
-                                                         _framebuffer.size().x * _framebuffer.size().y, 64,
-                                                         "clear depthbuffer", e);
+    _framebuffer_cleared =
+        _framebuffer_queue.enq_fill_buffer<cl_int>(_depth_buffer,
+                                                   0x7fffffff, _framebuffer.size().x * _framebuffer.size().y,
+                                                   "clear depthbuffer", e);
     statistics.start_render();
 
 }
