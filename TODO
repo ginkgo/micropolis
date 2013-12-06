@@ -1,11 +1,10 @@
 
 TODO:
 
-* Rename OpenCL{Renderer,BoundNSplit} & PatchDrawer
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
-* Pipeline drawcalls over several command-queues
 * Implement Gregory patches (+Blender export script for catmull-clark)
+* Avoid Bound&Split stalls
 * Write polygon size estimation shader
 * Implement dynamic-rate dicing
 * Switch readme to markdown/textile or something like that
@@ -32,6 +31,11 @@ TODO:
 
 DONE
 
+* Write more compact patch evaluation kernel
+* Pipeline drawcalls over several command-queues
+  * Didn't help as much as hoped
+* Rename OpenCL{Renderer,BoundNSplit} & PatchDrawer
+  * Only renamed PatchDrawer
 * Use glfwGetGLXContext() etc. to get context/display in shared CL/GL device setup
 * Check out default framebuffer properties with glGetFramebufferAttachmentParameteriv() 
 * Refactor OpenCL wrappers

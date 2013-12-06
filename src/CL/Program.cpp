@@ -108,7 +108,11 @@ namespace {
 
         cl_device_id dev = device.get_device();
 
-        status = clBuildProgram(program, 1, &dev, "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable", NULL, NULL);
+        string flags = "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable";
+        flags += " -I"+config.kernel_dir();
+
+        
+        status = clBuildProgram(program, 1, &dev, flags.c_str(), NULL, NULL);
 
         if (status != CL_SUCCESS && status != CL_BUILD_PROGRAM_FAILURE) {
             OPENCL_ASSERT(status);

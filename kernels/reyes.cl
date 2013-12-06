@@ -15,7 +15,7 @@
  * along with Micropolis.  If not, see <http://www.gnu.org/licenses/>.        *
 \******************************************************************************/
 
-
+#include "patch.h"
 
 // Compile time constants:
 // PATCH_SIZE            - int
@@ -44,26 +44,6 @@ int calc_framebuffer_pos(int2 pxlpos)
     return grid_id * TILE_SIZE * TILE_SIZE + locl_id;
 }
 
-float4 eval_spline(float4 p0, float4 p1, float4 p2, float4 p3, float t)
-{
-    float s = 1-t;
-    return s*s*s*p0 + 3*s*s*t*p1 + 3*s*t*t*p2 + t*t*t*p3;
-}
-
-float4 eval_patch(private float4* patch, float2 st)
-{
-    float4 P[4];
-
-    for (int i = 0; i < 4; ++i) {
-        P[i] = eval_spline(patch[4 * i + 0],
-                           patch[4 * i + 1],
-                           patch[4 * i + 2],
-                           patch[4 * i + 3], st.y);
-    }
-
-    return eval_spline(P[0],P[1],P[2],P[3], st.x);
-}
-
 float4 mul_m44v4(float16 mat, float4 vec)
 {
     return (float4) (dot(mat.s048C, vec),
@@ -88,18 +68,9 @@ __kernel void dice (const global float4* patch_buffer,
                     float16 modelview,
                     float16 proj)
 {
-    __local float4 patch[16];
-
     size_t nv = get_global_id(0), nu = get_global_id(1);
     size_t range_id = get_global_id(2);
     size_t patch_id = pid_buffer[range_id];
-
-    if (get_local_id(0) < 4 && get_local_id(1) < 4) {
-        size_t i = get_local_id(0) * 4 + get_local_id(1);
-        patch[i] = patch_buffer[patch_id * 16 + i];
-    }
-
-    barrier(CLK_LOCAL_MEM_FENCE);
 
     if (nv > PATCH_SIZE || nu > PATCH_SIZE) return;
         
@@ -108,16 +79,7 @@ __kernel void dice (const global float4* patch_buffer,
     
     float2 uv = (float2)(mix(rmin, rmax, (float2)(nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE)));
 
-    float4 P[4];
-
-    for (int i = 0; i < 4; ++i) {
-        P[i] = eval_spline(patch[4 * i + 0],
-                           patch[4 * i + 1],
-                           patch[4 * i + 2],
-                           patch[4 * i + 3], uv.y);
-    }
-
-    float4 pos = mul_m44v4(modelview, eval_spline(P[0],P[1],P[2],P[3], uv.x));
+    float4 pos = mul_m44v4(modelview, eval_patch(patch_buffer, patch_id, uv));
     float4 p = mul_m44v4(proj, pos);
 
     int2 coord = (int2)((int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),
