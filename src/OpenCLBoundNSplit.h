@@ -48,6 +48,7 @@ namespace Reyes
 
         void init(void* patches_handle, const mat4& matrix, const Projection* projection);
         bool done();
+        void finish();
 
         Batch do_bound_n_split(CL::Event& ready);
 

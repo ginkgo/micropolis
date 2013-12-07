@@ -65,12 +65,16 @@ bool Reyes::OpenCLBoundNSplit::done()
 {
     if (_stack.size() > 0) return false;
 
+    
+    return true;
+}
+
+void Reyes::OpenCLBoundNSplit::finish()
+{
     for (BatchRecord& record : _batch_records) {
         record.finish(_queue);
     }
     _next_batch_record = 0;
-    
-    return true;
 }
 
 
@@ -150,7 +154,6 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
 
     record.transfer(_queue, patch_count);
     
-    //_queue.wait_for_events(a|b|c);
     statistics.stop_bound_n_split();
     _bound_n_split_event.end();
     

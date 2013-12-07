@@ -1,7 +1,9 @@
 
 TODO:
 
+* Reorder config so patch_size and bound_n_split limit are side by side
 * Rename config.patch_buffer_count
+* Remove config.max_block_assignments
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
 * Implement Gregory patches (+Blender export script for catmull-clark)
@@ -33,6 +35,7 @@ TODO:
 
 DONE
 
+* Debug source of pipeline stalls
 * Write more compact patch evaluation kernel
 * Pipeline drawcalls over several command-queues
   * Didn't help as much as hoped

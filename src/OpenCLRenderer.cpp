@@ -87,6 +87,8 @@ void Reyes::OpenCLRenderer::prepare()
         _framebuffer_queue.enq_fill_buffer<cl_int>(_depth_buffer,
                                                    0x7fffffff, _framebuffer.size().x * _framebuffer.size().y,
                                                    "clear depthbuffer", e);
+
+    _framebuffer_queue.flush();
     statistics.start_render();
 
 }
@@ -94,6 +96,8 @@ void Reyes::OpenCLRenderer::prepare()
 
 void Reyes::OpenCLRenderer::finish()
 {
+    _bound_n_split->finish();
+    
     _framebuffer.release(_framebuffer_queue, _last_batch);
     _framebuffer.show();
 
@@ -175,5 +179,6 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
     e = _rasterization_queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
                           "sample", _framebuffer_cleared | e);
 
+    _rasterization_queue.flush();
     return e;
 }
