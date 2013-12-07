@@ -67,8 +67,10 @@ CL::Buffer::Buffer(Device& device, GLuint GL_buffer)
 
 CL::Buffer::~Buffer()
 {
-    statistics.free_opencl_memory(get_size());
-    clReleaseMemObject(_buffer);
+    if (_buffer != 0) {
+        statistics.free_opencl_memory(get_size());
+        clReleaseMemObject(_buffer);
+    }
 }
 
 size_t CL::Buffer::get_size() const
@@ -91,8 +93,30 @@ CL::TransferBuffer::TransferBuffer(Device& device, CL::CommandQueue& queue, size
 
 CL::TransferBuffer::~TransferBuffer()
 {
-    free(_host_ptr);
+    if (_host_ptr != nullptr) {
+        free(_host_ptr);
+    }
 }
+
+
+CL::TransferBuffer::TransferBuffer(TransferBuffer&& other)
+{
+    _buffer = std::move(other._buffer);
+    _host_ptr = std::move(other._host_ptr);
+}
+
+
+CL::TransferBuffer& CL::TransferBuffer::operator = (TransferBuffer&& other)
+{
+    _buffer = std::move(other._buffer);
+    _host_ptr = std::move(other._host_ptr);
+
+    other._buffer = 0;
+    other._host_ptr = nullptr;
+    
+    return *this;
+}
+
 
 void* CL::TransferBuffer::host_ptr()
 {

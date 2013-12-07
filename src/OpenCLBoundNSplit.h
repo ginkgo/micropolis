@@ -28,6 +28,7 @@ namespace Reyes
     {
 
         CL::CommandQueue& _queue;
+        CL::Program _bound_n_split_program;
         
         shared_ptr<PatchIndex> _patch_index;
 
@@ -39,12 +40,6 @@ namespace Reyes
         mat4 _mvp;
         const Projection* _projection;
 
-
-        CL::TransferBuffer _patch_ids;
-        CL::TransferBuffer _patch_min;
-        CL::TransferBuffer _patch_max;
-
-        CL::UserEvent _bound_n_split_event;
         
     public:
 
@@ -55,6 +50,43 @@ namespace Reyes
         bool done();
 
         Batch do_bound_n_split(CL::Event& ready);
+
+        
+    private:
+
+        
+        CL::UserEvent _bound_n_split_event;
+
+        enum BatchStatus {
+            INACTIVE,    // Currently unused
+            SET_UP,      // Data set up and transfer queued
+            ACCEPTED     // Picked up by rasterization stages
+        };
+                
+        
+        struct BatchRecord 
+        {
+            BatchStatus status;
+            
+            CL::TransferBuffer patch_ids;
+            CL::TransferBuffer patch_min;
+            CL::TransferBuffer patch_max;
+            
+            CL::Event transferred;
+            CL::Event rasterizer_done;
+
+            BatchRecord(size_t batch_size, CL::Device& device, CL::CommandQueue& queue);
+
+            BatchRecord(BatchRecord&& other);         
+            BatchRecord& operator=(BatchRecord&& other);
+            
+            void transfer(CL::CommandQueue& queue, size_t patch_count);
+            void accept(CL::Event& event);
+            void finish(CL::CommandQueue& queue);
+        };
+
+        vector<BatchRecord> _batch_records;
+        size_t _next_batch_record;
         
     };
 }

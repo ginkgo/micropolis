@@ -17,6 +17,9 @@ namespace CL
         
         cl_mem _buffer;
 
+        Buffer() : _buffer(0) {};
+        Buffer(cl_mem buffer) : _buffer(buffer) {};
+        
     public:
         
         Buffer(Device& device, size_t size, cl_mem_flags flags);
@@ -49,9 +52,13 @@ namespace CL
 
         public:
 
+        TransferBuffer() : _host_ptr(nullptr) {};
         TransferBuffer(Device& device, CommandQueue& queue, size_t size, cl_mem_flags flags);
         virtual ~TransferBuffer();
 
+        TransferBuffer(TransferBuffer&&);
+        TransferBuffer& operator=(TransferBuffer&&);
+        
         void* host_ptr();
     };
 

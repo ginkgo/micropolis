@@ -135,7 +135,7 @@ void Reyes::OpenCLRenderer::draw_patches(void* patches_handle,
         Batch batch = _bound_n_split->do_bound_n_split(_last_batch);
 
         _last_batch = send_batch(batch, matrix, proj, color,
-                                 batch.transfer_done);
+                                 batch.transfer_done | _last_batch);
     }
 }
 

@@ -1,6 +1,7 @@
 
 TODO:
 
+* Rename config.patch_buffer_count
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
 * Implement Gregory patches (+Blender export script for catmull-clark)
@@ -10,6 +11,7 @@ TODO:
 * Switch readme to markdown/textile or something like that
 * Add SCons build dir and config-option
 * Make CL::TransferBuffer use pinned memory again
+* Clean up parse_trace.py
 
 * Find source for FPS-counter/trace time discrepancy
 * Check for potential ways to get direct access to default framebuffer
