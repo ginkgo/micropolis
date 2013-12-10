@@ -292,8 +292,8 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
 
 void Reyes::vsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
 {
-    r0 = {r.range, r.depth + 1, r.patch_id};
-    r1 = {r.range, r.depth + 1, r.patch_id};
+    r0 = PatchRange(r.range, r.depth + 1, r.patch_id);
+    r1 = PatchRange(r.range, r.depth + 1, r.patch_id);
         
     float cy = (r.range.min.y + r.range.max.y) * 0.5f;
 
@@ -303,8 +303,8 @@ void Reyes::vsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
     
 void Reyes::hsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
 {
-    r0 = {r.range, r.depth + 1, r.patch_id};
-    r1 = {r.range, r.depth + 1, r.patch_id};
+    r0 = PatchRange(r.range, r.depth + 1, r.patch_id);
+    r1 = PatchRange(r.range, r.depth + 1, r.patch_id);
 
     float cx = (r.range.min.x + r.range.max.x) * 0.5f;
 

@@ -88,13 +88,13 @@
       Size used for bounding and dicing.
     </value>
 
+    <value name="bound_n_split_limit" type="float" default="100">
+      Maximum size for patches before they can be sent to the dicing stage.
+    </value>
+    
     <value name="reyes_patches_per_pass" type="size_t" default="64">
       Number of patches that get cached and are submitted as a 
       single rendering pass together.
-    </value>
-
-    <value name="bound_n_split_limit" type="float" default="100">
-      Maximum size for patches before they can be sent to the dicing stage.
     </value>
 
     <value name="max_split_depth" type="size_t" default="20">
@@ -103,10 +103,6 @@
 
     <value name="dice_group_width" type="size_t" default="32">
       Width of the work-group for the dicing kernel.
-    </value>
-
-    <value name="max_block_assignments" type="size_t" default="9">
-      Maximum number of framebuffer tiles, a block can be assigned to.
     </value>
 
     <value name="subpixel_bits" type="size_t" default="8">
@@ -137,7 +133,7 @@
       Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
     </value>
 
-    <value name="patch_buffer_count" type="int" default="3">
+    <value name="bns_pipeline_length" type="int" default="3">
       Number of patch buffers used for transferring patch data to device.
     </value>
 

@@ -88,6 +88,14 @@ namespace Reyes
 
         vector<BatchRecord> _batch_records;
         size_t _next_batch_record;
+
+
+    private:
+
+        
+        static void vsplit_range(const PatchRange& r, vector<PatchRange>& stack);
+        static void hsplit_range(const PatchRange& r, vector<PatchRange>& stack);
+
         
     };
 }

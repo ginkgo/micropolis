@@ -24,12 +24,14 @@ Reyes::OpenCLBoundNSplit::OpenCLBoundNSplit(CL::Device& device,
 
     _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
     _bound_n_split_program.set_constant("SCREEN_SIZE", config.window_size());
+    _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", 64);
+    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
     
     _bound_n_split_program.compile(device, "bound_n_split.cl");
-    shared_ptr<CL::Kernel> _bound_kernel;
-    _bound_kernel.reset(_bound_n_split_program.get_kernel("bound"));
+    shared_ptr<CL::Kernel> _bound_n_split_kernel;
+    _bound_n_split_kernel.reset(_bound_n_split_program.get_kernel("bound_n_split"));
 
-    for (int i : irange(0, config.patch_buffer_count())) {
+    for (int i : irange(0, config.bns_pipeline_length())) {
         _batch_records.emplace_back(config.reyes_patches_per_pass(), device, queue);
     }
 }
@@ -80,7 +82,7 @@ void Reyes::OpenCLBoundNSplit::finish()
 
 Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
 {
-    size_t ring_size = config.patch_buffer_count(); // Size of batch buffer ring
+    size_t ring_size = config.bns_pipeline_length(); // Size of batch buffer ring
 
     if (_next_batch_record > 0)
         _batch_records[(_next_batch_record-1)%ring_size].accept(ready);
@@ -104,8 +106,6 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
 
     float s = config.bound_n_split_limit();
 
-    PatchRange r0,r1;
-    
     while (!_stack.empty()) {
 
         PatchRange r = _stack.back();
@@ -141,13 +141,10 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
             // cout << "Warning: Split limit reached" << endl
         } else {
             if (vlen < hlen) {
-                vsplit_range(r, r0, r1);
+                vsplit_range(r, _stack);
             } else {
-                hsplit_range(r, r0, r1);
+                hsplit_range(r, _stack);
             }
-
-            _stack.push_back(r0);
-            _stack.push_back(r1);
         }
 
     }
@@ -192,9 +189,8 @@ void Reyes::OpenCLBoundNSplit::BatchRecord::transfer(CL::CommandQueue& queue, si
         a = queue.enq_write_buffer(patch_ids, patch_ids.host_ptr(), patch_count * sizeof(int), "write patch ids" , CL::Event());
         b = queue.enq_write_buffer(patch_min, patch_min.host_ptr(), patch_count * sizeof(vec2), "write patch mins", CL::Event());
         c = queue.enq_write_buffer(patch_max, patch_max.host_ptr(), patch_count * sizeof(vec2), "write patch maxs", CL::Event());
-        
-        queue.flush();
-        
+
+        //queue.flush();
         status = SET_UP;
     }
     transferred = a|b|c;
@@ -221,4 +217,21 @@ void Reyes::OpenCLBoundNSplit::BatchRecord::finish(CL::CommandQueue& queue)
     rasterizer_done = CL::Event();
     transferred = CL::Event();
     status = INACTIVE;    
+}
+
+
+void Reyes::OpenCLBoundNSplit::vsplit_range(const PatchRange& r, vector<PatchRange>& stack)
+{
+    float cy = (r.range.min.y + r.range.max.y) * 0.5f;
+
+    stack.emplace_back(r.range.min.x, r.range.min.y, r.range.max.x, cy,    r.depth + 1, r.patch_id);
+    stack.emplace_back(r.range.min.x, cy, r.range.max.x, r.range.max.y,    r.depth + 1, r.patch_id);
+}
+    
+void Reyes::OpenCLBoundNSplit::hsplit_range(const PatchRange& r, vector<PatchRange>& stack)
+{
+    float cx = (r.range.min.x + r.range.max.x) * 0.5f;
+    
+    stack.emplace_back(r.range.min.x, r.range.min.y, cx, r.range.max.y,    r.depth + 1, r.patch_id);   
+    stack.emplace_back(cx, r.range.min.y, r.range.max.x, r.range.max.y,    r.depth + 1, r.patch_id); 
 }

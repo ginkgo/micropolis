@@ -52,7 +52,6 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     _reyes_program.set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
     _reyes_program.set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
     _reyes_program.set_constant("MAX_BLOCK_COUNT", _max_block_count);
-    _reyes_program.set_constant("MAX_BLOCK_ASSIGNMENTS", config.max_block_assignments());
     _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
     _reyes_program.set_constant("BACKFACE_CULLING", config.backface_culling());
     _reyes_program.set_constant("CLEAR_COLOR", config.clear_color());
@@ -140,8 +139,7 @@ void Reyes::OpenCLRenderer::draw_patches(void* patches_handle,
         
         Batch batch = _bound_n_split->do_bound_n_split(_last_batch);
 
-        _last_batch = send_batch(batch, matrix, proj, color,
-                                 batch.transfer_done | _last_batch);
+        _last_batch = send_batch(batch, matrix, proj, color, batch.transfer_done | _last_batch);
     }
 }
 
@@ -166,20 +164,20 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
                            _pos_grid, _pxlpos_grid, _depth_grid,
                            matrix, proj);    
     e = _rasterization_queue.enq_kernel(*_dice_kernel,
-                          ivec3(patch_size + group_width, patch_size + group_width, patch_count),
-                          ivec3(group_width, group_width, 1),
-                          "dice", ready);
+                                        ivec3(patch_size + group_width, patch_size + group_width, patch_count),
+                                        ivec3(group_width, group_width, 1),
+                                        "dice", ready);
 
     // SHADE
     _shade_kernel->set_args(_pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
     e = _rasterization_queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8,8,1),
-                          "shade", e);
+                                        "shade", e);
 
     // SAMPLE
     _sample_kernel->set_args(_block_index, _pxlpos_grid, _color_grid, _depth_grid,
                              _tile_locks, _framebuffer.get_buffer(), _depth_buffer);
     e = _rasterization_queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
-                          "sample", _framebuffer_cleared | e);
+                                        "sample", _framebuffer_cleared | e);
 
     _rasterization_queue.flush();
     return e;

@@ -152,7 +152,7 @@ def mm(mm):
 def setup_context(surface, padding):
     context = cairo.Context(surface)
     context.scale(1.0 / 25.4 * 72.0, 1.0 / 25.4 * 72.0)
-    context.set_line_width(0.5)
+    context.set_line_width(0.25)
     context.translate(padding, padding)
     context.save()
 
@@ -236,8 +236,7 @@ def draw_grid_front(ctx, graph_width, graph_height, start, stop):
     increment = graph_width/((stop-start)*10)
     ctx.set_source_rgb(0.3,0.3,0.3)
 
-    for i in range(0, math.ceil(graph_width/increment)):
-
+    for i in range(0, math.ceil((graph_width+0.0001)/increment)):
         
         nub_len = 3 if i%10 == 0 else 2
         ctx.move_to(i*increment,0)
@@ -308,11 +307,14 @@ def draw_trace(trace_items, outfilename):
     height_per_entry = 7
     width_per_ms = 50
 
+    ms_per_page = 8
+
     command_height_dict = {}
     font = cairo.ScaledFont(cairo.ToyFontFace('FreeSans'), cairo.Matrix(4,0, 0,4, 0,0), cairo.Matrix(), cairo.FontOptions())
     legend_width, legend_height = calc_command_placement(queue_list, command_height_dict, height_per_entry, font)
     
-    graph_width = milliseconds(tmax-tmin) * width_per_ms
+    #graph_width = milliseconds(tmax-tmin) * width_per_ms
+    graph_width = ms_per_page * width_per_ms
     graph_height = legend_height
     
     width  = graph_width  + 3*padding + legend_width
@@ -322,13 +324,25 @@ def draw_trace(trace_items, outfilename):
 
     context = setup_context(surface, padding)
 
-    offset(0,0, draw_legend, context, queue_list, font, height_per_entry)
+    for i in range(0,math.ceil(dur_ms/ms_per_page)):
+        tmin_p = tmin_ms + i * ms_per_page
+        tmax_p = tmin_p + min(max(2, tmax_ms-tmin_p), ms_per_page)
 
-    offset(legend_width+padding,0, draw_grid_back, context, graph_width, graph_height, tmin_ms, tmax_ms)
-    offset(legend_width+padding,0, draw_items, context, trace_items,
-           height_per_entry, width_per_ms, color_scheme, command_height_dict)
-    offset(legend_width+padding,0, draw_grid_front, context, graph_width, graph_height, tmin_ms, tmax_ms)
-    
+        graph_width = (tmax_p-tmin_p) * width_per_ms
+
+        offset(0,0, draw_legend, context, queue_list, font, height_per_entry)
+
+        offset(legend_width+padding,0, draw_grid_back, context, graph_width, graph_height, tmin_p, tmax_p)
+        context.save()
+        context.rectangle(legend_width+padding,0,graph_width, graph_height)
+        context.clip()
+        offset(legend_width+padding-tmin_p*width_per_ms,0, draw_items, context, trace_items,
+               height_per_entry, width_per_ms, color_scheme, command_height_dict)
+        context.restore()
+        offset(legend_width+padding,0, draw_grid_front, context, graph_width, graph_height, tmin_p, tmax_p)
+
+        context.show_page()
+        
     surface.finish()
 
 
