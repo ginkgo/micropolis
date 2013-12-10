@@ -187,7 +187,7 @@ int CL::Device::insert_user_event(const string& name, cl_event event)
 
     idx.id = id;
     idx.name = name;
-    idx.queue_name = "user";
+    idx.queue_name = "host";
     idx.event =  event;
     idx.is_user = true;
     idx.user_begin = nanotime();

@@ -192,9 +192,11 @@ void Reyes::OpenCLBoundNSplit::BatchRecord::transfer(CL::CommandQueue& queue, si
         a = queue.enq_write_buffer(patch_ids, patch_ids.host_ptr(), patch_count * sizeof(int), "write patch ids" , CL::Event());
         b = queue.enq_write_buffer(patch_min, patch_min.host_ptr(), patch_count * sizeof(vec2), "write patch mins", CL::Event());
         c = queue.enq_write_buffer(patch_max, patch_max.host_ptr(), patch_count * sizeof(vec2), "write patch maxs", CL::Event());
+        
+        queue.flush();
+        
+        status = SET_UP;
     }
-
-    status = SET_UP;
     transferred = a|b|c;
 }
 

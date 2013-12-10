@@ -15,9 +15,11 @@
 
 Reyes::OpenCLRenderer::OpenCLRenderer()
     : _device(config.platform_id(), config.device_id())
+      
     // , _framebuffer_queue(_device, "framebuffer")
     // , _bound_n_split_queue(_device, "bound & split")
     , _rasterization_queue(_device, "rasterization")
+
     , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
@@ -80,7 +82,7 @@ void Reyes::OpenCLRenderer::prepare()
 {
     _frame_event.begin();
     
-    CL::Event e = _framebuffer.acquire(_rasterization_queue, CL::Event());
+    CL::Event e = _framebuffer.acquire(_framebuffer_queue, CL::Event());
     e = _framebuffer.clear(_framebuffer_queue, e);
 
     _framebuffer_cleared =

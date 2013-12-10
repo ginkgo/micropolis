@@ -1,16 +1,51 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import sys
 import re
+import colorsys
 
-import math
-import cairo
-#import pango
-#import pangocairo
 import random
+import math
+
+import cairo
+
+from tabulate import tabulate
+
+from collections import defaultdict
+import math
+
+
+
+def milliseconds(nanoseconds):
+    return nanoseconds / 1000000.0
+
+
+
+class TraceItem:
+    def __init__(self, name, queue_name, queued, submit, start, end):
+        self.name = name
+        self.queue_name = queue_name
+        self.queued = queued
+        self.submit = submit
+        self.start = start
+        self.end = end
+
+    def duration_ms(self):
+        return milliseconds(self.end - self.start)
+
+    def start_ms(self):
+        return milliseconds(self.start)
+    
+    def end_ms(self):
+        return milliseconds(self.end)
+
+    def handle(self):
+        return (self.queue_name,self.name)
+
+    
 
 def parse(file):
-    pattern = re.compile("([^@:]*)(@[^@:]*):(\d+):(\d+):(\d+):(\d+)")
+    pattern = re.compile(r'([^@:]*)(@[^@:]*):(\d+):(\d+):(\d+):(\d+)')
 
     items = []
 
@@ -21,46 +56,121 @@ def parse(file):
             print('Input file format mismatch.')
             exit(1)
         
-        item = (match.group(1),
-                match.group(2),
-                int(match.group(3)), 
-                int(match.group(4)), 
-                int(match.group(5)), 
-                int(match.group(6)))
+        item = TraceItem(match.group(1),
+                         match.group(2)[1:],
+                         int(match.group(3)), 
+                         int(match.group(4)), 
+                         int(match.group(5)), 
+                         int(match.group(6)))
             
         items.append(item)
-    
+
+    items.reverse()
+        
     return items
+
+
+
+def find_time_range(trace_items):
+    tmin = min((ti.start for ti in trace_items))
+    tmax = max((ti.end for ti in trace_items))
     
-def milliseconds(nanoseconds):
-    return nanoseconds / 1000000.0
-def microseconds(nanoseconds):
-    return nanoseconds / 1000.0
-
-def duration(item):
-    return item[5] - item[4]
-
-def min_time(items):
-    return min([i[4] for i in items])
-
-def max_time(items):
-    return max([i[5] for i in items])
-
-def offset_time(item, o):
-    n,q,a,b,c,d = item
-    return n,q,a-o,b-o,c-o,d-o
+    return tmin,tmax
 
 
-color_index = {}
-def get_color(name):
-    global color_index
 
-    if name in color_index:
-        return color_index[name]
-    else:
-        c = (random.random(), random.random(), random.random())
-        color_index[name] = c
-        return c
+def offset_time_ranges(trace_items, tmin):
+    for ti in trace_items:
+        ti.queued -= tmin
+        ti.submit -= tmin
+        ti.start  -= tmin
+        ti.end    -= tmin
+        
+
+
+def create_queue_list(trace_items):
+    queue_list = []
+
+    queue_dict = {}
+    inserted = {('','')}
+    
+    for qn,n in [(i.queue_name, i.name) for i in trace_items]:
+        ns = None
+
+        if qn in queue_dict:
+            ns = queue_dict[qn]
+        else:
+            ns = []
+            queue_dict[qn] = ns
+            queue_list.append((qn,ns))
+            
+        if (qn,n) not in inserted:
+            ns.append(n)
+            inserted.add((qn,n))
+
+    return queue_list
+
+
+
+def generate_colorscheme(queue_list):
+    color_scheme = {}
+    queue_cnt = len(queue_list)
+    command_cnt = max([len(ns) for qn,ns in queue_list])
+    offset = random.random()
+    
+    for qi,(qn,ns) in enumerate(queue_list):
+        for ni,n in enumerate(ns):
+            h = 1 / (1.5*queue_cnt) * (1.5*qi + ni/(command_cnt-1)) + offset
+            v = 0.65 + 0.35 * ni/(command_cnt-1)
+            s = 0.65 + 0.35 * ni/(command_cnt-1)
+            color_scheme[(qn,n)] = colorsys.hsv_to_rgb(h,s,v)
+            
+    return color_scheme
+
+
+
+def show_color_scheme(queue_list, color_scheme):
+    with open('colorscheme.html', 'w') as outfile:
+        outfile.write('<head>\n'
+                      '  <title>Hello</title>\n'
+                      '</head>\n'
+                      '<body>\n')
+
+        for qn,ns in queue_list.items():
+            for n in ns:
+                c = [int(255.9999*c) for c in color_scheme[qn,n]]
+                
+                outfile.write('  <span style="background-color:#%02x%02x%02x">%s</span>\n' % (c[0],c[1],c[2],n))
+            outfile.write('  <br>\n');
+        
+        outfile.write('</body>')
+
+
+def mm(mm):
+    return mm / 25.4 * 72.0
+
+def setup_context(surface, padding):
+    context = cairo.Context(surface)
+    context.scale(1.0 / 25.4 * 72.0, 1.0 / 25.4 * 72.0)
+    context.set_line_width(0.5)
+    context.translate(padding, padding)
+    context.save()
+
+    return context
+
+def offset(w,h, f, context, *params):
+    context.save()
+    context.translate(w,h)
+
+    f(context, *params)
+
+    context.restore()
+    
+def aligned_text(ctx, txt, fx, fy):
+    xb, yb, w, h, xa, ya = ctx.text_extents(txt)
+
+    ctx.rel_move_to(-w*fx, h*fy)
+    ctx.show_text(txt)
 
 def rounded_rect(ctx, x,y,w,h, r):
     if h < r * 2:
@@ -78,144 +188,161 @@ def rounded_rect(ctx, x,y,w,h, r):
     ctx.arc(x+r, y+h-r, r, math.pi * 0.5, math.pi * 1.0)
     #ctx.line_to(x, y+r)
     ctx.close_path()
-    ctx.fill()
-     
-def aligned_text(ctx, txt, fx, fy):
-    xb, yb, w, h, xa, ya = ctx.text_extents(txt)
-
-    ctx.rel_move_to(-w*fx, h*fy)
-    ctx.show_text(txt)
     
-if (len(sys.argv) != 3):
-    print('Usage: %s <tracefile> <outfile>' % sys.argv[0])
-    exit(1)
+def draw_legend(ctx, queue_list, font, height_per_entry):
+    
+    queue_indent = 5
 
-tracefile = open(sys.argv[1], 'r')
+    legend_height = 0
 
-
-items = parse(tracefile)
-items = [offset_time(i, min_time(items)) for i in items]
-
-
-inch = 72.0 * 4
-mm = inch/25.4
-
-length = math.ceil(10*milliseconds(max_time(items) - min_time(items)))/10
-
-BORDER = 5*mm
-AXIS = 0*mm
-HEIGHT_PER_BAR = 2.5*mm
-LEN_PER_MS = 20*mm
-
-item_names = []
-[item_names.append(n) for n,_,_,_,_,_ in items if not item_names.count(n)]
-BAR_CNT = len(item_names)
-
-VHEIGHT, VWIDTH = BAR_CNT * HEIGHT_PER_BAR,  LEN_PER_MS * length
+    ctx.set_scaled_font(font)
+    
+    for qn,ns in queue_list:
+        ctx.move_to(0, legend_height + height_per_entry/2)
+        aligned_text(ctx, qn, 0.0, 0.5)
+        
+        legend_height += height_per_entry
+        for n in ns:
+            ctx.move_to(5, legend_height + height_per_entry/2)
+            aligned_text(ctx, n, 0.0, 0.5)
+        
+            legend_height += height_per_entry
 
 
-HEIGHT, WIDTH = VHEIGHT + 2*BORDER + AXIS, VWIDTH + 2*BORDER
+            
+def draw_grid_back(ctx, graph_width, graph_height, start, stop):
 
-surface = cairo.PDFSurface (sys.argv[2], WIDTH, HEIGHT)
-ctx = cairo.Context(surface)
-#pctx = pangocairo.CairoContext(ctx)
+    increment = graph_width/((stop-start)*10)
+    
+    for i in range(0, math.ceil(graph_width/increment)):
 
-ctx.set_line_width(0.005)
+        if i%10 == 0:
+            ctx.set_source_rgb(0.75,0.75,0.75)
+        elif i%5 == 0:
+            ctx.set_source_rgb(0.87,0.87,0.87)
+        else:
+            ctx.set_source_rgb(0.95,0.95,0.95)
+        
+        ctx.move_to(i*increment,0)
+        ctx.rel_line_to(0,graph_height)
+        ctx.stroke()
 
-ctx.translate(BORDER, BORDER+AXIS)
-ctx.scale(LEN_PER_MS, LEN_PER_MS)
+        ctx.stroke()
 
-ctx.set_font_size(0.05)
-ctx.select_font_face('FreeSans')
 
-for t in range(0, int(length*10)):
+        
+def draw_grid_front(ctx, graph_width, graph_height, start, stop):
 
-    ctx.stroke()
-    if t == 166:
-        ctx.set_source_rgb(1,0,0)
-    elif t % 10 == 0:
-        ctx.set_source_rgb(0.75,0.75,0.75)
-    elif t % 5 == 0:
-        ctx.set_source_rgb(0.87,0.87,0.87)
-    else:
-        ctx.set_source_rgb(0.95,0.95,0.95)
-    ctx.move_to(t * 0.1, -0)
-    ctx.rel_line_to(0, VHEIGHT/LEN_PER_MS)
-    ctx.stroke()
+    increment = graph_width/((stop-start)*10)
     ctx.set_source_rgb(0.3,0.3,0.3)
 
-    l = 0.01;
-    if t % 10 == 0:
-        l = 0.05
-    elif t % 5 == 0:
-        l = 0.025
+    for i in range(0, math.ceil(graph_width/increment)):
 
-    ctx.move_to(t * 0.1, -0)
-    ctx.rel_line_to(0, -l)
+        
+        nub_len = 3 if i%10 == 0 else 2
+        ctx.move_to(i*increment,0)
+        ctx.rel_line_to(0, -nub_len);
+        
+        ctx.move_to(i*increment,graph_height)
+        ctx.rel_line_to(0, nub_len);
 
-    ctx.move_to(t * 0.1, VHEIGHT/LEN_PER_MS)
-    ctx.rel_line_to(0,  l)
+        ctx.stroke()
 
-    if t % 10 == 0:
-        txt = '%d ms' % (t/10)
-        ctx.move_to(t * 0.1, -0.1)
-        aligned_text(ctx, txt, 0.5, 0)
-        ctx.move_to(t * 0.1, VHEIGHT/LEN_PER_MS+0.1)
-        aligned_text(ctx, txt, 0.5, 1)
-
-ctx.set_source_rgb(0.3,0.3,0.3)
-
-ctx.move_to(0, VHEIGHT/LEN_PER_MS)
-ctx.rel_line_to(length, 0)
-
-ctx.move_to(0,-0)
-ctx.rel_line_to(length, 0)
-
-ctx.stroke()
-
-for v in items:
-    n,q,a,b,c,d = v
-
-    i = item_names.index(n)
-
-    i = BAR_CNT - i - 1
-
-    color = get_color(n)
     
-    start = milliseconds(c)
-    end = milliseconds(d)
+    ctx.set_source_rgb(0.3,0.3,0.3)
+    ctx.rectangle(0,0,graph_width, graph_height)
+    ctx.stroke()
 
-    y = (i + 0.125) * HEIGHT_PER_BAR / LEN_PER_MS
-    h = 0.75 * HEIGHT_PER_BAR / LEN_PER_MS
 
-    ctx.set_source_rgb(*color)
-    rounded_rect(ctx, start, y, end-start, h, 0.125 * HEIGHT_PER_BAR/LEN_PER_MS)
+    
+def calc_command_placement(queue_list, command_height, height_per_entry, font):
+    legend_width = 0
+    queue_indent = 5
 
-    _, _, w, _, _, _ = ctx.text_extents(n)
-    p = 0.05
-    wb = end-start
-    if w < wb - 2*p and w > wb/2:
-        ctx.set_source_rgb(1,1,1)
-        ctx.move_to(start + wb/2, y + h/2)
-        aligned_text(ctx, n, 0.5, 0.5)
-    elif w < wb - 2*p:
-        ctx.set_source_rgb(1,1,1)
-        ctx.move_to(start + p, y + h/2)
-        aligned_text(ctx, n, 0.0, 0.5)
-    else:
-        ctx.set_source_rgb(0,0,0)
-        ctx.move_to(end   + 0.05, y + h/2)
-        aligned_text(ctx, n, 0.0, 0.5)
+    legend_height = 0
+    
+    for qn,ns in queue_list:
+        _,_,w,_,_,_ = font.text_extents(qn)
+        legend_width = max(legend_width, w)
+        command_height[qn] = legend_height
+        legend_height += height_per_entry
+        for n in ns:
+            _,_,w,_,_,_ = font.text_extents(n)
+            legend_width = max(legend_width, w + queue_indent)
+            command_height[qn,n] = legend_height
+            legend_height += height_per_entry
 
-surface.finish()
+    return legend_width, legend_height
 
-# for item in items:
-#     print ('%s: %.1f µs' % (item[0], microseconds(duration(item))))
 
-# print ('')
 
-# print ('total runtime: %.1f µs' % microseconds(sum([duration(i) for i in items])))
-# print ('from %.1f to %.1f µs (%.1f)' % (microseconds(min_time(items)), 
-#                                         microseconds(max_time(items)),
-#                                         microseconds(max_time(items) - min_time(items))))
-                                        
+def draw_items(ctx, trace_items, height_per_entry, width_per_ms, color_scheme, command_height_dict):
+
+    ctx.set_line_width(0.25)
+    for ti in trace_items:
+        ctx.set_source_rgb(*color_scheme[ti.handle()])
+        rounded_rect(ctx,
+                     ti.start_ms()*width_per_ms, command_height_dict[ti.handle()]+0.5,
+                     ti.duration_ms()*width_per_ms, height_per_entry-1, .5)
+        ctx.fill()
+        ctx.set_source_rgb(*(c*0.5 for c in color_scheme[ti.handle()]))
+        rounded_rect(ctx,
+                     ti.start_ms()*width_per_ms, command_height_dict[ti.handle()]+0.5,
+                     ti.duration_ms()*width_per_ms, height_per_entry-1, .5)        
+        ctx.stroke()
+
+
+def draw_trace(trace_items, outfilename):
+    tmin,tmax = find_time_range(traceitems)
+    offset_time_ranges(traceitems, tmin)   
+    tmin,tmax = find_time_range(traceitems)
+    
+    tmin_ms = milliseconds(tmin)
+    tmax_ms = milliseconds(tmax)
+    dur_ms = tmax_ms - tmin_ms
+        
+    queue_list = create_queue_list(traceitems)
+    color_scheme = generate_colorscheme(queue_list)
+
+    padding = 10
+    height_per_entry = 7
+    width_per_ms = 50
+
+    command_height_dict = {}
+    font = cairo.ScaledFont(cairo.ToyFontFace('FreeSans'), cairo.Matrix(4,0, 0,4, 0,0), cairo.Matrix(), cairo.FontOptions())
+    legend_width, legend_height = calc_command_placement(queue_list, command_height_dict, height_per_entry, font)
+    
+    graph_width = milliseconds(tmax-tmin) * width_per_ms
+    graph_height = legend_height
+    
+    width  = graph_width  + 3*padding + legend_width
+    height = graph_height + 2*padding
+    
+    surface = cairo.PDFSurface(outfilename, mm(width), mm(height))
+
+    context = setup_context(surface, padding)
+
+    offset(0,0, draw_legend, context, queue_list, font, height_per_entry)
+
+    offset(legend_width+padding,0, draw_grid_back, context, graph_width, graph_height, tmin_ms, tmax_ms)
+    offset(legend_width+padding,0, draw_items, context, trace_items,
+           height_per_entry, width_per_ms, color_scheme, command_height_dict)
+    offset(legend_width+padding,0, draw_grid_front, context, graph_width, graph_height, tmin_ms, tmax_ms)
+    
+    surface.finish()
+
+
+        
+if __name__=='__main__':
+
+    if (len(sys.argv) != 3):
+        print('Usage: %s <tracefile> <outfile>' % sys.argv[0])
+        #print('Usage: %s <tracefile>' % sys.argv[0])
+        exit(1)
+
+    with open(sys.argv[1], 'r') as tracefile:
+        traceitems = parse(tracefile)
+
+
+    draw_trace(traceitems, sys.argv[2])
+    

@@ -32,6 +32,7 @@ namespace Reyes
     {
         
         CL::Device _device;
+        
         // CL::CommandQueue _framebuffer_queue;
         // CL::CommandQueue _bound_n_split_queue;
         CL::CommandQueue _rasterization_queue;
