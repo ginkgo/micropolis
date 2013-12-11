@@ -3,6 +3,7 @@ TODO:
 
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
+* Move stuff from BoundNSplit to OpenCLBoundNSplit
 * Implement Gregory patches (+Blender export script for catmull-clark)
 * Avoid Bound&Split stalls
 * Write polygon size estimation shader

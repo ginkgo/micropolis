@@ -73,6 +73,9 @@ do_event_polling = true
 // Number of patch buffers used for transferring patch data to device.
 bns_pipeline_length = 8
 
+// Number of samples per side for doing calculating patch range bound.
+bound_sample_rate = 3
+
 // Allocation method of patch buffers. Either PINNED or UNPINNED.
 // PINNED should be a lot faster.
 patch_buffer_mode = PINNED
@@ -90,4 +93,4 @@ cull_ribbon = 32
 
 
 
-#hash:5096722854827368848
+#hash:-9038565986149538717

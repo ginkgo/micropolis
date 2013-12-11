@@ -315,7 +315,7 @@ void Reyes::hsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
 void Reyes::bound_patch_range (const PatchRange& r, const BezierPatch& p, const mat4& mv, const mat4& mvp,
                                BBox& box, float& vlen, float& hlen)
 {
-    const size_t RES = 3;
+    const size_t RES = config.bound_sample_rate();
         
     //vec2 pp[RES][RES];
     vec3 ps[RES][RES];

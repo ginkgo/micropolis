@@ -15,7 +15,7 @@
  * along with Micropolis.  If not, see <http://www.gnu.org/licenses/>.        *
 \******************************************************************************/
 
-#include "patch.h"
+#include "utility.h"
 
 // Compile time constants:
 // PATCH_SIZE            - int
@@ -41,15 +41,6 @@ int calc_framebuffer_pos(int2 pxlpos)
     int  locl_id = loclpos.x + TILE_SIZE * loclpos.y;
 
     return grid_id * TILE_SIZE * TILE_SIZE + locl_id;
-}
-
-float4 mul_m44v4(float16 mat, float4 vec)
-{
-    return (float4) (dot(mat.s048C, vec),
-                     dot(mat.s159D, vec),
-                     dot(mat.s26AE, vec),
-                     dot(mat.s37BF, vec));
-
 }
 
 size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)

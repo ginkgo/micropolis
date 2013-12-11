@@ -137,6 +137,10 @@
       Number of patch buffers used for transferring patch data to device.
     </value>
 
+    <value name="bound_sample_rate" type="int" default="3">
+      Number of samples per side for doing calculating patch range bound.
+    </value>
+
     <value name="patch_buffer_mode" type="PatchBufferMode" default="PINNED">
       Allocation method of patch buffers. Either PINNED or UNPINNED.
       PINNED should be a lot faster.

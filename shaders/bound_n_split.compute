@@ -190,7 +190,6 @@ void main (void)
     // vec3 ppmax = vec3(-infinity);
 
     vec3 ppos[4][4];
-    bool row_homogeneous = true;
     
     for (int v = 0; v < 4; ++v) {
         int zrc = 0;
@@ -211,7 +210,6 @@ void main (void)
             // ppmax = max(ppos[v][u], ppmax);
         }
 
-        row_homogeneous = row_homogeneous && (zrc%4==0);
     }
 
     uvec2 flag;

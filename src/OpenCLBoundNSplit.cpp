@@ -23,8 +23,8 @@ Reyes::OpenCLBoundNSplit::OpenCLBoundNSplit(CL::Device& device,
     _patch_index->enable_load_opencl_buffer(device, queue);
 
     _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
-    _bound_n_split_program.set_constant("SCREEN_SIZE", config.window_size());
     _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", 64);
+    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", config.bound_sample_rate());
     _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
     
     _bound_n_split_program.compile(device, "bound_n_split.cl");
@@ -67,7 +67,6 @@ bool Reyes::OpenCLBoundNSplit::done()
 {
     if (_stack.size() > 0) return false;
 
-    
     return true;
 }
 
