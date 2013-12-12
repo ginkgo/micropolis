@@ -8,6 +8,7 @@
 // BOUND_SAMPLE_RATE             - int
 // MAX_SPLIT_DEPTH               - int
 // BOUND_N_SPLIT_LIMIT           - float
+// BATCH_SIZE                    - size_t
 
 
 bool outside_frustum(float3 pmin, float3 pmax, constant const projection* P)
@@ -64,7 +65,7 @@ char bound(const global float4* patch_buffer,
         }
     }
 
-    bool vsplit = 0;
+    bool vsplit = false;
     
     if (outside_frustum(bbox_min, bbox_max, P)) {
         return 0; // CULL
@@ -125,12 +126,13 @@ void bound_n_split(const global float4* patch_buffer,
 
     // stack properties
     int occupied;
-    int rpid;
+    int rpid, rdepth;
     float2 rmin, rmax;
 
     // local stack
     local int stack_height;
     local int pid_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * (MAX_SPLIT_DEPTH + 1)];
+    local int depth_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * (MAX_SPLIT_DEPTH + 1)];
     local float2 min_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * (MAX_SPLIT_DEPTH + 1)];
     local float2 max_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * (MAX_SPLIT_DEPTH + 1)];
 
@@ -138,13 +140,17 @@ void bound_n_split(const global float4* patch_buffer,
     // pad for prefix sum
     local int prefix_pad[BOUND_N_SPLIT_WORK_GROUP_SIZE];
     
-    // Number of items to be copied from input buffer
+    // Number of items to be copied from input/output buffer copy
     local int cnt, start;
+
+    // Number of items to be copied from stack
+    local int stack_cnt;
 
     if (lid == 0) {
         stack_height = 0;
-        cnt = 0;
+        stack_cnt = 0;
         start = 0;
+        cnt = 0;
     }
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -157,28 +163,33 @@ void bound_n_split(const global float4* patch_buffer,
                 start = top - BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height;
                 cnt = max(BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height, min(0, top));
 
-                #warning todo: update stack_height
+                stack_cnt = max(stack_height, BOUND_N_SPLIT_WORK_GROUP_SIZE - cnt);
+                stack_height -= stack_cnt;
             } else {
                 cnt = 0;
+                
+                stack_cnt = BOUND_N_SPLIT_WORK_GROUP_SIZE;
+                stack_height -= stack_cnt;
             }
         }
     
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        if (cnt == 0 && stack_height == 0) {
+        if (cnt == 0 && stack_cnt == 0) {
             return; // Global exit test
         }
 
-#warning TODO: Handle stack_height stuff properly
         if (lid < cnt) {
-            rpid = in_pids[start + lid];
-            rmin = in_mins[start + lid];
-            rmax = in_maxs[start + lid];
+            rpid   = in_pids[start + lid];
+            rdepth = 0;
+            rmin   = in_mins[start + lid];
+            rmax   = in_maxs[start + lid];
             occupied = 1;
-        } else if (lid < cnt + stack_height) {
-            rpid = pid_stack[stack_height + lid - cnt];
-            rmin = min_stack[stack_height + lid - cnt];
-            rmax = max_stack[stack_height + lid - cnt];
+        } else if (lid < cnt + stack_cnt) {
+            rpid   = pid_stack[stack_height + lid - cnt];
+            rdepth = depth_stack[stack_height + lid - cnt];
+            rmin   = min_stack[stack_height + lid - cnt];
+            rmax   = max_stack[stack_height + lid - cnt];
             occupied = 1;
         } else {
             occupied = 0;
@@ -196,12 +207,12 @@ void bound_n_split(const global float4* patch_buffer,
         if (lid + 1 == BOUND_N_SPLIT_WORK_GROUP_SIZE) {
             cnt = sum;
             start = atomic_add(out_range_count, cnt) - 1;
-#warning handle overflow
+            #warning handle overflow
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        if (bound_flags & 1 != 0) {
+        if ((bound_flags & 1) != 0 && start + sum < BATCH_SIZE) {
             out_pids[start + sum] = rpid;
             out_mins[start + sum] = rmin;
             out_maxs[start + sum] = rmax;
@@ -218,10 +229,14 @@ void bound_n_split(const global float4* patch_buffer,
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        if (bound_flags & 2 != 0) {
-            pid_stack[start + sum * 2 + 0] = rpid+1;
-            pid_stack[start + sum * 2 + 1] = rpid+1;
-            float2 c = (rmin+rmax)*0.5;
+        if ((bound_flags & 2) != 0) {
+            depth_stack[start + sum * 2 + 0] = rdepth+1;
+            pid_stack  [start + sum * 2 + 0] = rpid;
+            
+            depth_stack[start + sum * 2 + 1] = rdepth+1;
+            pid_stack  [start + sum * 2 + 1] = rpid;
+            
+            float2 c = (rmin+rmax)*0.5f;
 
             // Check split direction
             if (bound_flags & 4) {
@@ -262,3 +277,6 @@ void init_range_buffers(global int* pids,
         maxs[gid] = (float2)(1,1);
     }
 }
+
+
+

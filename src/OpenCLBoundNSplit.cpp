@@ -9,9 +9,10 @@
 using namespace Reyes;
 
 
-Reyes::OpenCLBoundNSplit::OpenCLBoundNSplit(CL::Device& device,
-                                            CL::CommandQueue& queue,
-                                            shared_ptr<PatchIndex>& patch_index)
+
+Reyes::OpenCLBoundNSplitCPU::OpenCLBoundNSplitCPU(CL::Device& device,
+                                                  CL::CommandQueue& queue,
+                                                  shared_ptr<PatchIndex>& patch_index)
     : _queue(queue)
     , _patch_index(patch_index)
     , _active_handle(nullptr)
@@ -22,14 +23,15 @@ Reyes::OpenCLBoundNSplit::OpenCLBoundNSplit(CL::Device& device,
     _patch_index->enable_retain_vector();
     _patch_index->enable_load_opencl_buffer(device, queue);
 
-    _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
-    _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", 64);
-    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", config.bound_sample_rate());
-    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
+    // _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
+    // _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", 64);
+    // _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", config.bound_sample_rate());
+    // _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
+    // _bound_n_split_program.set_constant("BATCH_SIZE", config.reyes_patches_per_pass());
     
-    _bound_n_split_program.compile(device, "bound_n_split.cl");
-    shared_ptr<CL::Kernel> _bound_n_split_kernel;
-    _bound_n_split_kernel.reset(_bound_n_split_program.get_kernel("bound_n_split"));
+    // _bound_n_split_program.compile(device, "bound_n_split.cl");
+    // shared_ptr<CL::Kernel> _bound_n_split_kernel;
+    // _bound_n_split_kernel.reset(_bound_n_split_program.get_kernel("bound_n_split"));
 
     for (int i : irange(0, config.bns_pipeline_length())) {
         _batch_records.emplace_back(config.reyes_patches_per_pass(), device, queue);
@@ -37,7 +39,7 @@ Reyes::OpenCLBoundNSplit::OpenCLBoundNSplit(CL::Device& device,
 }
 
 
-void Reyes::OpenCLBoundNSplit::init(void* patches_handle, const mat4& matrix, const Projection* projection)
+void Reyes::OpenCLBoundNSplitCPU::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
     statistics.start_bound_n_split();
     
@@ -63,14 +65,14 @@ void Reyes::OpenCLBoundNSplit::init(void* patches_handle, const mat4& matrix, co
 }
 
 
-bool Reyes::OpenCLBoundNSplit::done()
+bool Reyes::OpenCLBoundNSplitCPU::done()
 {
     if (_stack.size() > 0) return false;
 
     return true;
 }
 
-void Reyes::OpenCLBoundNSplit::finish()
+void Reyes::OpenCLBoundNSplitCPU::finish()
 {
     for (BatchRecord& record : _batch_records) {
         record.finish(_queue);
@@ -79,7 +81,7 @@ void Reyes::OpenCLBoundNSplit::finish()
 }
 
 
-Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
+Batch Reyes::OpenCLBoundNSplitCPU::do_bound_n_split(CL::Event& ready)
 {
     size_t ring_size = config.bns_pipeline_length(); // Size of batch buffer ring
 
@@ -157,7 +159,7 @@ Batch Reyes::OpenCLBoundNSplit::do_bound_n_split(CL::Event& ready)
 }
 
 
-Reyes::OpenCLBoundNSplit::BatchRecord::BatchRecord(size_t batch_size, CL::Device& device, CL::CommandQueue& queue)
+Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(size_t batch_size, CL::Device& device, CL::CommandQueue& queue)
     : status(INACTIVE)
     , patch_ids(device, queue, batch_size * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
     , patch_min(device, queue, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
@@ -169,7 +171,7 @@ Reyes::OpenCLBoundNSplit::BatchRecord::BatchRecord(size_t batch_size, CL::Device
 }
 
 
-Reyes::OpenCLBoundNSplit::BatchRecord::BatchRecord(BatchRecord&& other)
+Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(BatchRecord&& other)
 {
     status = std::move(other.status);
     patch_ids = std::move(other.patch_ids);
@@ -180,7 +182,7 @@ Reyes::OpenCLBoundNSplit::BatchRecord::BatchRecord(BatchRecord&& other)
 }
 
 
-void Reyes::OpenCLBoundNSplit::BatchRecord::transfer(CL::CommandQueue& queue, size_t patch_count)
+void Reyes::OpenCLBoundNSplitCPU::BatchRecord::transfer(CL::CommandQueue& queue, size_t patch_count)
 {
     CL::Event a,b,c;
 
@@ -196,14 +198,14 @@ void Reyes::OpenCLBoundNSplit::BatchRecord::transfer(CL::CommandQueue& queue, si
 }
 
 
-void Reyes::OpenCLBoundNSplit::BatchRecord::accept(CL::Event& event)
+void Reyes::OpenCLBoundNSplitCPU::BatchRecord::accept(CL::Event& event)
 {
     status = ACCEPTED;
     rasterizer_done = event;
 }
 
 
-void Reyes::OpenCLBoundNSplit::BatchRecord::finish(CL::CommandQueue& queue)
+void Reyes::OpenCLBoundNSplitCPU::BatchRecord::finish(CL::CommandQueue& queue)
 {
     if (status == INACTIVE) {
         return;
@@ -219,7 +221,7 @@ void Reyes::OpenCLBoundNSplit::BatchRecord::finish(CL::CommandQueue& queue)
 }
 
 
-void Reyes::OpenCLBoundNSplit::vsplit_range(const PatchRange& r, vector<PatchRange>& stack)
+void Reyes::OpenCLBoundNSplitCPU::vsplit_range(const PatchRange& r, vector<PatchRange>& stack)
 {
     float cy = (r.range.min.y + r.range.max.y) * 0.5f;
 
@@ -227,7 +229,7 @@ void Reyes::OpenCLBoundNSplit::vsplit_range(const PatchRange& r, vector<PatchRan
     stack.emplace_back(r.range.min.x, cy, r.range.max.x, r.range.max.y,    r.depth + 1, r.patch_id);
 }
     
-void Reyes::OpenCLBoundNSplit::hsplit_range(const PatchRange& r, vector<PatchRange>& stack)
+void Reyes::OpenCLBoundNSplitCPU::hsplit_range(const PatchRange& r, vector<PatchRange>& stack)
 {
     float cx = (r.range.min.x + r.range.max.x) * 0.5f;
     

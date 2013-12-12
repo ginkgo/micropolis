@@ -23,7 +23,7 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
-    , _bound_n_split(new OpenCLBoundNSplit(_device, _bound_n_split_queue, _patch_index))
+    , _bound_n_split(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index))
       
     , _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass())
     , _pos_grid(_device, 

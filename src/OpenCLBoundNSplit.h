@@ -24,11 +24,32 @@ namespace Reyes
     
     class PatchIndex;    
 
+
+    
     class OpenCLBoundNSplit
     {
 
+    public:
+
+        virtual ~OpenCLBoundNSplit() {};
+        
+    public:
+
+        virtual void init(void* patches_handle, const mat4& matrix, const Projection* projection) = 0;
+        virtual bool done() = 0;
+        virtual void finish() = 0;
+
+        virtual Batch do_bound_n_split(CL::Event& ready) = 0;
+    };
+
+    
+    
+    class OpenCLBoundNSplitCPU : public OpenCLBoundNSplit
+    {
+
         CL::CommandQueue& _queue;
-        CL::Program _bound_n_split_program;
+        
+        // CL::Program _bound_n_split_program;
         
         shared_ptr<PatchIndex> _patch_index;
 
@@ -44,13 +65,13 @@ namespace Reyes
     public:
 
         
-        OpenCLBoundNSplit(CL::Device& device, CL::CommandQueue& queue, shared_ptr<PatchIndex>& patch_index);
+        OpenCLBoundNSplitCPU(CL::Device& device, CL::CommandQueue& queue, shared_ptr<PatchIndex>& patch_index);
 
-        void init(void* patches_handle, const mat4& matrix, const Projection* projection);
-        bool done();
-        void finish();
+        virtual void init(void* patches_handle, const mat4& matrix, const Projection* projection);
+        virtual bool done();
+        virtual void finish();
 
-        Batch do_bound_n_split(CL::Event& ready);
+        virtual Batch do_bound_n_split(CL::Event& ready);
 
         
     private:
