@@ -28,16 +28,16 @@ device_id = 0
 // 0...(Almost) no output
 // 1...Regular performance information and warnings posted
 // 2...Lots of information posted, can be detrimental to render performance
-verbosity_level = 1
+verbosity_level = 0
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 16
+reyes_patch_size = 8
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 16
+bound_n_split_limit = 10
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
@@ -73,6 +73,9 @@ do_event_polling = true
 // Number of patch buffers used for transferring patch data to device.
 bns_pipeline_length = 8
 
+// Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
+bound_n_split_method = LOCAL
+
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
 
@@ -93,4 +96,4 @@ cull_ribbon = 32
 
 
 
-#hash:6835874881196376080
+#hash:3138481978145793863

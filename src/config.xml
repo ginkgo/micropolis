@@ -35,6 +35,12 @@
       <element name="SMOOTH"/>
       <element name="FLAT"/>
     </enum>
+
+    <enum name="BoundNSplitMethod">
+      <element name="CPU"/>
+      <element name="MULTIPASS"/>
+      <element name="LOCAL"/>
+    </enum>
   </enums>
 
   <values>
@@ -135,6 +141,10 @@
 
     <value name="bns_pipeline_length" type="int" default="3">
       Number of patch buffers used for transferring patch data to device.
+    </value>
+
+    <value name="bound_n_split_method" type="BoundNSplitMethod" default="LOCAL">
+      Method used to implement Bound&amp;Split. Either CPU, MULTIPASS or LOCAL.
     </value>
 
     <value name="bound_sample_rate" type="int" default="3">

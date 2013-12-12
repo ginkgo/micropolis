@@ -15,7 +15,23 @@ namespace Reyes
 
     class PatchIndex;    
 
+
     class OpenGLBoundNSplit
+    {
+        
+    public:
+
+        virtual ~OpenGLBoundNSplit() {};
+
+        virtual void init(void* patches_handle, const mat4& matrix, const Projection* projection) = 0;
+        virtual bool done() = 0;
+
+        virtual void do_bound_n_split(GL::IndirectVBO& vbo) = 0;
+        
+    };
+
+    
+    class OpenGLBoundNSplitMultipass : public OpenGLBoundNSplit
     {
 
         shared_ptr<PatchIndex> _patch_index;
@@ -58,8 +74,8 @@ namespace Reyes
         
     public:
 
-        OpenGLBoundNSplit(shared_ptr<PatchIndex>& patch_index);
-        ~OpenGLBoundNSplit();
+        OpenGLBoundNSplitMultipass(shared_ptr<PatchIndex>& patch_index);
+        ~OpenGLBoundNSplitMultipass();
 
         void init(void* patches_handle, const mat4& matrix, const Projection* projection);
         bool done();

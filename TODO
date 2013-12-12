@@ -3,9 +3,7 @@ TODO:
 
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
-* Move stuff from BoundNSplit to OpenCLBoundNSplit
 * Implement Gregory patches (+Blender export script for catmull-clark)
-* Avoid Bound&Split stalls
 * Write polygon size estimation shader
 * Implement dynamic-rate dicing
 * Switch readme to markdown/textile or something like that
@@ -13,28 +11,27 @@ TODO:
 * Make CL::TransferBuffer use pinned memory again
 
 * Make use of
-  __attribute__((work_group_size_hint(X,Y,Z)))
-  __attribute__((reqd_work_group_size(X,Y,Z)))
-  
+  * __attribute__((work_group_size_hint(X,Y,Z)))
+  * __attribute__((reqd_work_group_size(X,Y,Z)))
 
 * Improve on parse_trace.py output
-   Rename script to something more fitting
-   Queue name in bold
-   (Colored) vertical lines for orientation?
-   Time markers on scale
-   Make paper size adapt to trace-length
-   
-*  Debug weird trace behavior where patch-range transfer seem to happen after depending dice/shade/sample
+  * Rename script to something more fitting
+  * Queue name in bold
+  * (Colored) vertical lines for orientation?
+  * Time markers on scale
+  * Make paper size adapt to trace-length
+
+* Debug weird trace behavior where patch-range transfer seem to happen after depending dice/shade/sample
 * Create command-dependency graph dump (In DOT format)
 
 * Find source for FPS-counter/trace time discrepancy
 * Check for potential ways to get direct access to default framebuffer
 
 * Read:
-   'Fast GPU-based Adaptive Tessellation with CUDA'
-   'Fragment-Parallel Composite and Filter'
-   '3D Rasterization: A Bridge between Rasterization and Ray Casting'
-   'Task Management for Irregular-Parallel Workloads on the GPU'
+  * 'Fast GPU-based Adaptive Tessellation with CUDA'
+  * 'Fragment-Parallel Composite and Filter'
+  * '3D Rasterization: A Bridge between Rasterization and Ray Casting'
+  * 'Task Management for Irregular-Parallel Workloads on the GPU'
 
 * Shader system
   * Use Python for generation/compilation
@@ -46,8 +43,14 @@ TODO:
 * Implement multisampling
 * Implement stochastic rasterization
 
-DONE
 
+
+DONE:
+
+* Make type of Bound&Split method configurable (CPU,LOCAL,ITERATIVE (pick better names))
+  * Chose CPU, MULTIPASS, LOCAL
+* Avoid Bound&Split stalls
+* Move stuff from BoundNSplit to OpenCLBoundNSplit
 * Remove config.max_block_assignments
 * Rename config.patch_buffer_count
 * Reorder config so patch_size and bound_n_split limit are side by side

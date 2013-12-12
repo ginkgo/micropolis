@@ -13,17 +13,7 @@ namespace Reyes
         size_t patch_id;
 
         PatchRange() {}
-        
-        // PatchRange(PatchRange& other)
-        //     : range(other.range)
-        //     , depth(other.depth)
-        //     , patch_id(other.patch_id) {}
-        
-        // PatchRange(PatchRange&& other)
-        //     : range(other.range)
-        //     , depth(other.depth)
-        //     , patch_id(other.patch_id) {}
-        
+                
         PatchRange(const Bound& range, size_t depth, size_t patch_id)
             : range(range)
             , depth(depth)

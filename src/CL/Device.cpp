@@ -58,7 +58,7 @@ CL::Device::Device(int platform_index, int device_index)
         print_info();
     }
         
-    if(config.verbosity_level() >= 1 || share_gl()) {
+    if(config.verbosity_level() >= 1 || !share_gl()) {
         cout << endl;
         cout << "Device is" << (share_gl() ? " " : " NOT ") << "shared." << endl << endl;
     }

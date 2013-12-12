@@ -11,7 +11,7 @@ using namespace Reyes;
 #define BATCH_SIZE config.reyes_patches_per_pass()
 #define MAX_SPLIT config.max_split_depth()
 
-Reyes::OpenGLBoundNSplit::OpenGLBoundNSplit(shared_ptr<PatchIndex>& patch_index)
+Reyes::OpenGLBoundNSplitMultipass::OpenGLBoundNSplitMultipass(shared_ptr<PatchIndex>& patch_index)
     : _patch_index(patch_index)
     , _active_handle(nullptr)
 
@@ -46,14 +46,14 @@ Reyes::OpenGLBoundNSplit::OpenGLBoundNSplit(shared_ptr<PatchIndex>& patch_index)
 }
 
 
-Reyes::OpenGLBoundNSplit::~OpenGLBoundNSplit()
+Reyes::OpenGLBoundNSplitMultipass::~OpenGLBoundNSplitMultipass()
 {
     glDeleteQueries(1, &_bound_n_split_timer);
     glDeleteQueries(1, &_dice_n_raster_timer);
 }
 
 
-void Reyes::OpenGLBoundNSplit::init(void* patches_handle, const mat4& matrix, const Projection* projection)
+void Reyes::OpenGLBoundNSplitMultipass::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
     
     _active_handle = patches_handle;
@@ -104,7 +104,7 @@ void Reyes::OpenGLBoundNSplit::init(void* patches_handle, const mat4& matrix, co
 }
 
 
-bool Reyes::OpenGLBoundNSplit::done()
+bool Reyes::OpenGLBoundNSplitMultipass::done()
 {
     
     glEndQuery(GL_TIME_ELAPSED); // dice_n_raster_timer
@@ -160,7 +160,7 @@ bool Reyes::OpenGLBoundNSplit::done()
 }
 
 
-void Reyes::OpenGLBoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
+void Reyes::OpenGLBoundNSplitMultipass::do_bound_n_split(GL::IndirectVBO& vbo)
 {
     glBeginQuery(GL_TIME_ELAPSED, _bound_n_split_timer);
     

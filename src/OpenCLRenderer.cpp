@@ -23,7 +23,6 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
-    , _bound_n_split(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index))
       
     , _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass())
     , _pos_grid(_device, 
@@ -45,6 +44,21 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     , _reyes_program()
     , _frame_event(_device, "frame")
 {
+    
+    switch(config.bound_n_split_method()) {
+    case Config::CPU:
+        _bound_n_split.reset(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index));
+        break;
+    case Config::MULTIPASS:
+        cerr << "Warning: MULTIPASS Bound&Split not supported for OpenCL. Falling back to CPU" << endl;
+        _bound_n_split.reset(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index));
+        break;
+    case Config::LOCAL:
+        cerr << "Warning: LOCAL Bound&Split not supported for OpenCL. Falling back to CPU" << endl;
+        _bound_n_split.reset(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index));
+        break;
+    }
+    
     _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
     _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
     _reyes_program.set_constant("PATCH_SIZE", (int)config.reyes_patch_size());
