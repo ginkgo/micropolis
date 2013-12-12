@@ -2,11 +2,11 @@
 
 #include "common.h"
 
-#include "BoundNSplit.h"
 #include "CL/OpenCL.h"
 #include "GL/Texture.h"
 #include "GL/VBO.h"
 #include "Patch.h"
+#include "PatchRange.h"
 #include "Projection.h"
 
 namespace Reyes
@@ -116,6 +116,9 @@ namespace Reyes
         
         static void vsplit_range(const PatchRange& r, vector<PatchRange>& stack);
         static void hsplit_range(const PatchRange& r, vector<PatchRange>& stack);
+        static void bound_patch_range (const PatchRange& r, const BezierPatch& p,
+                                       const mat4& mv, const mat4& mvp,
+                                       BBox& box, float& vlen, float& hlen);
 
         
     };

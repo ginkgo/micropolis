@@ -1,4 +1,4 @@
-#include "BoundNSplit.h"
+#include "OpenGLBoundNSplit.h"
 
 
 #include "PatchIndex.h"
@@ -11,7 +11,7 @@ using namespace Reyes;
 #define BATCH_SIZE config.reyes_patches_per_pass()
 #define MAX_SPLIT config.max_split_depth()
 
-Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchIndex>& patch_index)
+Reyes::OpenGLBoundNSplit::OpenGLBoundNSplit(shared_ptr<PatchIndex>& patch_index)
     : _patch_index(patch_index)
     , _active_handle(nullptr)
 
@@ -46,14 +46,14 @@ Reyes::BoundNSplit::BoundNSplit(shared_ptr<PatchIndex>& patch_index)
 }
 
 
-Reyes::BoundNSplit::~BoundNSplit()
+Reyes::OpenGLBoundNSplit::~OpenGLBoundNSplit()
 {
     glDeleteQueries(1, &_bound_n_split_timer);
     glDeleteQueries(1, &_dice_n_raster_timer);
 }
 
 
-void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Projection* projection)
+void Reyes::OpenGLBoundNSplit::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
     
     _active_handle = patches_handle;
@@ -104,7 +104,7 @@ void Reyes::BoundNSplit::init(void* patches_handle, const mat4& matrix, const Pr
 }
 
 
-bool Reyes::BoundNSplit::done()
+bool Reyes::OpenGLBoundNSplit::done()
 {
     
     glEndQuery(GL_TIME_ELAPSED); // dice_n_raster_timer
@@ -160,7 +160,7 @@ bool Reyes::BoundNSplit::done()
 }
 
 
-void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
+void Reyes::OpenGLBoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
 {
     glBeginQuery(GL_TIME_ELAPSED, _bound_n_split_timer);
     
@@ -286,71 +286,3 @@ void Reyes::BoundNSplit::do_bound_n_split(GL::IndirectVBO& vbo)
     glBeginQuery(GL_TIME_ELAPSED, _dice_n_raster_timer);
 }
 
-
-/*----------------------------------------------------------------------------*/
-// Implementation of utility functions
-
-void Reyes::vsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
-{
-    r0 = PatchRange(r.range, r.depth + 1, r.patch_id);
-    r1 = PatchRange(r.range, r.depth + 1, r.patch_id);
-        
-    float cy = (r.range.min.y + r.range.max.y) * 0.5f;
-
-    r0.range.min.y = cy;
-    r1.range.max.y = cy;
-}
-    
-void Reyes::hsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1)
-{
-    r0 = PatchRange(r.range, r.depth + 1, r.patch_id);
-    r1 = PatchRange(r.range, r.depth + 1, r.patch_id);
-
-    float cx = (r.range.min.x + r.range.max.x) * 0.5f;
-
-    r0.range.min.x = cx;
-    r1.range.max.x = cx;
-}
-    
-void Reyes::bound_patch_range (const PatchRange& r, const BezierPatch& p, const mat4& mv, const mat4& mvp,
-                               BBox& box, float& vlen, float& hlen)
-{
-    const size_t RES = config.bound_sample_rate();
-        
-    //vec2 pp[RES][RES];
-    vec3 ps[RES][RES];
-    vec3 pos;
-     
-    box.clear();
-        
-    for (size_t iu = 0; iu < RES; ++iu) {
-        for (size_t iv = 0; iv < RES; ++iv) {
-            float v = r.range.min.x + (r.range.max.x - r.range.min.x) * iu * (1.0f / (RES-1));
-            float u = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
-
-            eval_patch(p, u, v, pos);
-
-            vec3 pt = vec3(mv * vec4(pos,1));
-                
-            box.add_point(pt);
-
-            // pp[iu][iv] = project(mvp * vec4(pos,1));
-            ps[iu][iv] = pt;
-        }
-    }
-
-    vlen = 0;
-    hlen = 0;
-
-    for (size_t i = 0; i < RES; ++i) {
-        float h = 0, v = 0;
-        for (size_t j = 0; j < RES-1; ++j) {
-            // v += glm::distance(pp[j][i], pp[j+1][i]);
-            // h += glm::distance(pp[i][j], pp[i][j+1]);
-            v += glm::distance(ps[j][i], ps[j+1][i]);
-            h += glm::distance(ps[i][j], ps[i][j+1]);
-        }
-        vlen = maximum(v, vlen);
-        hlen = maximum(h, hlen);
-    }
-}

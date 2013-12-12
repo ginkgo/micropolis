@@ -27,7 +27,7 @@ Reyes::HWTessRenderer::HWTessRenderer()
     : _shader("hwtess")
     , _vbo(4 * config.reyes_patches_per_pass())
     , _patch_index(new PatchIndex())
-    , _bound_n_split(new BoundNSplit(_patch_index))
+    , _bound_n_split(new OpenGLBoundNSplit(_patch_index))
 {
     _patch_index->enable_load_texture();
 }

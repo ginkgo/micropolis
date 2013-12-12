@@ -7,43 +7,15 @@
 #include "GL/Texture.h"
 #include "GL/VBO.h"
 #include "Patch.h"
+#include "PatchRange.h"
 #include "Projection.h"
 
 namespace Reyes
 {
-    struct PatchRange
-    {
-        Bound range;
-        size_t depth;
-        size_t patch_id;
-
-        PatchRange() {}
-        
-        // PatchRange(PatchRange& other)
-        //     : range(other.range)
-        //     , depth(other.depth)
-        //     , patch_id(other.patch_id) {}
-        
-        // PatchRange(PatchRange&& other)
-        //     : range(other.range)
-        //     , depth(other.depth)
-        //     , patch_id(other.patch_id) {}
-        
-        PatchRange(const Bound& range, size_t depth, size_t patch_id)
-            : range(range)
-            , depth(depth)
-            , patch_id(patch_id) {}
-        
-        PatchRange(float xmin, float ymin, float xmax, float ymax,
-                   size_t depth, size_t patch_id)
-            : range(xmin,ymin,xmax,ymax)
-            , depth(depth)
-            , patch_id(patch_id) {}
-    };
 
     class PatchIndex;    
 
-    class BoundNSplit
+    class OpenGLBoundNSplit
     {
 
         shared_ptr<PatchIndex> _patch_index;
@@ -86,8 +58,8 @@ namespace Reyes
         
     public:
 
-        BoundNSplit(shared_ptr<PatchIndex>& patch_index);
-        ~BoundNSplit();
+        OpenGLBoundNSplit(shared_ptr<PatchIndex>& patch_index);
+        ~OpenGLBoundNSplit();
 
         void init(void* patches_handle, const mat4& matrix, const Projection* projection);
         bool done();
@@ -96,11 +68,5 @@ namespace Reyes
         
     };
 
-    
-    void vsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1);
-    void hsplit_range(const PatchRange& r, PatchRange& r0, PatchRange& r1);
-    void bound_patch_range (const PatchRange& r, const BezierPatch& p,
-                            const mat4& mv, const mat4& mvp,
-                            BBox& box, float& vlen, float& hlen);
 
 }

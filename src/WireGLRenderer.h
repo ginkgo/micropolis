@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "BoundNSplit.h"
+#include "OpenGLBoundNSplit.h"
 #include "GL/Shader.h"
 #include "GL/Texture.h"
 #include "GL/VBO.h"
@@ -35,7 +35,7 @@ namespace Reyes
 		GL::IndirectVBO _vbo;
 
         shared_ptr<PatchIndex> _patch_index;
-        shared_ptr<BoundNSplit> _bound_n_split;
+        shared_ptr<OpenGLBoundNSplit> _bound_n_split;
 
     public:
 
