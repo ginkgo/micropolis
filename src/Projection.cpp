@@ -20,7 +20,7 @@
 #include "Config.h"
 
 
-Reyes::PerspectiveProjection::PerspectiveProjection(float fovy, float hither, ivec2 viewport):
+Reyes::Projection::Projection(float fovy, float hither, ivec2 viewport):
     _fovy(fovy), _near(hither), 
     _aspect(float(viewport.x)/viewport.y),
     _viewport(viewport) 
@@ -28,28 +28,33 @@ Reyes::PerspectiveProjection::PerspectiveProjection(float fovy, float hither, iv
     fy = 1.0f/(float)tan(_fovy * M_PI / 360);
     fx = fy / _aspect;
 
-    vp = vec2(_viewport.x/2.0, _viewport.y/2.0);
+    vp = vec2(_viewport.x/2.0f, _viewport.y/2.0f);
 
     fx *= vp.x;
     fy *= vp.y;
 };
 
-void Reyes::PerspectiveProjection::calc_projection(mat4& proj) const
+void Reyes::Projection::calc_projection(mat4& proj) const
 {
     proj = glm::perspective<float>(_fovy, _aspect, _near, 1000);
 }
 
-void Reyes::PerspectiveProjection::calc_projection_with_aspect_correction(mat4& proj) const
+void Reyes::Projection::calc_projection_with_aspect_correction(mat4& proj) const
 {
     proj = glm::perspective<float>(_fovy, 1, _near, 1000);
 }
 
-ivec4 Reyes::PerspectiveProjection::get_viewport() const
+void Reyes::Projection::calc_screen_matrix(mat2& screen_matrix) const
+{
+    screen_matrix = mat2(glm::scale(vec3(vp.x, vp.y, 1)));
+}
+
+ivec4 Reyes::Projection::get_viewport() const
 {
     return ivec4(0,0,_viewport.x, _viewport.y);
 }
 
-void Reyes::PerspectiveProjection::bound(const BBox& bbox, vec2& size, bool& cull) const
+void Reyes::Projection::bound(const BBox& bbox, vec2& size, bool& cull) const
 {
     vec2 min,max;
 

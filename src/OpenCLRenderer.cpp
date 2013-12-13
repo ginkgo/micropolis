@@ -54,8 +54,7 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
         _bound_n_split.reset(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index));
         break;
     case Config::LOCAL:
-        cerr << "Warning: LOCAL Bound&Split not supported for OpenCL. Falling back to CPU" << endl;
-        _bound_n_split.reset(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index));
+        _bound_n_split.reset(new OpenCLBoundNSplitLocal(_device, _bound_n_split_queue, _patch_index));
         break;
     }
     

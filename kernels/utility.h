@@ -129,7 +129,8 @@ typedef struct projection
     matrix2 screen_matrix;
     float fovy;
     float2 f;
-    float near, far;
+    float near;
+    float far;
     int2 screen_size;
 } projection;
 

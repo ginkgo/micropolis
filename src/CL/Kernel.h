@@ -47,6 +47,7 @@ namespace CL
         cl_int status;
 
         status = clSetKernelArg(_kernel, arg_index, sizeof(T), &value);
+
         OPENCL_ASSERT(status);
     }
 
@@ -59,6 +60,13 @@ namespace CL
 
     template<>
     inline void Kernel::set_arg<Buffer>(cl_uint arg_index, const Buffer& value)
+    {
+        cl_mem mem = value.get();
+        set_arg(arg_index, mem);
+    }
+
+    template<>
+    inline void Kernel::set_arg<TransferBuffer>(cl_uint arg_index, const TransferBuffer& value)
     {
         cl_mem mem = value.get();
         set_arg(arg_index, mem);

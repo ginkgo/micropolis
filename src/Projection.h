@@ -25,23 +25,6 @@ namespace Reyes {
 
     class Projection
     {
-        public:
-
-        virtual ~Projection() {};
-
-        virtual void calc_projection(mat4& proj) const = 0;
-        virtual void calc_projection_with_aspect_correction(mat4& proj) const = 0;
-        virtual ivec4 get_viewport() const = 0;
-        virtual void bound(const BBox& bbox, vec2& size, bool& cull) const = 0;
-
-        virtual float near() const = 0;
-        virtual float far() const = 0;
-        virtual vec2 f() const = 0;
-        virtual vec2 viewport() const = 0;
-    };
-
-    class PerspectiveProjection : public Projection
-    {
 		float _fovy;
         float _near;
 		float _aspect;
@@ -52,19 +35,22 @@ namespace Reyes {
 
         public:
 
-        PerspectiveProjection(float fovy, float hither, ivec2 viewport);
+        Projection(float fovy, float hither, ivec2 viewport);
 
-        virtual ~PerspectiveProjection() {};
+        ~Projection() {};
 
         void calc_projection(mat4& proj) const;    
-        void calc_projection_with_aspect_correction(mat4& proj) const;    
+        void calc_projection_with_aspect_correction(mat4& proj) const;
+        void calc_screen_matrix(mat2& screen_matrix) const;
         ivec4 get_viewport() const;    
         void bound(const BBox& bbox, vec2& size, bool& cull) const;
         
-        virtual float near() const { return _near; }
-        virtual float far()  const { return 1000;  }
-        virtual vec2 f() const { return vec2(fx,fy); }
-        virtual vec2 viewport() const { return vec2(_viewport.x, _viewport.y); }
+        float near() const { return _near; }
+        float far()  const { return 1000;  }
+        vec2 f() const { return vec2(fx,fy); }
+        vec2 viewport() const { return vec2(_viewport.x, _viewport.y); }
+        ivec2 viewport_i() const { return _viewport; }
+        float fovy() const { return _fovy; }
     };
 
 }

@@ -43,7 +43,7 @@ bool outside_frustum(float3 pmin, float3 pmax, constant const projection* P)
 char bound(const global float4* patch_buffer,
            int rpid, float2 rmin, float2 rmax, int rdepth,
            constant const matrix4* mv, constant const projection* P, float split_limit)
-{
+{    
     // Calculate bounding box and max u/v length of patch 
     float2 ppos[RES][RES];
     
@@ -117,7 +117,7 @@ void bound_n_split(const global float4* patch_buffer,
                    global int* out_pids,
                    global float2* out_mins,
                    global float2* out_maxs,
-                   volatile global int* out_range_count,
+                   volatile global int* out_range_cnt,
 
                    matrix4 modelview,
                    constant const projection* proj)
@@ -141,7 +141,7 @@ void bound_n_split(const global float4* patch_buffer,
     local int prefix_pad[BOUND_N_SPLIT_WORK_GROUP_SIZE];
     
     // Number of items to be copied from input/output buffer copy
-    local int cnt, start;
+    local int cnt, start, top;
 
     // Number of items to be copied from stack
     local int stack_cnt;
@@ -150,6 +150,7 @@ void bound_n_split(const global float4* patch_buffer,
         stack_height = 0;
         stack_cnt = 0;
         start = 0;
+        top = 42;
         cnt = 0;
     }
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -159,13 +160,15 @@ void bound_n_split(const global float4* patch_buffer,
         // Load range elements (source from stack first and fall back to input buffer if necessary)
         if (lid == 0) {
             if (stack_height < BOUND_N_SPLIT_WORK_GROUP_SIZE) {
-                int top = atomic_sub(in_range_cnt, BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height);
-                start = top - BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height;
-                cnt = max(BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height, min(0, top));
+                top = atomic_sub(in_range_cnt, BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height);
 
-                stack_cnt = max(stack_height, BOUND_N_SPLIT_WORK_GROUP_SIZE - cnt);
+                cnt = min(BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height, max(0, top));
+                start = top - cnt;
+                
+                stack_cnt = min(stack_height, BOUND_N_SPLIT_WORK_GROUP_SIZE - cnt);
                 stack_height -= stack_cnt;
             } else {
+                start = 0;
                 cnt = 0;
                 
                 stack_cnt = BOUND_N_SPLIT_WORK_GROUP_SIZE;
@@ -176,7 +179,7 @@ void bound_n_split(const global float4* patch_buffer,
         barrier(CLK_LOCAL_MEM_FENCE);
 
         if (cnt == 0 && stack_cnt == 0) {
-            return; // Global exit test
+            return; // Global exit condition
         }
 
         if (lid < cnt) {
@@ -204,9 +207,9 @@ void bound_n_split(const global float4* patch_buffer,
         // Move bounded ranges to output buffer
         int sum = prefix_sum(lid, BOUND_N_SPLIT_WORK_GROUP_SIZE, (bound_flags & 1) >> 0, prefix_pad);
 
-        if (lid + 1 == BOUND_N_SPLIT_WORK_GROUP_SIZE) {
+        if (lid == BOUND_N_SPLIT_WORK_GROUP_SIZE - 1) {
             cnt = sum;
-            start = atomic_add(out_range_count, cnt) - 1;
+            start = atomic_add(out_range_cnt, cnt) - 1;
             #warning handle overflow
         }
 
@@ -221,7 +224,7 @@ void bound_n_split(const global float4* patch_buffer,
         // Perform split
         sum = prefix_sum(lid, BOUND_N_SPLIT_WORK_GROUP_SIZE, (bound_flags & 2) >> 1, prefix_pad);
 
-        if (lid + 1 == BOUND_N_SPLIT_WORK_GROUP_SIZE) {
+        if (lid == BOUND_N_SPLIT_WORK_GROUP_SIZE - 1) {
             cnt = sum;
             start = stack_height - 2;
             stack_height += cnt + 2;
@@ -267,11 +270,14 @@ kernel __attribute__((reqd_work_group_size(BOUND_N_SPLIT_WORK_GROUP_SIZE, 1,1)))
 void init_range_buffers(global int* pids,
                         global float2* mins,
                         global float2* maxs,
-                        int range_count)
+                        int patch_count)
 {
-    const int gid = get_local_id(0);
+    const int gid = get_global_id(0);
 
-    if (gid < range_count) {
+    if (gid == 0) {
+    }        
+
+    if (gid < patch_count) {
         pids[gid] = gid;
         mins[gid] = (float2)(0,0);
         maxs[gid] = (float2)(1,1);
@@ -279,4 +285,30 @@ void init_range_buffers(global int* pids,
 }
 
 
+kernel __attribute__((reqd_work_group_size(1,1,1)))
+void init_flag_buffers(global projection* P,
+                       global int* in_range_cnt,
+                       global int* out_range_cnt,
+                       
+                       matrix4 proj,
+                       matrix2 screen_matrix,
+                       float fovy,
+                       float2 f,
+                       float near,
+                       float far,
+                       int2 screen_size,
 
+                       int patch_count)
+{
+    P->proj = proj;
+    P->screen_matrix = screen_matrix;
+    P->fovy = fovy;
+    P->f = f;
+    P->near = near;
+    P->far = far;
+    P->screen_size = screen_size;
+    
+    *in_range_cnt  = 32;
+    *out_range_cnt = 0;
+}
+                       

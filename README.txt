@@ -69,6 +69,7 @@ MMB+drag moves the camera on the eye plane
 RMB+drag rotates the camera along the z axis
 PGUP/PGDOWN controls target patch size for Bound&Split algorithm
 F3 toggles wireframe mode
+F9 dumps a trace file which can be visualized using tools/show_trace.sh
 
 You can configure the program by modifying the options.txt
 configuration file. The file is pretty well-documented.
@@ -92,12 +93,6 @@ disable_buffer_sharing:
     shared and copying from OpenCL to OpenGL has to go through host
     memory. This takes extra time.
 
-create_trace:
-    Creates a reyes.trace trace file if true.
-    This can then be used to visualize the timing of the individual
-    render steps in the OpenCL rasterizer. You can do this by calling
-    > tools/show_trace.sh reyes.trace
-    This will create a PDF using pycairo and show it with Evince.
 
 reyes_patches_per_pass:
     Sets how many sub-patches are diced and rasterized at once. Larger

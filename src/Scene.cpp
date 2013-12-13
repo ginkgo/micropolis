@@ -69,9 +69,9 @@ Reyes::Scene::Scene (const string& filename) :
         Camera* camera =
             new Camera{c.getName(),
                        transformToMatrix(c.getTransform()),
-                       shared_ptr<Projection>(new PerspectiveProjection(c.getFovy(),
-                                                                        c.getNear(),
-                                                                        config.window_size()))};
+                       shared_ptr<Projection>(new Projection(c.getFovy(),
+                                                             c.getNear(),
+                                                             config.window_size()))};
         cameras.push_back(shared_ptr<Camera>(camera));
     }
 

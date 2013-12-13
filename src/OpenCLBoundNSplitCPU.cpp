@@ -6,9 +6,6 @@
 #include "Statistics.h"
 
 
-using namespace Reyes;
-
-
 
 Reyes::OpenCLBoundNSplitCPU::OpenCLBoundNSplitCPU(CL::Device& device,
                                                   CL::CommandQueue& queue,
@@ -23,15 +20,6 @@ Reyes::OpenCLBoundNSplitCPU::OpenCLBoundNSplitCPU(CL::Device& device,
     _patch_index->enable_retain_vector();
     _patch_index->enable_load_opencl_buffer(device, queue);
 
-    // _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
-    // _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", 64);
-    // _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", config.bound_sample_rate());
-    // _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
-    // _bound_n_split_program.set_constant("BATCH_SIZE", config.reyes_patches_per_pass());
-    
-    // _bound_n_split_program.compile(device, "bound_n_split.cl");
-    // shared_ptr<CL::Kernel> _bound_n_split_kernel;
-    // _bound_n_split_kernel.reset(_bound_n_split_program.get_kernel("bound_n_split"));
 
     for (int i : irange(0, config.bns_pipeline_length())) {
         _batch_records.emplace_back(config.reyes_patches_per_pass(), device, queue);
@@ -81,7 +69,7 @@ void Reyes::OpenCLBoundNSplitCPU::finish()
 }
 
 
-Batch Reyes::OpenCLBoundNSplitCPU::do_bound_n_split(CL::Event& ready)
+Reyes::Batch Reyes::OpenCLBoundNSplitCPU::do_bound_n_split(CL::Event& ready)
 {
     size_t ring_size = config.bns_pipeline_length(); // Size of batch buffer ring
 

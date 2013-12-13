@@ -1,5 +1,6 @@
 // Size of the window in pixels.
 window_size = 1024 768
+// window_size = 512 384
 
 // Number of anti-aliasing samples. (0 means no AA)
 fsaa_samples = 0
@@ -20,7 +21,7 @@ kernel_dir = kernels
 max_anisotropy = 1
 
 // OpenCL platform ID.
-platform_id = 0
+platform_id = 1
 
 // OpenCL device ID.
 device_id = 0

@@ -1,16 +1,21 @@
 
 TODO:
 
+* Get rid of Projection subclasses
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
+* Replace "CL/OpenCL.h" includes with direct includes to necessary classes.
 * Implement Gregory patches (+Blender export script for catmull-clark)
 * Write polygon size estimation shader
 * Implement dynamic-rate dicing
 * Switch readme to markdown/textile or something like that
 * Add SCons build dir and config-option
 * Make CL::TransferBuffer use pinned memory again
+* Add config options to dump trace and exit app after N frames
+  * for scripted performance measurement
+* Automatically resize scratch-buffer for input buffers in OpenCLBoundNSplitLocal
 
-* Make use of
+* Make more use of
   * __attribute__((work_group_size_hint(X,Y,Z)))
   * __attribute__((reqd_work_group_size(X,Y,Z)))
 

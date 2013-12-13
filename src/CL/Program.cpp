@@ -108,7 +108,7 @@ namespace {
 
         cl_device_id dev = device.get_device();
 
-        string flags = "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable";
+        string flags = "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable -g";
         flags += " -I"+config.kernel_dir();
 
         
