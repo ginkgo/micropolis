@@ -40,10 +40,14 @@ bool outside_frustum(float3 pmin, float3 pmax, constant const projection* P)
 // B ... split
 // C ... split direction, 0=horizontal 1=vertical
 #define RES BOUND_SAMPLE_RATE
+#define CULL 0
+#define DRAW 1
+#define HSPLIT 2
+#define VSPLIT 6
 char bound(const global float4* patch_buffer,
            int rpid, float2 rmin, float2 rmax, int rdepth,
-           constant const matrix4* mv, constant const projection* P, float split_limit)
-{    
+           private const matrix4* mv, constant const projection* P, float split_limit)
+{   
     // Calculate bounding box and max u/v length of patch 
     float2 ppos[RES][RES];
     
@@ -55,7 +59,7 @@ char bound(const global float4* patch_buffer,
             float2 uv = mix(rmin, rmax, (float2)(u * (1.0f / (RES-1)), v * (1.0f / (RES-1))));
 
             float4 p = eval_patch(patch_buffer, rpid, uv);
-            p = mul_cm4v4(mv, p);
+            p = mul_pm4v4(mv, p);
 
             bbox_min = min(bbox_min, p.xyz);
             bbox_max = max(bbox_max, p.xyz);
@@ -68,20 +72,20 @@ char bound(const global float4* patch_buffer,
     bool vsplit = false;
     
     if (outside_frustum(bbox_min, bbox_max, P)) {
-        return 0; // CULL
+        return CULL;
     } else if (bbox_min.z < 0 && bbox_max.z > 0) {
-        if (rdepth >= MAX_SPLIT_DEPTH) {
-            return 0; // CULL
+        if (rdepth >= MAX_SPLIT_DEPTH-1) {
+            return CULL;
         } else {
             // Pick split direction from parameter space
-            vsplit = (rmax.x - rmin.x) < (rmax.y - rmin.y);
+            return ((rmax.x - rmin.x) < (rmax.y - rmin.y)) ? VSPLIT : HSPLIT;
         } 
     } else {
 
         float hlen=0, vlen=0;
         for (size_t i = 0; i < RES; ++i) {
             float h = 0, v = 0;
-            for (size_t j = 0; j < RES; ++j) {
+            for (size_t j = 0; j < RES-1; ++j) {
                 h += distance(ppos[i][j], ppos[i][j+1]);
                 v += distance(ppos[j][i], ppos[j+1][i]);
             }
@@ -91,16 +95,16 @@ char bound(const global float4* patch_buffer,
         }
 
         if (hlen <= split_limit && vlen <= split_limit) {
-            return 1; // DRAW
-        } else if (rdepth >= MAX_SPLIT_DEPTH-2) {
+            return DRAW;
+        } else if (rdepth >= MAX_SPLIT_DEPTH-1) {
             // Max split depth reached
-            return 0; // CULL
+            return CULL;
         } else {
-            vsplit = hlen < vlen;
+            return (hlen > vlen) ? VSPLIT : HSPLIT;
         }
     }
-    
-    return 2 & (vsplit ? 3 : 0); // SPLIT
+
+    // unreachable
 }
 
 
@@ -120,7 +124,8 @@ void bound_n_split(const global float4* patch_buffer,
                    volatile global int* out_range_cnt,
 
                    matrix4 modelview,
-                   constant const projection* proj)
+                   constant const projection* proj,
+                   float split_limit)
 {
     const size_t lid = get_local_id(0);
 
@@ -131,11 +136,10 @@ void bound_n_split(const global float4* patch_buffer,
 
     // local stack
     local int stack_height;
-    local int pid_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * (MAX_SPLIT_DEPTH + 1)];
-    local int depth_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * (MAX_SPLIT_DEPTH + 1)];
-    local float2 min_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * (MAX_SPLIT_DEPTH + 1)];
-    local float2 max_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * (MAX_SPLIT_DEPTH + 1)];
-
+    local int pid_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
+    local int depth_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
+    local float2 min_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
+    local float2 max_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
     
     // pad for prefix sum
     local int prefix_pad[BOUND_N_SPLIT_WORK_GROUP_SIZE];
@@ -153,16 +157,27 @@ void bound_n_split(const global float4* patch_buffer,
         top = 42;
         cnt = 0;
     }
+
+    for (int i = 0; i < MAX_SPLIT_DEPTH; ++i) {
+        depth_stack[lid + i * MAX_SPLIT_DEPTH] = -42;
+        pid_stack[lid + i * MAX_SPLIT_DEPTH] = -42;
+        
+        min_stack[lid + i * MAX_SPLIT_DEPTH] = (float2)(42,42);
+        max_stack[lid + i * MAX_SPLIT_DEPTH] = (float2)(42,42);
+    }
+    
     barrier(CLK_LOCAL_MEM_FENCE);
 
     
     while (1) {
         // Load range elements (source from stack first and fall back to input buffer if necessary)
         if (lid == 0) {
-            if (stack_height < BOUND_N_SPLIT_WORK_GROUP_SIZE) {
-                top = atomic_sub(in_range_cnt, BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height);
+            if (stack_height < 4) {
+                cnt = min(BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height, 1);
+                
+                top = atomic_sub(in_range_cnt, cnt);
 
-                cnt = min(BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height, max(0, top));
+                cnt = min(cnt, max(0, top));
                 start = top - cnt;
                 
                 stack_cnt = min(stack_height, BOUND_N_SPLIT_WORK_GROUP_SIZE - cnt);
@@ -171,7 +186,7 @@ void bound_n_split(const global float4* patch_buffer,
                 start = 0;
                 cnt = 0;
                 
-                stack_cnt = BOUND_N_SPLIT_WORK_GROUP_SIZE;
+                stack_cnt = min(stack_height, BOUND_N_SPLIT_WORK_GROUP_SIZE);
                 stack_height -= stack_cnt;
             }
         }
@@ -201,13 +216,15 @@ void bound_n_split(const global float4* patch_buffer,
         char bound_flags = 0;
 
         if (occupied) {
-            bound_flags = 1; //bound(patch_buffer, rpid, rmin, rmax);
+            bound_flags = bound(patch_buffer, rpid, rmin, rmax, rdepth,
+                                &modelview, proj, split_limit);
         }
 
         // Move bounded ranges to output buffer
         int sum = prefix_sum(lid, BOUND_N_SPLIT_WORK_GROUP_SIZE, (bound_flags & 1) >> 0, prefix_pad);
 
         if (lid == BOUND_N_SPLIT_WORK_GROUP_SIZE - 1) {
+
             cnt = sum;
             start = atomic_add(out_range_cnt, cnt) - 1;
             #warning handle overflow
@@ -225,14 +242,18 @@ void bound_n_split(const global float4* patch_buffer,
         sum = prefix_sum(lid, BOUND_N_SPLIT_WORK_GROUP_SIZE, (bound_flags & 2) >> 1, prefix_pad);
 
         if (lid == BOUND_N_SPLIT_WORK_GROUP_SIZE - 1) {
+
             cnt = sum;
             start = stack_height - 2;
-            stack_height += cnt + 2;
+            stack_height += cnt * 2;
+
+            // printf("start:%d, cnt:%d\n", start, cnt);
+            // printf("depth:%d\n", rdepth);
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
-        if ((bound_flags & 2) != 0) {
+        if (bound_flags & 2) {
             depth_stack[start + sum * 2 + 0] = rdepth+1;
             pid_stack  [start + sum * 2 + 0] = rpid;
             
@@ -259,8 +280,9 @@ void bound_n_split(const global float4* patch_buffer,
             }
         }
 
+        barrier(CLK_LOCAL_MEM_FENCE);
+
     }
-    
     
 }
                   
@@ -308,7 +330,7 @@ void init_flag_buffers(global projection* P,
     P->far = far;
     P->screen_size = screen_size;
     
-    *in_range_cnt  = 32;
+    *in_range_cnt  = patch_count;
     *out_range_cnt = 0;
 }
                        

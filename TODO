@@ -1,9 +1,20 @@
 
 TODO:
 
-* Get rid of Projection subclasses
-* GPU-based Bound&Split for OpenCL Renderer
-  * Keep CPU-version available for comparison
+* Read Anjul's scheduling paper!
+* Fix buffer-overflow handling for local bns kernel.
+* Make number of work groups in local bound-n-split kernel configurable
+* Debug regression with Intel rasterizer black pixels
+  * Only happens in debug build
+  * Same thing happens in AMD CPU backend
+* Investigate Intel vectorization problems in bound_n_split kernel
+  * Maybe there's Intel tools that help with finding vectorization problems?
+* Improve pipelining of local Bound&Split calculation
+  * Thread over items
+  * Implement Multipass variant
+* Handle output buffer in overflow properly
+* Clean up Projection class
+  * Only update when necessary
 * Replace "CL/OpenCL.h" includes with direct includes to necessary classes.
 * Implement Gregory patches (+Blender export script for catmull-clark)
 * Write polygon size estimation shader
@@ -25,6 +36,7 @@ TODO:
   * (Colored) vertical lines for orientation?
   * Time markers on scale
   * Make paper size adapt to trace-length
+  * Method for combining commands into single one
 
 * Debug weird trace behavior where patch-range transfer seem to happen after depending dice/shade/sample
 * Create command-dependency graph dump (In DOT format)
@@ -34,8 +46,6 @@ TODO:
 
 * Read:
   * 'Fast GPU-based Adaptive Tessellation with CUDA'
-  * 'Fragment-Parallel Composite and Filter'
-  * '3D Rasterization: A Bridge between Rasterization and Ray Casting'
   * 'Task Management for Irregular-Parallel Workloads on the GPU'
 
 * Shader system
@@ -52,6 +62,8 @@ TODO:
 
 DONE:
 
+* GPU-based Bound&Split for OpenCL Renderer
+  * Keep CPU-version available for comparison
 * Make type of Bound&Split method configurable (CPU,LOCAL,ITERATIVE (pick better names))
   * Chose CPU, MULTIPASS, LOCAL
 * Avoid Bound&Split stalls
@@ -96,4 +108,7 @@ DONE:
   * Read "Rapid Evaluation of Catmull-Clark Subdivision Surfaces"
   * Read "Approximating Catmull-clark Subdivision Surfaces with Bicubic Patches"
     Loop & Schaefer
+* Read:
+  * '3D Rasterization: A Bridge between Rasterization and Ray Casting'
+  * 'Fragment-Parallel Composite and Filter'
 

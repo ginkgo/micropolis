@@ -84,32 +84,32 @@ typedef struct matrix4
 
 float2 mul_cm2v2(constant const struct matrix2* mat, float2 vec)
 {
-    return (float2) (dot(mat->m[0], vec),
-                     dot(mat->m[1], vec));
+    return (mat->m[0] * vec.x +
+            mat->m[1] * vec.y );
 }
 
 float4 mul_cm4v4(constant const struct matrix4* mat, float4 vec)
 {
-    return (float4) (dot(mat->m[0], vec),
-                     dot(mat->m[1], vec),
-                     dot(mat->m[2], vec),
-                     dot(mat->m[3], vec));
+    return (mat->m[0] * vec.x +
+            mat->m[1] * vec.y +
+            mat->m[2] * vec.z +
+            mat->m[3] * vec.w );
 }
 
 
 
 float2 mul_pm2v2(private const struct matrix2* mat, float2 vec)
 {
-    return (float2) (dot(mat->m[0], vec),
-                     dot(mat->m[1], vec));
+    return (mat->m[0] * vec.x +
+            mat->m[1] * vec.y );
 }
 
 float4 mul_pm4v4(private const struct matrix4* mat, float4 vec)
 {
-    return (float4) (dot(mat->m[0], vec),
-                     dot(mat->m[1], vec),
-                     dot(mat->m[2], vec),
-                     dot(mat->m[3], vec));
+    return (mat->m[0] * vec.x +
+            mat->m[1] * vec.y +
+            mat->m[2] * vec.z +
+            mat->m[3] * vec.w );
 }
 
 

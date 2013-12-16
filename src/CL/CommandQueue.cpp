@@ -14,7 +14,7 @@ CL::CommandQueue::CommandQueue(Device& device, const string& name)
 {
     cl_int status;
     _queue = clCreateCommandQueue(device.get_context(), device.get_device(),
-                                  CL_QUEUE_PROFILING_ENABLE  | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, 
+                                  CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, 
                                   &status);
 
     OPENCL_ASSERT(status);

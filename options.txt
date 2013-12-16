@@ -1,6 +1,5 @@
 // Size of the window in pixels.
 window_size = 1024 768
-// window_size = 512 384
 
 // Number of anti-aliasing samples. (0 means no AA)
 fsaa_samples = 0
@@ -21,7 +20,7 @@ kernel_dir = kernels
 max_anisotropy = 1
 
 // OpenCL platform ID.
-platform_id = 1
+platform_id = 0
 
 // OpenCL device ID.
 device_id = 0
@@ -29,7 +28,7 @@ device_id = 0
 // 0...(Almost) no output
 // 1...Regular performance information and warnings posted
 // 2...Lots of information posted, can be detrimental to render performance
-verbosity_level = 0
+verbosity_level = 1
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
 disable_buffer_sharing = false
@@ -38,14 +37,14 @@ disable_buffer_sharing = false
 reyes_patch_size = 8
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 10
+bound_n_split_limit = 8
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
 reyes_patches_per_pass = 2048
 
 // Maximum number of times a surface patch can be split.
-max_split_depth = 15
+max_split_depth = 20
 
 // Width of the work-group for the dicing kernel.
 dice_group_width = 8
@@ -60,7 +59,7 @@ clear_color = 0.1 0.2 1 0
 input_file = mscene/teapots.mscene
 
 // Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
-dump_kernel_files = false
+dump_kernel_files = true
 
 // Target file for writing OpenCL trace to.
 trace_file = reyes.trace
@@ -72,7 +71,7 @@ backface_culling = true
 do_event_polling = true
 
 // Number of patch buffers used for transferring patch data to device.
-bns_pipeline_length = 8
+bns_pipeline_length = 4
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
 bound_n_split_method = LOCAL
@@ -97,4 +96,4 @@ cull_ribbon = 32
 
 
 
-#hash:3138481978145793863
+#hash:1235830800135106654

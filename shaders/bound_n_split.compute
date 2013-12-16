@@ -83,7 +83,7 @@ vec3 eval_patch(vec2 t, int patch_id)
     vec2 s = 1 - t;
 
     mat4 B = outerProduct(vec4(s.x*s.x*s.x, 3*s.x*s.x*t.x, 3*s.x*t.x*t.x, t.x*t.x*t.x),
-                          vec4(s.y*s.y*s.y, 3*s.y*s.y*t.y, 3*s.y*t.y*t.y, t.y*t.y*t.y));                          
+                          vec4(s.y*s.y*s.y, 3*s.y*s.y*t.y, 3*s.y*t.y*t.y, t.y*t.y*t.y));
     
     vec3 sum = vec3(0,0,0);
     for (int u = 0; u < 4; ++u) {
@@ -186,13 +186,10 @@ void main (void)
     
     vec3 pmin = vec3( infinity);
     vec3 pmax = vec3(-infinity);
-    // vec3 ppmin = vec3( infinity);
-    // vec3 ppmax = vec3(-infinity);
 
-    vec3 ppos[4][4];
+    vec2 ppos[4][4];
     
     for (int v = 0; v < 4; ++v) {
-        int zrc = 0;
         for (int u = 0; u < 4; ++u) {
             vec2 lt = vec2(u / 3.0, v / 3.0);
             vec4 p = mv * vec4(eval_patch(mix(rmin,rmax,lt), int(rpid)),1);
@@ -202,14 +199,8 @@ void main (void)
             
             vec4 pp = proj * p;
 
-            zrc = ((p.z <= 0) ? 1 : 0);
-
-            ppos[v][u] = screen_matrix * (pp.xyz / pp.w);
-
-            // ppmin = min(ppos[v][u], ppmin);
-            // ppmax = max(ppos[v][u], ppmax);
+            ppos[v][u] = mat2(screen_matrix) * (pp.xy / pp.w);
         }
-
     }
 
     uvec2 flag;
@@ -233,8 +224,8 @@ void main (void)
             float ht = 0;
             float vt = 0;
             for (int j = 0; j < 3; ++j) {
-                ht += distance(ppos[i][j].xy, ppos[i][j+1].xy);
-                vt += distance(ppos[j][i].xy, ppos[j+1][i].xy);
+                ht += distance(ppos[i][j].xy, ppos[i][j+1]);
+                vt += distance(ppos[j][i].xy, ppos[j+1][i]);
             }
             
             hlen = max(ht, hlen);

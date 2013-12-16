@@ -108,8 +108,12 @@ namespace {
 
         cl_device_id dev = device.get_device();
 
-        string flags = "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable -g";
+        string flags = "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable";
         flags += " -I"+config.kernel_dir();
+
+#ifdef DEBUG_OPENCL
+        flags += " -g";
+#endif
 
         
         status = clBuildProgram(program, 1, &dev, flags.c_str(), NULL, NULL);

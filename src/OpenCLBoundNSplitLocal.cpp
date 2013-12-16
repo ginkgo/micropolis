@@ -33,7 +33,7 @@ Reyes::OpenCLBoundNSplitLocal::OpenCLBoundNSplitLocal(CL::Device& device,
     , _out_pids_buffer(device, BATCH_SIZE * sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
     , _out_mins_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
     , _out_maxs_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _out_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
+    , _out_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY)
 
     , _projection_buffer(device, queue, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
 {
@@ -113,10 +113,22 @@ Reyes::Batch Reyes::OpenCLBoundNSplitLocal::do_bound_n_split(CL::Event& ready)
     _bound_n_split_kernel->set_args(*_active_patch_buffer,
                                     _in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,
                                     _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _out_range_cnt_buffer,
-                                    _active_matrix, _projection_buffer);
-    _ready = _queue.enq_kernel(*_bound_n_split_kernel, 64, 64, "bound & split", _ready);
+                                    _active_matrix, _projection_buffer,
+                                    config.bound_n_split_limit());
+    _ready = _queue.enq_kernel(*_bound_n_split_kernel, 64 * 32, 64, "bound & split", _ready | ready);
 
-    _active_handle = nullptr;
+    int out_range_cnt;
+
+    _ready = _queue.enq_read_buffer(_out_range_cnt_buffer, &out_range_cnt, sizeof(out_range_cnt), "read patch count", _ready);
     
-    return {patch_count, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, ready | _ready};
+    _queue.flush();
+    _queue.wait_for_events(_ready);
+    _ready = CL::Event();
+    
+    _active_handle = nullptr;
+
+    // TODO: Handle this properly
+    out_range_cnt = std::min((int)BATCH_SIZE, out_range_cnt);
+    
+    return {(size_t)out_range_cnt, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }

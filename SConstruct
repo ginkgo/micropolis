@@ -5,9 +5,9 @@ warning_flags = ['-Wall', '-Wno-unknown-pragmas', '-Wno-unused-variable', '-Wno-
 optimization_flags = ['-O3', '-msse4']
 defines = ['linux', 'NDEBUG']
 
-if True:
+if False:
     optimization_flags = ['-O0', '-ggdb']
-    defines = ['linux']
+    defines = ['linux', 'DEBUG_OPENCL']
 
 env['CPPPATH'] = ['#/external', '#/generated', '#src']
 env['LINK'] = 'g++'
