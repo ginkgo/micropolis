@@ -87,53 +87,8 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 
     return _parent_device.insert_event(name, _name, e);
 }
 
-CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t len, size_t offset,
-                                             const string& name, const CL::Event& events)
-{
-        
-    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
-    cl_event e;
-
-    cl_int status;
-
-    status = clEnqueueWriteBuffer(_queue, buffer.get(), CL_FALSE, 
-                                  offset, len, src,
-                                  cnt, _event_pad_ptr, &e);
-
-    //cout << name << endl;
-    OPENCL_ASSERT(status);
-
-    return _parent_device.insert_event(name, _name, e);
-}
-
-CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t len,
-                                             const string& name, const CL::Event& events)
-{
-    return enq_write_buffer(buffer, src, len, 0, name, events);
-}
-
-CL::Event CL::CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t len, size_t offset,
-                                            const string& name, const CL::Event& events)
-{
-    cl_int status;
-        
-    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
-    cl_event e;
-
-    status = clEnqueueReadBuffer(_queue, buffer.get(), CL_FALSE, 
-                                 offset, len, src, cnt, _event_pad_ptr, &e);
-
-    OPENCL_ASSERT(status);
-
-    return _parent_device.insert_event(name, _name, e);
-}
 
 
-CL::Event CL::CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t len,
-                                            const string& name, const CL::Event& events)
-{
-    return enq_read_buffer(buffer, src, len, 0, name, events);
-}
 
 void CL::CommandQueue::finish()
 {
@@ -203,21 +158,103 @@ CL::Event CL::CommandQueue::enq_GL_release(cl_mem mem, const string& name, const
     return _parent_device.insert_event(name, _name, e);
 }
 
-void* CL::CommandQueue::map_buffer(Buffer& buffer)
+
+
+
+void CL::CommandQueue::map_buffer(TransferBuffer& buffer, cl_map_flags map_flags,
+                                  const string& name, const Event& events)
 {
-    cl_int status;
-
-    void* mapped = clEnqueueMapBuffer(_queue, buffer.get(), CL_TRUE, CL_MAP_READ,
-                                      0, buffer.get_size(), 0, 0, 0,
-                                      &status);
-    OPENCL_ASSERT(status);
-
-    return mapped;
+    enq_map_buffer(buffer, map_flags, name, events, true);
 }
 
-void CL::CommandQueue::unmap_buffer(Buffer& buffer, void* mapped)
+
+CL::Event CL::CommandQueue::enq_map_buffer(TransferBuffer& buffer, cl_map_flags map_flags,
+                                           const string& name, const Event& events, bool blocking)
 {
-    cl_int status = clEnqueueUnmapMemObject(_queue, buffer.get(), mapped, 
-                                            0, NULL, NULL);
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
+    cl_event e;
+    cl_int status;
+
+    void* mapped = clEnqueueMapBuffer(_queue, buffer.get(),
+                                      blocking ? CL_TRUE : CL_FALSE, map_flags,
+                                      0, buffer.get_size(),
+                                      cnt, _event_pad_ptr, &e,
+                                      &status);
+
     OPENCL_ASSERT(status);
+
+    buffer.set_host_ptr(mapped);
+
+    return _parent_device.insert_event(name, _name, e);
+}
+
+
+CL::Event CL::CommandQueue::enq_unmap_buffer(TransferBuffer& buffer, 
+                                             const string& name, const Event& events)
+{
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
+    cl_event e;
+
+    cl_int status = clEnqueueUnmapMemObject(_queue, buffer.get(), buffer.void_ptr(), 
+                                            cnt, _event_pad_ptr, &e);
+    OPENCL_ASSERT(status);
+
+    buffer.set_host_ptr(nullptr);
+    
+    return _parent_device.insert_event(name, _name, e);
+}
+
+
+
+
+CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t len, size_t offset,
+                                             const string& name, const CL::Event& events)
+{
+        
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
+    cl_event e;
+
+    cl_int status;
+
+    status = clEnqueueWriteBuffer(_queue, buffer.get(), CL_FALSE, 
+                                  offset, len, src,
+                                  cnt, _event_pad_ptr, &e);
+
+    //cout << name << endl;
+    OPENCL_ASSERT(status);
+
+    return _parent_device.insert_event(name, _name, e);
+}
+
+
+CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t len,
+                                             const string& name, const CL::Event& events)
+{
+    return enq_write_buffer(buffer, src, len, 0, name, events);
+}
+
+
+
+
+CL::Event CL::CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t len, size_t offset,
+                                            const string& name, const CL::Event& events)
+{
+    cl_int status;
+        
+    size_t cnt = _parent_device.setup_event_pad(events, _event_pad, _event_pad_ptr);
+    cl_event e;
+
+    status = clEnqueueReadBuffer(_queue, buffer.get(), CL_FALSE, 
+                                 offset, len, src, cnt, _event_pad_ptr, &e);
+
+    OPENCL_ASSERT(status);
+
+    return _parent_device.insert_event(name, _name, e);
+}
+
+
+CL::Event CL::CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t len,
+                                            const string& name, const CL::Event& events)
+{
+    return enq_read_buffer(buffer, src, len, 0, name, events);
 }

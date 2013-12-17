@@ -16,6 +16,7 @@ namespace CL
     class Device;
     class Event;
     class Buffer;
+    class TransferBuffer;
 
     class CommandQueue : public noncopyable
     {
@@ -45,15 +46,16 @@ namespace CL
         Event enq_GL_release(cl_mem buffer,
                              const string& name, const Event& events);
 
-        void* map_buffer  (Buffer& buffer);
-        void  unmap_buffer(Buffer& buffer, void* mapped);
-
+        void  map_buffer   (TransferBuffer& buffer, cl_map_flags map_flags, const string& name, const Event& events);
+        Event enq_map_buffer   (TransferBuffer& buffer, cl_map_flags map_flags, const string& name, const Event& events, bool blocking=false);
+        Event enq_unmap_buffer (TransferBuffer& buffer, const string& name, const Event& events);
+        
         Event enq_write_buffer(Buffer& buffer, void* src, size_t length, size_t offset,
                                const string& name, const Event& events);
-        Event enq_read_buffer (Buffer& buffer, void* dst, size_t length, size_t offset,
-                               const string& name, const Event& events);
-
         Event enq_write_buffer(Buffer& buffer, void* src, size_t length,
+                               const string& name, const Event& events);
+        
+        Event enq_read_buffer (Buffer& buffer, void* dst, size_t length, size_t offset,
                                const string& name, const Event& events);
         Event enq_read_buffer (Buffer& buffer, void* dst, size_t length,
                                const string& name, const Event& events);

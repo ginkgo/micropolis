@@ -12,7 +12,6 @@ TODO:
 * Improve pipelining of local Bound&Split calculation
   * Thread over items
   * Implement Multipass variant
-* Handle output buffer in overflow properly
 * Clean up Projection class
   * Only update when necessary
 * Replace "CL/OpenCL.h" includes with direct includes to necessary classes.
@@ -21,10 +20,9 @@ TODO:
 * Implement dynamic-rate dicing
 * Switch readme to markdown/textile or something like that
 * Add SCons build dir and config-option
-* Make CL::TransferBuffer use pinned memory again
 * Add config options to dump trace and exit app after N frames
   * for scripted performance measurement
-* Automatically resize scratch-buffer for input buffers in OpenCLBoundNSplitLocal
+  * also dump options and build version
 
 * Make more use of
   * __attribute__((work_group_size_hint(X,Y,Z)))
@@ -39,6 +37,7 @@ TODO:
   * Method for combining commands into single one
 
 * Debug weird trace behavior where patch-range transfer seem to happen after depending dice/shade/sample
+* Find out about ~2ms extra latency when creating framebuffers >800x600
 * Create command-dependency graph dump (In DOT format)
 
 * Find source for FPS-counter/trace time discrepancy
@@ -54,7 +53,7 @@ TODO:
 
 * Use GL sync objects once available
 
-* Consider switching to (multisampled?) ImageBuffers for framebuffer
+* Consider switching to ImageBuffers for framebuffer
 * Implement multisampling
 * Implement stochastic rasterization
 
@@ -62,6 +61,9 @@ TODO:
 
 DONE:
 
+* Automatically resize scratch-buffer for input buffers in OpenCLBoundNSplitLocal
+* Make CL::TransferBuffer use pinned memory again
+* Handle output buffer in overflow properly
 * GPU-based Bound&Split for OpenCL Renderer
   * Keep CPU-version available for comparison
 * Make type of Bound&Split method configurable (CPU,LOCAL,ITERATIVE (pick better names))

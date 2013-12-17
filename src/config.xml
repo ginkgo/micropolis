@@ -21,7 +21,7 @@
   </include>
 
   <enums>
-    <enum name="PatchBufferMode">
+    <enum name="TransferBufferMode">
       <element name="UNPINNED"/>
       <element name="PINNED"/>
     </enum>
@@ -151,8 +151,8 @@
       Number of samples per side for doing calculating patch range bound.
     </value>
 
-    <value name="patch_buffer_mode" type="PatchBufferMode" default="PINNED">
-      Allocation method of patch buffers. Either PINNED or UNPINNED.
+    <value name="transfer_buffer_mode" type="TransferBufferMode" default="PINNED">
+      Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
       PINNED should be a lot faster.
     </value>
 

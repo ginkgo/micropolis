@@ -34,14 +34,14 @@ verbosity_level = 1
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 8
+reyes_patch_size = 16
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 8
+bound_n_split_limit = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 2048
+reyes_patches_per_pass = 4096
 
 // Maximum number of times a surface patch can be split.
 max_split_depth = 20
@@ -74,14 +74,14 @@ do_event_polling = true
 bns_pipeline_length = 4
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = LOCAL
+bound_n_split_method = CPU
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
 
-// Allocation method of patch buffers. Either PINNED or UNPINNED.
+// Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
 // PINNED should be a lot faster.
-patch_buffer_mode = PINNED
+transfer_buffer_mode = PINNED
 
 // Defines which renderer implementation to use.
 // Either OPENCL or GLTESS.
@@ -96,4 +96,4 @@ cull_ribbon = 32
 
 
 
-#hash:1235830800135106654
+#hash:4519864379331016621

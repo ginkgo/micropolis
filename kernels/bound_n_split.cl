@@ -172,8 +172,8 @@ void bound_n_split(const global float4* patch_buffer,
     while (1) {
         // Load range elements (source from stack first and fall back to input buffer if necessary)
         if (lid == 0) {
-            if (stack_height < 4) {
-                cnt = min(BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height, 1);
+            if (stack_height < BOUND_N_SPLIT_WORK_GROUP_SIZE) {
+                cnt = min(BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height, BOUND_N_SPLIT_WORK_GROUP_SIZE);
                 
                 top = atomic_sub(in_range_cnt, cnt);
 

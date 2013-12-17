@@ -86,9 +86,9 @@ Reyes::Batch Reyes::OpenCLBoundNSplitCPU::do_bound_n_split(CL::Event& ready)
     const vector<BezierPatch>& patches = _patch_index->get_patch_vector(_active_handle);
     
     size_t patch_count = 0;
-    int*  pids = (int* )record.patch_ids.host_ptr();
-    vec2* mins = (vec2*)record.patch_min.host_ptr();
-    vec2* maxs = (vec2*)record.patch_max.host_ptr();
+    int*  pids = record.patch_ids.host_ptr<int>();
+    vec2* mins = record.patch_min.host_ptr<vec2>();
+    vec2* maxs = record.patch_max.host_ptr<vec2>();
     
     BBox box;
     float vlen, hlen;
@@ -149,9 +149,9 @@ Reyes::Batch Reyes::OpenCLBoundNSplitCPU::do_bound_n_split(CL::Event& ready)
 
 Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(size_t batch_size, CL::Device& device, CL::CommandQueue& queue)
     : status(INACTIVE)
-    , patch_ids(device, queue, batch_size * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
-    , patch_min(device, queue, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
-    , patch_max(device, queue, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , patch_ids(device, batch_size * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , patch_min(device, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , patch_max(device, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
     , transferred()
     , rasterizer_done()
 {
@@ -160,13 +160,14 @@ Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(size_t batch_size, CL::Dev
 
 
 Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(BatchRecord&& other)
+    : status(std::move(other.status))
+    , patch_ids(std::move(other.patch_ids))
+    , patch_min(std::move(other.patch_min))
+    , patch_max(std::move(other.patch_max))
+    , transferred(std::move(other.transferred))
+    , rasterizer_done(std::move(other.rasterizer_done))
 {
-    status = std::move(other.status);
-    patch_ids = std::move(other.patch_ids);
-    patch_min = std::move(other.patch_max);
-    patch_max = std::move(other.patch_min);
-    transferred = other.transferred;
-    rasterizer_done = other.rasterizer_done;
+    
 }
 
 
@@ -175,9 +176,9 @@ void Reyes::OpenCLBoundNSplitCPU::BatchRecord::transfer(CL::CommandQueue& queue,
     CL::Event a,b,c;
 
     if (patch_count > 0) {
-        a = queue.enq_write_buffer(patch_ids, patch_ids.host_ptr(), patch_count * sizeof(int), "write patch ids" , CL::Event());
-        b = queue.enq_write_buffer(patch_min, patch_min.host_ptr(), patch_count * sizeof(vec2), "write patch mins", CL::Event());
-        c = queue.enq_write_buffer(patch_max, patch_max.host_ptr(), patch_count * sizeof(vec2), "write patch maxs", CL::Event());
+        a = queue.enq_write_buffer(patch_ids, patch_ids.void_ptr(), patch_count * sizeof(int), "write patch ids" , CL::Event());
+        b = queue.enq_write_buffer(patch_min, patch_min.void_ptr(), patch_count * sizeof(vec2), "write patch mins", CL::Event());
+        c = queue.enq_write_buffer(patch_max, patch_max.void_ptr(), patch_count * sizeof(vec2), "write patch maxs", CL::Event());
 
         //queue.flush();
         status = SET_UP;

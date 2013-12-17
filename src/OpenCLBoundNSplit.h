@@ -101,8 +101,9 @@ namespace Reyes
 
             BatchRecord(BatchRecord&& other);         
             BatchRecord& operator=(BatchRecord&& other);
-            
+
             void transfer(CL::CommandQueue& queue, size_t patch_count);
+            
             void accept(CL::Event& event);
             void finish(CL::CommandQueue& queue);
         };
@@ -140,7 +141,8 @@ namespace Reyes
         void* _active_handle;
         CL::Buffer* _active_patch_buffer;
         mat4 _active_matrix;
-        
+
+        size_t _in_buffers_size;
         CL::Buffer _in_pids_buffer;
         CL::Buffer _in_mins_buffer;
         CL::Buffer _in_maxs_buffer;
@@ -149,9 +151,9 @@ namespace Reyes
         CL::Buffer _out_pids_buffer;
         CL::Buffer _out_mins_buffer;
         CL::Buffer _out_maxs_buffer;
-        CL::Buffer _out_range_cnt_buffer;
+        CL::TransferBuffer _out_range_cnt_buffer;
 
-        CL::TransferBuffer _projection_buffer;
+        CL::Buffer _projection_buffer;
 
         CL::Event _ready;
         

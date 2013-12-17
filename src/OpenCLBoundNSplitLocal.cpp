@@ -24,10 +24,11 @@ Reyes::OpenCLBoundNSplitLocal::OpenCLBoundNSplitLocal(CL::Device& device,
 
     , _active_handle(nullptr)
     , _active_patch_buffer(nullptr)
-      
-    , _in_pids_buffer(device, BATCH_SIZE * sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _in_mins_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _in_maxs_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
+
+    , _in_buffers_size(128)
+    , _in_pids_buffer(device, _in_buffers_size * sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
+    , _in_mins_buffer(device, _in_buffers_size * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
+    , _in_maxs_buffer(device, _in_buffers_size * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
     , _in_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
       
     , _out_pids_buffer(device, BATCH_SIZE * sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
@@ -35,7 +36,7 @@ Reyes::OpenCLBoundNSplitLocal::OpenCLBoundNSplitLocal(CL::Device& device,
     , _out_maxs_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
     , _out_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY)
 
-    , _projection_buffer(device, queue, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
     
@@ -59,8 +60,16 @@ void Reyes::OpenCLBoundNSplitLocal::init(void* patches_handle, const mat4& matri
     _active_patch_buffer = _patch_index->get_opencl_buffer(patches_handle);
     _active_matrix = matrix;
     
-    int patch_count = _patch_index->get_patch_count(patches_handle);
+    size_t patch_count = _patch_index->get_patch_count(patches_handle);
 
+    if (_in_buffers_size < patch_count) {
+        _in_buffers_size = patch_count;
+            
+        _in_pids_buffer.resize(_in_buffers_size * sizeof(int));
+        _in_mins_buffer.resize(_in_buffers_size * sizeof(vec2));
+        _in_maxs_buffer.resize(_in_buffers_size * sizeof(vec2));
+    }
+    
     
     {
         // TODO: Redo this only when projection has changed
@@ -74,14 +83,14 @@ void Reyes::OpenCLBoundNSplitLocal::init(void* patches_handle, const mat4& matri
         _init_flag_buffers_kernel->set_args(_projection_buffer, _in_range_cnt_buffer, _out_range_cnt_buffer,
                                             proj, screen_matrix, projection->fovy(), projection->f(),
                                             projection->near(), projection->far(), projection->viewport_i(),
-                                            patch_count);
+                                            (cl_int)patch_count);
         _ready = _queue.enq_kernel(*_init_flag_buffers_kernel, 1,1, "initialize flag buffers", _ready);
                                             
     }
     
     
     
-    _init_range_buffers_kernel->set_args(_in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, patch_count);
+    _init_range_buffers_kernel->set_args(_in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, (cl_int)patch_count);
     _ready = _queue.enq_kernel(*_init_range_buffers_kernel,
                                (int)ceil(patch_count / 64.0) * 64, 64,
                                "initialize range buffers", _ready);
@@ -117,14 +126,11 @@ Reyes::Batch Reyes::OpenCLBoundNSplitLocal::do_bound_n_split(CL::Event& ready)
                                     config.bound_n_split_limit());
     _ready = _queue.enq_kernel(*_bound_n_split_kernel, 64 * 32, 64, "bound & split", _ready | ready);
 
-    int out_range_cnt;
+    _queue.map_buffer(_out_range_cnt_buffer, CL_MAP_READ, "map range count", _ready);
+    
+    int out_range_cnt = _out_range_cnt_buffer.host_ref<cl_int>();
 
-    _ready = _queue.enq_read_buffer(_out_range_cnt_buffer, &out_range_cnt, sizeof(out_range_cnt), "read patch count", _ready);
-    
-    _queue.flush();
-    _queue.wait_for_events(_ready);
-    _ready = CL::Event();
-    
+    _ready = _queue.enq_unmap_buffer(_out_range_cnt_buffer, "unmap range count", CL::Event());
     _active_handle = nullptr;
 
     // TODO: Handle this properly
