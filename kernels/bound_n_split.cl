@@ -3,12 +3,13 @@
 
 
 // Compile time constants:
-// CULL_RIBBON                   - float
+// BATCH_SIZE                    - size_t
+// BOUND_N_SPLIT_LIMIT           - float
+// BOUND_N_SPLIT_WORK_GROUP_CNT  - int
 // BOUND_N_SPLIT_WORK_GROUP_SIZE - int
 // BOUND_SAMPLE_RATE             - int
+// CULL_RIBBON                   - float
 // MAX_SPLIT_DEPTH               - int
-// BOUND_N_SPLIT_LIMIT           - float
-// BATCH_SIZE                    - size_t
 
 
 bool outside_frustum(float3 pmin, float3 pmax, constant const projection* P)
@@ -44,8 +45,8 @@ bool outside_frustum(float3 pmin, float3 pmax, constant const projection* P)
 #define DRAW 1
 #define HSPLIT 2
 #define VSPLIT 6
-char bound(const global float4* patch_buffer,
-           int rpid, float2 rmin, float2 rmax, int rdepth,
+uchar bound(const global float4* patch_buffer,
+           int rpid, float2 rmin, float2 rmax, uchar rdepth,
            private const matrix4* mv, constant const projection* P, float split_limit)
 {   
     // Calculate bounding box and max u/v length of patch 
@@ -53,6 +54,8 @@ char bound(const global float4* patch_buffer,
     
     float3 bbox_min = (float3)( INFINITY, INFINITY, INFINITY);
     float3 bbox_max = (float3)(-INFINITY,-INFINITY,-INFINITY);
+
+    uchar mask = (rdepth >= MAX_SPLIT_DEPTH-1) ? 0 : 0xff;
     
     for (size_t u = 0; u < RES; ++u) {
         for (size_t v = 0; v < RES; ++v) {
@@ -69,17 +72,10 @@ char bound(const global float4* patch_buffer,
         }
     }
 
-    bool vsplit = false;
-    
     if (outside_frustum(bbox_min, bbox_max, P)) {
         return CULL;
     } else if (bbox_min.z < 0 && bbox_max.z > 0) {
-        if (rdepth >= MAX_SPLIT_DEPTH-1) {
-            return CULL;
-        } else {
-            // Pick split direction from parameter space
-            return ((rmax.x - rmin.x) < (rmax.y - rmin.y)) ? VSPLIT : HSPLIT;
-        } 
+        return (((rmax.x - rmin.x) < (rmax.y - rmin.y)) ? VSPLIT : HSPLIT) & mask;
     } else {
 
         float hlen=0, vlen=0;
@@ -96,11 +92,8 @@ char bound(const global float4* patch_buffer,
 
         if (hlen <= split_limit && vlen <= split_limit) {
             return DRAW;
-        } else if (rdepth >= MAX_SPLIT_DEPTH-1) {
-            // Max split depth reached
-            return CULL;
         } else {
-            return (hlen > vlen) ? VSPLIT : HSPLIT;
+            return ((hlen > vlen) ? VSPLIT : HSPLIT) & mask;
         }
     }
 
@@ -112,7 +105,8 @@ char bound(const global float4* patch_buffer,
 
 kernel __attribute__((reqd_work_group_size(BOUND_N_SPLIT_WORK_GROUP_SIZE, 1, 1)))
 void bound_n_split(const global float4* patch_buffer,
-                    
+
+                   int in_buffer_stride,
                    global int* in_pids,
                    global float2* in_mins,
                    global float2* in_maxs,
@@ -128,16 +122,18 @@ void bound_n_split(const global float4* patch_buffer,
                    float split_limit)
 {
     const size_t lid = get_local_id(0);
+    const size_t wid = get_global_id(1);
 
     // stack properties
     int occupied;
-    int rpid, rdepth;
+    int rpid;
+    uchar rdepth;
     float2 rmin, rmax;
 
     // local stack
     local int stack_height;
     local int pid_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
-    local int depth_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
+    local uchar depth_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
     local float2 min_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
     local float2 max_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
     
@@ -157,14 +153,6 @@ void bound_n_split(const global float4* patch_buffer,
         top = 42;
         cnt = 0;
     }
-
-    for (int i = 0; i < MAX_SPLIT_DEPTH; ++i) {
-        depth_stack[lid + i * MAX_SPLIT_DEPTH] = -42;
-        pid_stack[lid + i * MAX_SPLIT_DEPTH] = -42;
-        
-        min_stack[lid + i * MAX_SPLIT_DEPTH] = (float2)(42,42);
-        max_stack[lid + i * MAX_SPLIT_DEPTH] = (float2)(42,42);
-    }
     
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -175,7 +163,7 @@ void bound_n_split(const global float4* patch_buffer,
             if (stack_height < BOUND_N_SPLIT_WORK_GROUP_SIZE) {
                 cnt = min(BOUND_N_SPLIT_WORK_GROUP_SIZE - stack_height, BOUND_N_SPLIT_WORK_GROUP_SIZE);
                 
-                top = atomic_sub(in_range_cnt, cnt);
+                top = atomic_sub(in_range_cnt + wid, cnt);
 
                 cnt = min(cnt, max(0, top));
                 start = top - cnt;
@@ -198,10 +186,11 @@ void bound_n_split(const global float4* patch_buffer,
         }
 
         if (lid < cnt) {
-            rpid   = in_pids[start + lid];
+            size_t pos = wid * in_buffer_stride + start + lid;
+            rpid   = in_pids[pos];
             rdepth = 0;
-            rmin   = in_mins[start + lid];
-            rmax   = in_maxs[start + lid];
+            rmin   = in_mins[pos];
+            rmax   = in_maxs[pos];
             occupied = 1;
         } else if (lid < cnt + stack_cnt) {
             rpid   = pid_stack[stack_height + lid - cnt];
@@ -247,8 +236,6 @@ void bound_n_split(const global float4* patch_buffer,
             start = stack_height - 2;
             stack_height += cnt * 2;
 
-            // printf("start:%d, cnt:%d\n", start, cnt);
-            // printf("depth:%d\n", rdepth);
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -292,35 +279,34 @@ kernel __attribute__((reqd_work_group_size(BOUND_N_SPLIT_WORK_GROUP_SIZE, 1,1)))
 void init_range_buffers(global int* pids,
                         global float2* mins,
                         global float2* maxs,
-                        int patch_count)
+                        int patch_count,
+                        int buffer_stride)
 {
-    const int gid = get_global_id(0);
-
-    if (gid == 0) {
-    }        
-
+    size_t items_per_work_group = round_up_div(patch_count, BOUND_N_SPLIT_WORK_GROUP_CNT);
+    
+    size_t gid = get_global_id(0);
+    size_t wid = gid / items_per_work_group;
+    size_t lid = gid % items_per_work_group;
+    
     if (gid < patch_count) {
-        pids[gid] = gid;
-        mins[gid] = (float2)(0,0);
-        maxs[gid] = (float2)(1,1);
+        size_t pos = lid + wid * buffer_stride;
+        pids[pos] = gid;
+        mins[pos] = (float2)(0,0);
+        maxs[pos] = (float2)(1,1);
     }
 }
 
 
 kernel __attribute__((reqd_work_group_size(1,1,1)))
-void init_flag_buffers(global projection* P,
-                       global int* in_range_cnt,
-                       global int* out_range_cnt,
+void init_projection_buffer(global projection* P,
                        
-                       matrix4 proj,
-                       matrix2 screen_matrix,
-                       float fovy,
-                       float2 f,
-                       float near,
-                       float far,
-                       int2 screen_size,
-
-                       int patch_count)
+                            matrix4 proj,
+                            matrix2 screen_matrix,
+                            float fovy,
+                            float2 f,
+                            float near,
+                            float far,
+                            int2 screen_size)
 {
     P->proj = proj;
     P->screen_matrix = screen_matrix;
@@ -329,8 +315,22 @@ void init_flag_buffers(global projection* P,
     P->near = near;
     P->far = far;
     P->screen_size = screen_size;
-    
-    *in_range_cnt  = patch_count;
-    *out_range_cnt = 0;
+}
+
+
+kernel __attribute__((reqd_work_group_size(BOUND_N_SPLIT_WORK_GROUP_CNT,1,1)))
+void init_count_buffers(global int* in_range_cnt,
+                        global int* out_range_cnt,
+
+                       int patch_count)
+{
+    size_t lid = get_global_id(0);
+    size_t ilid = BOUND_N_SPLIT_WORK_GROUP_SIZE - lid - 1;
+    in_range_cnt[lid] = (patch_count+ilid)/BOUND_N_SPLIT_WORK_GROUP_CNT;
+
+    if (get_global_id(0) == 0) {
+        *out_range_cnt = 0;
+    }
 }
                        
+ 

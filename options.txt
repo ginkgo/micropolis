@@ -41,10 +41,10 @@ bound_n_split_limit = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 4096
+reyes_patches_per_pass = 2048
 
 // Maximum number of times a surface patch can be split.
-max_split_depth = 20
+max_split_depth = 15
 
 // Width of the work-group for the dicing kernel.
 dice_group_width = 8
@@ -71,10 +71,13 @@ backface_culling = true
 do_event_polling = true
 
 // Number of patch buffers used for transferring patch data to device.
-bns_pipeline_length = 4
+bns_pipeline_length = 8
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = CPU
+bound_n_split_method = LOCAL
+
+// Number of work groups for local bound n split operation.
+local_bns_work_groups = 4
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -96,4 +99,4 @@ cull_ribbon = 32
 
 
 
-#hash:4519864379331016621
+#hash:4370273025974522575

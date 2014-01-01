@@ -147,6 +147,10 @@
       Method used to implement Bound&amp;Split. Either CPU, MULTIPASS or LOCAL.
     </value>
 
+    <value name="local_bns_work_groups" type="size_t" default="32">
+      Number of work groups for local bound n split operation.
+    </value>
+
     <value name="bound_sample_rate" type="int" default="3">
       Number of samples per side for doing calculating patch range bound.
     </value>

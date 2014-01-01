@@ -1,9 +1,11 @@
 
 TODO:
 
-* Read Anjul's scheduling paper!
-* Fix buffer-overflow handling for local bns kernel.
-* Make number of work groups in local bound-n-split kernel configurable
+* Find clCreateUserEvent leak CodeXL is reporting
+* Handle output buffer overflow by writing stack back to input queue
+  * Implement task donation/stealing on top of this
+* Rename reyes_patches_per_pass to grids_per_pass or something like that
+  * Consider generally cleaning up config options
 * Debug regression with Intel rasterizer black pixels
   * Only happens in debug build
   * Same thing happens in AMD CPU backend
@@ -23,7 +25,11 @@ TODO:
 * Add config options to dump trace and exit app after N frames
   * for scripted performance measurement
   * also dump options and build version
-
+* Query ideal work group size and use that for bound_n_split kernels
+  * Also pick local stack size (vs. spill region) that way
+  
+* Add save-scene feature to save camera position (and perhaps other stuff)
+  
 * Make more use of
   * __attribute__((work_group_size_hint(X,Y,Z)))
   * __attribute__((reqd_work_group_size(X,Y,Z)))
@@ -37,7 +43,7 @@ TODO:
   * Method for combining commands into single one
 
 * Debug weird trace behavior where patch-range transfer seem to happen after depending dice/shade/sample
-* Find out about ~2ms extra latency when creating framebuffers >800x600
+* Investigate cause of ~2ms extra latency when creating framebuffers >800x600
 * Create command-dependency graph dump (In DOT format)
 
 * Find source for FPS-counter/trace time discrepancy
@@ -61,6 +67,9 @@ TODO:
 
 DONE:
 
+* Use distributed queuing to parallelize bns
+* Make number of work groups in local bound-n-split kernel configurable
+* Read Stanley & Anjul's scheduling paper!
 * Automatically resize scratch-buffer for input buffers in OpenCLBoundNSplitLocal
 * Make CL::TransferBuffer use pinned memory again
 * Handle output buffer in overflow properly

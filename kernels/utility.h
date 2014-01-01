@@ -134,3 +134,13 @@ typedef struct projection
     int2 screen_size;
 } projection;
 
+inline int round_up_div(int n, int d)
+{
+    return n/d + ((n%d == 0) ? 0 : 1);
+}
+
+inline int round_up_by(int n, int d)
+{
+    return round_up_div(n,d) * n;
+}
+

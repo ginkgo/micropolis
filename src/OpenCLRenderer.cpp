@@ -192,6 +192,6 @@ CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
     e = _rasterization_queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
                                         "sample", _framebuffer_cleared | e);
 
-    _rasterization_queue.flush();
+    //_rasterization_queue.flush();
     return e;
 }

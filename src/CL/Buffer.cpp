@@ -61,7 +61,12 @@ void CL::Buffer::resize(size_t new_size)
     if (_buffer != 0) {
         statistics.free_opencl_memory(get_size());
         clReleaseMemObject(_buffer);
+
+        _buffer = 0;
+        _size = 0;
     }
+
+    if (new_size == 0) return;
     
     _buffer = clCreateBuffer(_device->get_context(), _flags, new_size, NULL, &status);
     OPENCL_ASSERT(status);

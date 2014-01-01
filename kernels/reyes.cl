@@ -212,6 +212,8 @@ __kernel void shade(const global float4* pos_grid,
 
     float4 c = ac + max(dot(n,l),0.0f) * dc + pow(max(dot(n,h), 0.0f), sh) * sc;
 
+    // c *= (range_id % 4 + 1) / 4.0f;
+    
     color_grid[calc_color_grid_pos(nu, nv, range_id)] = c;
 
 

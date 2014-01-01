@@ -313,5 +313,11 @@ void debug_print(const T& v, Rest&& ... rest)
     debug_print(rest...);
 }
 
+template <typename I>
+inline I round_up_by(I i, I n)
+{
+    return (i % n == 0) ? i : (i/n+1)*n;
+}
+
 
 #endif

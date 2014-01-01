@@ -229,7 +229,7 @@ void CL::Device::release_events()
                 submit = idx.user_begin;
                 start = idx.user_begin;
                 end = idx.user_end;
-
+                
             } else {
                 status = clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
                 OPENCL_ASSERT(status);

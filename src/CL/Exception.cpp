@@ -1,12 +1,12 @@
 #include "Exception.h"
 
-
-
+#include <signal.h>
 
 
 CL::Exception::Exception(cl_int err_code, const string& file, int line_no):
     _file(file), _line_no(line_no) 
 {
+    
     get_errors();
 
     switch(err_code) {
@@ -51,12 +51,18 @@ CL::Exception::Exception(cl_int err_code, const string& file, int line_no):
     case -1001:                                  _msg = "Vendor ICD not correctly installed(?)"; break;
     default:                                     _msg = "Unknown error: " + to_string(err_code);
     }
+
+#ifdef DEBUG_OPENCL
+    raise(SIGTRAP);
+#endif
 }
 
 CL::Exception::Exception(const string& msg, const string& file, int line_no):
     _msg(msg), _file(file), _line_no(line_no) 
 {
-
+#ifdef DEBUG_OPENCL
+    raise(SIGTRAP);
+#endif
 }
 
 const string& CL::Exception::msg()
