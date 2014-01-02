@@ -298,7 +298,7 @@ __kernel void sample(global const int4* block_index,
                      )
 {
     local float4 colors[8][8];
-    local float depths[8][8];
+    local int depths[8][8];
     volatile local int locks[8][8];
 
     int2 l = (int2)(get_local_id(0), get_local_id(1));
@@ -343,8 +343,8 @@ __kernel void sample(global const int4* block_index,
             da[idx] = depth;
         }
 	
-        Px   = vload4(0, &Pxa[0]);
-        Py   = vload4(0, &Pya[0]);
+        Px = vload4(0, &Pxa[0]);
+        Py = vload4(0, &Pya[0]);
         dv = vload4(0, &da[0]);
     }
 
@@ -359,8 +359,8 @@ __kernel void sample(global const int4* block_index,
             int2 fb_pos = l + o;
             int fb_id = calc_framebuffer_pos(fb_pos);
 
-            depths[l.x][l.y] = INFINITY;
-            colors[l.x][l.y] = (float4)(0,0,0,0);
+            depths[l.x][l.y] = 0x7fffffff;
+            colors[l.x][l.y] = (float4)(1,0,0,0);
 
             barrier(CLK_LOCAL_MEM_FENCE);
 	    
@@ -380,16 +380,18 @@ __kernel void sample(global const int4* block_index,
                     float depth = 1;
                     int inside1 = inside_triangle(Px.xyw, Py.xyw, tp, dv.xyw, &depth);
                     int inside2 = inside_triangle(Px.xwz, Py.xwz, tp, dv.xwz, &depth);
-                
+
+                    // TODO: Replace this with a proper mapping function
+                    int idepth = (int)(clamp(depth / 200.0f, 0.0f, 1.0f) * 0x7fffffff);
+                    
                     if (inside1 || inside2) {
                         
                         while (1) {
                             if (atomic_xchg(&(locks[y][x]), 0)) continue;
 
-                            if (depths[y][x] > depth) {
-                                depths[y][x] = depth;
+                            if (depths[y][x] > idepth) {
+                                depths[y][x] = idepth;
                                 colors[y][x] = c;
-                                //colors[y][x] += 0.1;
                             }
 
                             atomic_xchg(&(locks[y][x]), 1);
@@ -404,9 +406,8 @@ __kernel void sample(global const int4* block_index,
             if (head) while (!atomic_xchg(&(tile_locks[tile_id]), 0));
             barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
 
-            int d = (int)(clamp(depths[l.y][l.x] / 200.0f , 0.0f, 1.0f) * 0x7fffffff);
+            int d = depths[l.y][l.x];
             if (d < atomic_min(depth_buffer + fb_id, d)) {
-                //depth_buffer[fb_id] = depths[l.y][l.x]; 
                 color_buffer[fb_id] = colors[l.y][l.x];
             }
             
