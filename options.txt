@@ -34,10 +34,10 @@ verbosity_level = 1
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 16
+reyes_patch_size = 8
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 16
+bound_n_split_limit = 8
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
@@ -99,4 +99,4 @@ cull_ribbon = 32
 
 
 
-#hash:4370273025974522575
+#hash:-273670402678395880

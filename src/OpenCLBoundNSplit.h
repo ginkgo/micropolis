@@ -158,6 +158,8 @@ namespace Reyes
         CL::Buffer _projection_buffer;
 
         CL::Event _ready;
+
+        bool _done;
         
     public:
 

@@ -111,14 +111,13 @@ void Reyes::OpenCLBoundNSplitLocal::init(void* patches_handle, const mat4& matri
 
     
     //_queue.flush();
+    _done = false;
 }
 
 
 bool Reyes::OpenCLBoundNSplitLocal::done()
 {
-    if (_active_handle == nullptr) return true;
-
-    return false;
+    return _done;
 }
 
 
@@ -132,6 +131,8 @@ void Reyes::OpenCLBoundNSplitLocal::finish()
 Reyes::Batch Reyes::OpenCLBoundNSplitLocal::do_bound_n_split(CL::Event& ready)
 {
     size_t patch_count = _patch_index->get_patch_count(_active_handle);
+
+    _ready = _queue.enq_fill_buffer(_out_range_cnt_buffer, (cl_int)0, 1, "Clear out_range_cnt", _ready | ready);
     
     _bound_n_split_kernel->set_args(*_active_patch_buffer,
                                     (cl_int)_in_buffer_stride,
@@ -141,7 +142,7 @@ Reyes::Batch Reyes::OpenCLBoundNSplitLocal::do_bound_n_split(CL::Event& ready)
                                     config.bound_n_split_limit());
     _ready = _queue.enq_kernel(*_bound_n_split_kernel,
                                ivec2(WORK_GROUP_SIZE,  WORK_GROUP_CNT), ivec2(WORK_GROUP_SIZE, 1),
-                               "bound & split", _ready | ready);
+                               "bound & split", _ready);
 
     _ready = _queue.enq_read_buffer(_out_range_cnt_buffer, _out_range_cnt_buffer.void_ptr(), _out_range_cnt_buffer.get_size(),
                                     "read range count", _ready);
@@ -153,9 +154,12 @@ Reyes::Batch Reyes::OpenCLBoundNSplitLocal::do_bound_n_split(CL::Event& ready)
     _ready = CL::Event();
     _active_handle = nullptr;
     
-    
-    // TODO: Handle this properly
     out_range_cnt = std::min((int)BATCH_SIZE, out_range_cnt);
+
+    if (out_range_cnt <= 0) {
+        _done = true;
+    }
+
 
     
     return {(size_t)out_range_cnt, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
