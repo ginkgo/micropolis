@@ -1,4 +1,5 @@
 
+traces/*.pdf
 *.o
 micropolis
 generated/*
