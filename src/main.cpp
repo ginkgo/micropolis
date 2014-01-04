@@ -76,15 +76,15 @@ void mainloop(GLFWwindow* window)
 
     Reyes::Scene scene(config.input_file());
     
-    Reyes::WireGLRenderer wire_renderer;
+    Reyes::RendererGLWire wire_renderer;
     shared_ptr<Reyes::Renderer> renderer;
     
     switch (config.renderer_type()) {
     case Config::OPENCL:
-        renderer.reset(new Reyes::OpenCLRenderer());
+        renderer.reset(new Reyes::RendererCL());
         break;
     case Config::GLTESS:
-        renderer.reset(new Reyes::HWTessRenderer());
+        renderer.reset(new Reyes::RendererGLHWTess());
         break;
     default:
         assert(0);

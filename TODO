@@ -1,6 +1,7 @@
 
 TODO:
 
+* Implement BoundNSplitCLMultipass
 * Find clCreateUserEvent leak CodeXL is reporting
 * Handle output buffer overflow by writing stack back to input queue
   * Implement task donation/stealing on top of this
@@ -67,6 +68,8 @@ TODO:
 
 DONE:
 
+* Rename *BoundNSplit* classes to BoundNSplit(CL|GL)(CPU|Local|Multipass)
+* Rename *Renderer classes to Renderer(CL|GL)*
 * Clean up parse_trace.py
   * Time markers on scale
 * Use distributed queuing to parallelize bns

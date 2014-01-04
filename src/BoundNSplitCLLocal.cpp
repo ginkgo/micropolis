@@ -1,4 +1,4 @@
-#include "OpenCLBoundNSplit.h"
+#include "BoundNSplitCL.h"
 
 
 #include "PatchIndex.h"
@@ -20,7 +20,7 @@ struct cl_projection
 #define WORK_GROUP_SIZE (size_t)64
 #define MAX_SPLIT_DEPTH config.max_split_depth()
 
-Reyes::OpenCLBoundNSplitLocal::OpenCLBoundNSplitLocal(CL::Device& device,
+Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
                                                       CL::CommandQueue& queue,
                                                       shared_ptr<PatchIndex>& patch_index)
     : _queue(queue)
@@ -61,7 +61,7 @@ Reyes::OpenCLBoundNSplitLocal::OpenCLBoundNSplitLocal(CL::Device& device,
 }
 
 
-void Reyes::OpenCLBoundNSplitLocal::init(void* patches_handle, const mat4& matrix, const Projection* projection)
+void Reyes::BoundNSplitCLLocal::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
     _active_handle = patches_handle;
     _active_patch_buffer = _patch_index->get_opencl_buffer(patches_handle);
@@ -115,20 +115,20 @@ void Reyes::OpenCLBoundNSplitLocal::init(void* patches_handle, const mat4& matri
 }
 
 
-bool Reyes::OpenCLBoundNSplitLocal::done()
+bool Reyes::BoundNSplitCLLocal::done()
 {
     return _done;
 }
 
 
-void Reyes::OpenCLBoundNSplitLocal::finish()
+void Reyes::BoundNSplitCLLocal::finish()
 {
     _queue.wait_for_events(_ready);
     _ready = CL::Event();
 }
 
 
-Reyes::Batch Reyes::OpenCLBoundNSplitLocal::do_bound_n_split(CL::Event& ready)
+Reyes::Batch Reyes::BoundNSplitCLLocal::do_bound_n_split(CL::Event& ready)
 {
     size_t patch_count = _patch_index->get_patch_count(_active_handle);
 

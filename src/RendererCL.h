@@ -26,9 +26,9 @@ namespace Reyes
 {
     class Batch;
     class PatchIndex;
-    class OpenCLBoundNSplit;
+    class BoundNSplitCL;
 
-    class OpenCLRenderer : public Renderer
+    class RendererCL : public Renderer
     {
         
         CL::Device _device;
@@ -40,7 +40,7 @@ namespace Reyes
         OGLSharedFramebuffer _framebuffer;
 
         shared_ptr<PatchIndex> _patch_index;
-        shared_ptr<OpenCLBoundNSplit> _bound_n_split;
+        shared_ptr<BoundNSplitCL> _bound_n_split;
         
         size_t _max_block_count;
 
@@ -65,8 +65,8 @@ namespace Reyes
 
     public:
 
-        OpenCLRenderer();
-        ~OpenCLRenderer();
+        RendererCL();
+        ~RendererCL();
 
         virtual void prepare();
         virtual void finish();

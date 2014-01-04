@@ -1,4 +1,4 @@
-#include "OpenCLBoundNSplit.h"
+#include "BoundNSplitCL.h"
 
 
 #include "PatchIndex.h"
@@ -7,7 +7,7 @@
 
 
 
-Reyes::OpenCLBoundNSplitCPU::OpenCLBoundNSplitCPU(CL::Device& device,
+Reyes::BoundNSplitCLCPU::BoundNSplitCLCPU(CL::Device& device,
                                                   CL::CommandQueue& queue,
                                                   shared_ptr<PatchIndex>& patch_index)
     : _queue(queue)
@@ -27,7 +27,7 @@ Reyes::OpenCLBoundNSplitCPU::OpenCLBoundNSplitCPU(CL::Device& device,
 }
 
 
-void Reyes::OpenCLBoundNSplitCPU::init(void* patches_handle, const mat4& matrix, const Projection* projection)
+void Reyes::BoundNSplitCLCPU::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
     statistics.start_bound_n_split();
     
@@ -53,14 +53,14 @@ void Reyes::OpenCLBoundNSplitCPU::init(void* patches_handle, const mat4& matrix,
 }
 
 
-bool Reyes::OpenCLBoundNSplitCPU::done()
+bool Reyes::BoundNSplitCLCPU::done()
 {
     if (_stack.size() > 0) return false;
 
     return true;
 }
 
-void Reyes::OpenCLBoundNSplitCPU::finish()
+void Reyes::BoundNSplitCLCPU::finish()
 {
     for (BatchRecord& record : _batch_records) {
         record.finish(_queue);
@@ -69,7 +69,7 @@ void Reyes::OpenCLBoundNSplitCPU::finish()
 }
 
 
-Reyes::Batch Reyes::OpenCLBoundNSplitCPU::do_bound_n_split(CL::Event& ready)
+Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
 {
     size_t ring_size = config.bns_pipeline_length(); // Size of batch buffer ring
 
@@ -147,7 +147,7 @@ Reyes::Batch Reyes::OpenCLBoundNSplitCPU::do_bound_n_split(CL::Event& ready)
 }
 
 
-Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(size_t batch_size, CL::Device& device, CL::CommandQueue& queue)
+Reyes::BoundNSplitCLCPU::BatchRecord::BatchRecord(size_t batch_size, CL::Device& device, CL::CommandQueue& queue)
     : status(INACTIVE)
     , patch_ids(device, batch_size * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
     , patch_min(device, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
@@ -159,7 +159,7 @@ Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(size_t batch_size, CL::Dev
 }
 
 
-Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(BatchRecord&& other)
+Reyes::BoundNSplitCLCPU::BatchRecord::BatchRecord(BatchRecord&& other)
     : status(std::move(other.status))
     , patch_ids(std::move(other.patch_ids))
     , patch_min(std::move(other.patch_min))
@@ -171,7 +171,7 @@ Reyes::OpenCLBoundNSplitCPU::BatchRecord::BatchRecord(BatchRecord&& other)
 }
 
 
-void Reyes::OpenCLBoundNSplitCPU::BatchRecord::transfer(CL::CommandQueue& queue, size_t patch_count)
+void Reyes::BoundNSplitCLCPU::BatchRecord::transfer(CL::CommandQueue& queue, size_t patch_count)
 {
     CL::Event a,b,c;
 
@@ -187,14 +187,14 @@ void Reyes::OpenCLBoundNSplitCPU::BatchRecord::transfer(CL::CommandQueue& queue,
 }
 
 
-void Reyes::OpenCLBoundNSplitCPU::BatchRecord::accept(CL::Event& event)
+void Reyes::BoundNSplitCLCPU::BatchRecord::accept(CL::Event& event)
 {
     status = ACCEPTED;
     rasterizer_done = event;
 }
 
 
-void Reyes::OpenCLBoundNSplitCPU::BatchRecord::finish(CL::CommandQueue& queue)
+void Reyes::BoundNSplitCLCPU::BatchRecord::finish(CL::CommandQueue& queue)
 {
     if (status == INACTIVE) {
         return;
@@ -210,7 +210,7 @@ void Reyes::OpenCLBoundNSplitCPU::BatchRecord::finish(CL::CommandQueue& queue)
 }
 
 
-void Reyes::OpenCLBoundNSplitCPU::vsplit_range(const PatchRange& r, vector<PatchRange>& stack)
+void Reyes::BoundNSplitCLCPU::vsplit_range(const PatchRange& r, vector<PatchRange>& stack)
 {
     float cy = (r.range.min.y + r.range.max.y) * 0.5f;
 
@@ -218,7 +218,7 @@ void Reyes::OpenCLBoundNSplitCPU::vsplit_range(const PatchRange& r, vector<Patch
     stack.emplace_back(r.range.min.x, cy, r.range.max.x, r.range.max.y,    r.depth + 1, r.patch_id);
 }
     
-void Reyes::OpenCLBoundNSplitCPU::hsplit_range(const PatchRange& r, vector<PatchRange>& stack)
+void Reyes::BoundNSplitCLCPU::hsplit_range(const PatchRange& r, vector<PatchRange>& stack)
 {
     float cx = (r.range.min.x + r.range.max.x) * 0.5f;
     
@@ -228,7 +228,7 @@ void Reyes::OpenCLBoundNSplitCPU::hsplit_range(const PatchRange& r, vector<Patch
 
 
 
-void Reyes::OpenCLBoundNSplitCPU::bound_patch_range (const PatchRange& r, const BezierPatch& p,
+void Reyes::BoundNSplitCLCPU::bound_patch_range (const PatchRange& r, const BezierPatch& p,
                                                      const mat4& mv, const mat4& mvp,
                                                      BBox& box, float& vlen, float& hlen)
 {

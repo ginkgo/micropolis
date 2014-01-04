@@ -16,14 +16,14 @@
 \******************************************************************************/
 
 
-#include "HWTessRenderer.h"
+#include "RendererGLHWTess.h"
 
 #include "Projection.h"
 #include "Config.h"
 #include "Statistics.h"
 
 
-Reyes::HWTessRenderer::HWTessRenderer()
+Reyes::RendererGLHWTess::RendererGLHWTess()
     : _shader("hwtess")
     , _vbo(4 * config.reyes_patches_per_pass())
     , _patch_index(new PatchIndex())
@@ -31,21 +31,21 @@ Reyes::HWTessRenderer::HWTessRenderer()
     switch(config.bound_n_split_method()) {
     case Config::CPU:
         cerr << "Warning: CPU Bound&Split not supported for OpenGL. Falling back to MULTIPASS." << endl;
-        _bound_n_split.reset(new OpenGLBoundNSplitMultipass(_patch_index));
+        _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
     case Config::MULTIPASS:
-        _bound_n_split.reset(new OpenGLBoundNSplitMultipass(_patch_index));
+        _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
     case Config::LOCAL:
         cerr << "Warning: LOCAL Bound&Split not supported for OpenGL. Falling back to MULTIPASS." << endl;
-        _bound_n_split.reset(new OpenGLBoundNSplitMultipass(_patch_index));
+        _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
     }
     
     _patch_index->enable_load_texture();
 }
 
-void Reyes::HWTessRenderer::prepare()
+void Reyes::RendererGLHWTess::prepare()
 {
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
@@ -57,24 +57,24 @@ void Reyes::HWTessRenderer::prepare()
 }
 
     
-void Reyes::HWTessRenderer::finish()
+void Reyes::RendererGLHWTess::finish()
 {
 }
 
 
-bool Reyes::HWTessRenderer::are_patches_loaded(void* patches_handle)
+bool Reyes::RendererGLHWTess::are_patches_loaded(void* patches_handle)
 {
     return _patch_index->are_patches_loaded(patches_handle);
 }
 
 
-void Reyes::HWTessRenderer::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
+void Reyes::RendererGLHWTess::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
 {
     _patch_index->load_patches(patches_handle, patch_data);
 }
 
 
-void Reyes::HWTessRenderer::draw_patches(void* patches_handle,
+void Reyes::RendererGLHWTess::draw_patches(void* patches_handle,
                                          const mat4& matrix,
                                          const Projection* projection,
                                          const vec4& color)

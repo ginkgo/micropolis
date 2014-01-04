@@ -1,11 +1,11 @@
 #include "common.h"
 
-#include "OpenCLRenderer.h"
+#include "RendererCL.h"
 
 #include "CL/OpenCL.h"
 #include "Config.h"
 #include "Framebuffer.h"
-#include "OpenCLBoundNSplit.h"
+#include "BoundNSplitCL.h"
 #include "PatchIndex.h"
 #include "Projection.h"
 #include "Statistics.h"
@@ -13,7 +13,7 @@
 #define _framebuffer_queue _rasterization_queue
 #define _bound_n_split_queue _rasterization_queue
 
-Reyes::OpenCLRenderer::OpenCLRenderer()
+Reyes::RendererCL::RendererCL()
     : _device(config.platform_id(), config.device_id())
       
     // , _framebuffer_queue(_device, "framebuffer")
@@ -47,14 +47,14 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
     
     switch(config.bound_n_split_method()) {
     case Config::CPU:
-        _bound_n_split.reset(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index));
+        _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
     case Config::MULTIPASS:
         cerr << "Warning: MULTIPASS Bound&Split not supported for OpenCL. Falling back to CPU" << endl;
-        _bound_n_split.reset(new OpenCLBoundNSplitCPU(_device, _bound_n_split_queue, _patch_index));
+        _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
     case Config::LOCAL:
-        _bound_n_split.reset(new OpenCLBoundNSplitLocal(_device, _bound_n_split_queue, _patch_index));
+        _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
         break;
     }
     
@@ -84,13 +84,13 @@ Reyes::OpenCLRenderer::OpenCLRenderer()
 }
 
 
-Reyes::OpenCLRenderer::~OpenCLRenderer()
+Reyes::RendererCL::~RendererCL()
 {
 }
 
 
 
-void Reyes::OpenCLRenderer::prepare()
+void Reyes::RendererCL::prepare()
 {
     _frame_event.begin();
     
@@ -108,7 +108,7 @@ void Reyes::OpenCLRenderer::prepare()
 }
 
 
-void Reyes::OpenCLRenderer::finish()
+void Reyes::RendererCL::finish()
 {
     _bound_n_split->finish();
     
@@ -126,19 +126,19 @@ void Reyes::OpenCLRenderer::finish()
 
 
 
-bool Reyes::OpenCLRenderer::are_patches_loaded(void* patches_handle)
+bool Reyes::RendererCL::are_patches_loaded(void* patches_handle)
 {
     return _patch_index->are_patches_loaded(patches_handle);
 }
 
 
-void Reyes::OpenCLRenderer::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
+void Reyes::RendererCL::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
 {
     _patch_index->load_patches(patches_handle, patch_data);
 }
 
 
-void Reyes::OpenCLRenderer::draw_patches(void* patches_handle,
+void Reyes::RendererCL::draw_patches(void* patches_handle,
                                          const mat4& matrix,
                                          const Projection* projection,
                                          const vec4& color)
@@ -157,7 +157,7 @@ void Reyes::OpenCLRenderer::draw_patches(void* patches_handle,
 }
 
 
-CL::Event Reyes::OpenCLRenderer::send_batch(Reyes::Batch& batch,
+CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
                                             const mat4& matrix, const mat4& proj, const vec4& color,
                                             const CL::Event& ready)
 {

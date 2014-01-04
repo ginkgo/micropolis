@@ -16,7 +16,7 @@
 \******************************************************************************/
 
 
-#include "WireGLRenderer.h"
+#include "RendererGLWire.h"
 
 
 #include "Config.h"
@@ -25,7 +25,7 @@
 
 
 
-Reyes::WireGLRenderer::WireGLRenderer()
+Reyes::RendererGLWire::RendererGLWire()
     : _shader("wire")
     , _vbo(4 * config.reyes_patches_per_pass())
     , _patch_index(new PatchIndex())
@@ -33,21 +33,21 @@ Reyes::WireGLRenderer::WireGLRenderer()
     switch(config.bound_n_split_method()) {
     case Config::CPU:
         cerr << "Warning: CPU Bound&Split not supported for OpenGL. Falling back to MULTIPASS." << endl;
-        _bound_n_split.reset(new OpenGLBoundNSplitMultipass(_patch_index));
+        _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
     case Config::MULTIPASS:
-        _bound_n_split.reset(new OpenGLBoundNSplitMultipass(_patch_index));
+        _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
     case Config::LOCAL:
         cerr << "Warning: LOCAL Bound&Split not supported for OpenGL. Falling back to MULTIPASS." << endl;
-        _bound_n_split.reset(new OpenGLBoundNSplitMultipass(_patch_index));
+        _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
     }
     
     _patch_index->enable_load_texture();
 }
 
-void Reyes::WireGLRenderer::prepare()
+void Reyes::RendererGLWire::prepare()
 {
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
@@ -59,24 +59,24 @@ void Reyes::WireGLRenderer::prepare()
 }
 
     
-void Reyes::WireGLRenderer::finish()
+void Reyes::RendererGLWire::finish()
 {
 }
 
 
-bool Reyes::WireGLRenderer::are_patches_loaded(void* patches_handle)
+bool Reyes::RendererGLWire::are_patches_loaded(void* patches_handle)
 {
     return _patch_index->are_patches_loaded(patches_handle);
 }
 
 
-void Reyes::WireGLRenderer::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
+void Reyes::RendererGLWire::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
 {
     _patch_index->load_patches(patches_handle, patch_data);
 }
 
 
-void Reyes::WireGLRenderer::draw_patches(void* patches_handle,
+void Reyes::RendererGLWire::draw_patches(void* patches_handle,
                                          const mat4& matrix,
                                          const Projection* projection,
                                          const vec4& color)

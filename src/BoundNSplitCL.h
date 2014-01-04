@@ -26,12 +26,12 @@ namespace Reyes
 
 
     
-    class OpenCLBoundNSplit
+    class BoundNSplitCL
     {
 
     public:
 
-        virtual ~OpenCLBoundNSplit() {};
+        virtual ~BoundNSplitCL() {};
         
     public:
 
@@ -44,7 +44,7 @@ namespace Reyes
 
     
     
-    class OpenCLBoundNSplitCPU : public OpenCLBoundNSplit
+    class BoundNSplitCLCPU : public BoundNSplitCL
     {
 
         CL::CommandQueue& _queue;
@@ -63,7 +63,7 @@ namespace Reyes
     public:
 
         
-        OpenCLBoundNSplitCPU(CL::Device& device, CL::CommandQueue& queue,
+        BoundNSplitCLCPU(CL::Device& device, CL::CommandQueue& queue,
                              shared_ptr<PatchIndex>& patch_index);
 
         virtual void init(void* patches_handle,
@@ -125,7 +125,7 @@ namespace Reyes
     };
 
 
-    class OpenCLBoundNSplitLocal : public OpenCLBoundNSplit
+    class BoundNSplitCLLocal : public BoundNSplitCL
     {
         
         CL::CommandQueue& _queue;
@@ -164,7 +164,7 @@ namespace Reyes
     public:
 
 
-        OpenCLBoundNSplitLocal(CL::Device& device, CL::CommandQueue& queue,
+        BoundNSplitCLLocal(CL::Device& device, CL::CommandQueue& queue,
                                shared_ptr<PatchIndex>& patch_index);
         
 

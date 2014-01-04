@@ -2,7 +2,7 @@
 #pragma once
 
 
-#include "OpenGLBoundNSplit.h"
+#include "BoundNSplitGL.h"
 #include "GL/Shader.h"
 #include "GL/Texture.h"
 #include "GL/VBO.h"
@@ -14,18 +14,18 @@
 namespace Reyes
 {
         
-    class HWTessRenderer : public Renderer
+    class RendererGLHWTess : public Renderer
     {
 		GL::Shader _shader;
 		GL::IndirectVBO _vbo;
         
         shared_ptr<PatchIndex> _patch_index;
-        shared_ptr<OpenGLBoundNSplit> _bound_n_split;
+        shared_ptr<BoundNSplitGL> _bound_n_split;
 
     public:
 
-        HWTessRenderer();
-        ~HWTessRenderer() {};
+        RendererGLHWTess();
+        ~RendererGLHWTess() {};
 
         virtual void prepare();
         virtual void finish();
