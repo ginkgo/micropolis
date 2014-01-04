@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "Statistics.h"
 
+
 struct cl_projection
 {
     mat4 proj;
@@ -15,14 +16,15 @@ struct cl_projection
     ivec2 screen_size;
 };
 
+
 #define BATCH_SIZE config.reyes_patches_per_pass()
 #define WORK_GROUP_CNT config.local_bns_work_groups()
 #define WORK_GROUP_SIZE (size_t)64
 #define MAX_SPLIT_DEPTH config.max_split_depth()
 
 Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
-                                                      CL::CommandQueue& queue,
-                                                      shared_ptr<PatchIndex>& patch_index)
+                                              CL::CommandQueue& queue,
+                                              shared_ptr<PatchIndex>& patch_index)
     : _queue(queue)
     , _patch_index(patch_index)
 

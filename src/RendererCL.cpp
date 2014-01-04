@@ -50,8 +50,7 @@ Reyes::RendererCL::RendererCL()
         _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
     case Config::MULTIPASS:
-        cerr << "Warning: MULTIPASS Bound&Split not supported for OpenCL. Falling back to CPU" << endl;
-        _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
+        _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
         break;
     case Config::LOCAL:
         _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));

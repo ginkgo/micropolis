@@ -128,8 +128,7 @@ namespace Reyes
     class BoundNSplitCLLocal : public BoundNSplitCL
     {
         
-        CL::CommandQueue& _queue;
-                
+        CL::CommandQueue& _queue;                
         shared_ptr<PatchIndex> _patch_index;
         
         CL::Program _bound_n_split_program;
@@ -165,7 +164,7 @@ namespace Reyes
 
 
         BoundNSplitCLLocal(CL::Device& device, CL::CommandQueue& queue,
-                               shared_ptr<PatchIndex>& patch_index);
+                           shared_ptr<PatchIndex>& patch_index);
         
 
         virtual void init(void* patches_handle,
@@ -176,5 +175,41 @@ namespace Reyes
         virtual Batch do_bound_n_split(CL::Event& ready);
     };
 
+
+    class BoundNSplitCLMultipass : public BoundNSplitCL
+    {
+
+        CL::CommandQueue& _queue;
+        shared_ptr<PatchIndex> _patch_index;
+        
+        void* _active_handle;
+        CL::Buffer* _active_patch_buffer;
+        mat4 _active_matrix;
+        
+        CL::Buffer _out_pids_buffer;
+        CL::Buffer _out_mins_buffer;
+        CL::Buffer _out_maxs_buffer;
+        CL::TransferBuffer _out_range_cnt_buffer;
+
+        CL::Buffer _projection_buffer;
+
+        CL::Event _ready;
+        
+    public:
+
+        
+        BoundNSplitCLMultipass(CL::Device& device, CL::CommandQueue& queue,
+                               shared_ptr<PatchIndex>& patch_index);
+        
+
+        virtual void init(void* patches_handle,
+                          const mat4& matrix, const Projection* projection);
+        virtual bool done();
+        virtual void finish();
+
+        virtual Batch do_bound_n_split(CL::Event& ready);
+        
+    };
+    
     
 }

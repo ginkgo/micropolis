@@ -74,7 +74,7 @@ do_event_polling = true
 bns_pipeline_length = 8
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = CPU
+bound_n_split_method = MULTIPASS
 
 // Number of work groups for local bound n split operation.
 local_bns_work_groups = 4
