@@ -22,13 +22,15 @@ def milliseconds(nanoseconds):
 
 
 class TraceItem:
-    def __init__(self, name, queue_name, queued, submit, start, end):
+    def __init__(self, name, queue_name, queued, submit, start, end, index, dependencies):
         self.name = name
         self.queue_name = queue_name
         self.queued = queued
         self.submit = submit
         self.start = start
         self.end = end
+        self.index = index
+        self.dependencies = dependencies
 
     def duration_ms(self):
         return milliseconds(self.end - self.start)
@@ -45,7 +47,7 @@ class TraceItem:
     
 
 def parse(file):
-    pattern = re.compile(r'([^@:]*)(@[^@:]*):(\d+):(\d+):(\d+):(\d+)')
+    pattern = re.compile(r'([^@:]*)(@[^@:]*):(\d+):(\d+):(\d+):(\d+):(\d+):([0-9|]*)')
 
     items = []
 
@@ -61,7 +63,9 @@ def parse(file):
                          int(match.group(3)), 
                          int(match.group(4)), 
                          int(match.group(5)), 
-                         int(match.group(6)))
+                         int(match.group(6)),
+                         int(match.group(7)),
+                         [int(s) for s in match.group(8).split('|') if s])
             
         items.append(item)
 
@@ -300,8 +304,21 @@ def draw_items(ctx, trace_items, height_per_entry, width_per_ms, color_scheme, c
                      ti.duration_ms()*width_per_ms, height_per_entry-1, .5)        
         ctx.stroke()
 
+def draw_dependencies(ctx, trace_items, height_per_entry, width_per_ms, color_scheme, command_height_dict):
 
-def draw_trace(trace_items, outfilename):
+    trace_index = {ti.index:ti for ti in trace_items}
+
+    ctx.set_source_rgb(1,0,0)
+    for e in trace_items:
+        for d in e.dependencies:
+            s = trace_index[d]
+            ctx.move_to(s.end_ms()*width_per_ms, command_height_dict[s.handle()]+height_per_entry*0.5)
+            ctx.line_to(e.start_ms()*width_per_ms, command_height_dict[e.handle()]+height_per_entry*0.5)
+            ctx.stroke()
+            
+        
+
+def draw_trace(trace_items, outfilename, show_dependencies):
     tmin,tmax = find_time_range(traceitems)
     offset_time_ranges(traceitems, tmin)   
     tmin,tmax = find_time_range(traceitems)
@@ -348,6 +365,8 @@ def draw_trace(trace_items, outfilename):
         context.clip()
         offset(legend_width+padding-tmin_p*width_per_ms,0, draw_items, context, trace_items,
                height_per_entry, width_per_ms, color_scheme, command_height_dict)
+        offset(legend_width+padding-tmin_p*width_per_ms,0, draw_dependencies, context, trace_items,
+               height_per_entry, width_per_ms, color_scheme, command_height_dict)
         context.restore()
         offset(legend_width+padding,0, draw_grid_front, context, graph_width, graph_height, tmin_p, tmax_p)
 
@@ -359,14 +378,16 @@ def draw_trace(trace_items, outfilename):
         
 if __name__=='__main__':
 
+    print("TODO: Add optarg parsing")
+    show_dependencies = True
+    
     if (len(sys.argv) != 3):
         print('Usage: %s <tracefile> <outfile>' % sys.argv[0])
-        #print('Usage: %s <tracefile>' % sys.argv[0])
         exit(1)
 
     with open(sys.argv[1], 'r') as tracefile:
         traceitems = parse(tracefile)
 
 
-    draw_trace(traceitems, sys.argv[2])
+    draw_trace(traceitems, sys.argv[2], show_dependencies)
     

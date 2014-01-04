@@ -10,12 +10,15 @@ namespace CL
 
     class Event
     {
-        static const int MAX_ID_COUNT = 16;
+    public:
         
+        static const int MAX_ID_COUNT = 16;
+
+    private:
         int _ids[MAX_ID_COUNT];
         size_t _count;
 
-        public:
+    public:
 
         Event();
         Event(int id);

@@ -43,7 +43,7 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, int global_size, int loca
                                     cnt, _event_pad_ptr, &e);
     OPENCL_ASSERT(status);
 
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 
@@ -64,7 +64,7 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec2 global_size, ivec2 
 
     OPENCL_ASSERT(status);
 
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 local_size,
@@ -84,7 +84,7 @@ CL::Event CL::CommandQueue::enq_kernel(Kernel& kernel, ivec3 global_size, ivec3 
 
     OPENCL_ASSERT(status);
 
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 
@@ -142,7 +142,7 @@ CL::Event CL::CommandQueue::enq_GL_acquire(cl_mem mem, const string& name, const
 
     OPENCL_ASSERT(status);
 
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 CL::Event CL::CommandQueue::enq_GL_release(cl_mem mem, const string& name, const CL::Event& events)
@@ -155,7 +155,7 @@ CL::Event CL::CommandQueue::enq_GL_release(cl_mem mem, const string& name, const
 
     OPENCL_ASSERT(status);
 
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 
@@ -185,7 +185,7 @@ CL::Event CL::CommandQueue::enq_map_buffer(TransferBuffer& buffer, cl_map_flags 
 
     buffer.set_host_ptr(mapped);
 
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 
@@ -201,7 +201,7 @@ CL::Event CL::CommandQueue::enq_unmap_buffer(TransferBuffer& buffer,
 
     buffer.set_host_ptr(nullptr);
     
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 
@@ -223,7 +223,7 @@ CL::Event CL::CommandQueue::enq_write_buffer(Buffer& buffer, void* src, size_t l
     //cout << name << endl;
     OPENCL_ASSERT(status);
 
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 
@@ -249,7 +249,7 @@ CL::Event CL::CommandQueue::enq_read_buffer(Buffer& buffer, void* src, size_t le
 
     OPENCL_ASSERT(status);
 
-    return _parent_device.insert_event(name, _name, e);
+    return _parent_device.insert_event(name, _name, e, events);
 }
 
 

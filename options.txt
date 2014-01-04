@@ -34,10 +34,10 @@ verbosity_level = 1
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 8
+reyes_patch_size = 16
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 8
+bound_n_split_limit = 16
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
@@ -74,7 +74,7 @@ do_event_polling = true
 bns_pipeline_length = 8
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = MULTIPASS
+bound_n_split_method = CPU
 
 // Number of work groups for local bound n split operation.
 local_bns_work_groups = 4

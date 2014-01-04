@@ -91,7 +91,7 @@ namespace CL
         //cout << name << endl;
         OPENCL_ASSERT(status);
 
-        return _parent_device.insert_event(name, _name, e);
+        return _parent_device.insert_event(name, _name, e, events);
     }
     
 }

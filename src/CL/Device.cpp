@@ -136,7 +136,7 @@ void CL::Device::print_info()
 
 
 
-CL::Event CL::Device::insert_event(const string& name, const string& queue_name, cl_event event)
+CL::Event CL::Device::insert_event(const string& name, const string& queue_name, cl_event event, const CL::Event& dependencies)
 {
     int id = _id_count;
     ++_id_count;
@@ -148,6 +148,11 @@ CL::Event CL::Device::insert_event(const string& name, const string& queue_name,
     idx.queue_name = queue_name;
     idx.event =  event;
     idx.is_user = false;
+    idx.dependency_count = dependencies.get_id_count();
+
+    for (int i = 0; i < idx.dependency_count; ++i) {
+        idx.dependency_ids[i] = dependencies.get_ids()[i];
+    }
 
     return CL::Event(id);
 }
@@ -191,6 +196,7 @@ int CL::Device::insert_user_event(const string& name, cl_event event)
     idx.event =  event;
     idx.is_user = true;
     idx.user_begin = nanotime();
+    idx.dependency_count = 0;
 
     return id;    
 }
@@ -248,7 +254,17 @@ void CL::Device::release_events()
                << queued << ":"
                << submit << ":"
                << start << ":"
-               << end << endl;
+               << end << ":"
+               << idx.id << ":";
+
+            for (int i = 0; i < idx.dependency_count; ++i) {
+                fs << idx.dependency_ids[i];
+
+                if (i+1 < idx.dependency_count)
+                    fs << "|";
+            }
+            
+            fs << endl;
         }
 
         cout << endl << "OpenCL trace dumped." << endl << endl;
