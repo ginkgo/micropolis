@@ -38,9 +38,9 @@ TODO:
   * Rename script to something more fitting
   * Queue name in bold
   * (Colored) vertical lines for orientation?
-  * Time markers on scale
   * Make paper size adapt to trace-length
   * Method for combining commands into single one
+  * Visualize event dependencies
 
 * Debug weird trace behavior where patch-range transfer seem to happen after depending dice/shade/sample
 * Investigate cause of ~2ms extra latency when creating framebuffers >800x600
@@ -67,6 +67,8 @@ TODO:
 
 DONE:
 
+* Clean up parse_trace.py
+  * Time markers on scale
 * Use distributed queuing to parallelize bns
 * Make number of work groups in local bound-n-split kernel configurable
 * Read Stanley & Anjul's scheduling paper!
@@ -82,7 +84,6 @@ DONE:
 * Remove config.max_block_assignments
 * Rename config.patch_buffer_count
 * Reorder config so patch_size and bound_n_split limit are side by side
-* Clean up parse_trace.py
 * Debug source of pipeline stalls
 * Write more compact patch evaluation kernel
 * Pipeline drawcalls over several command-queues

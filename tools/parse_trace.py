@@ -166,11 +166,14 @@ def offset(w,h, f, context, *params):
 
     context.restore()
     
-def aligned_text(ctx, txt, fx, fy):
+def aligned_text(ctx, txt, fx, fy, scale=1.0):
     xb, yb, w, h, xa, ya = ctx.text_extents(txt)
 
+    ctx.save()
+    ctx.scale(scale, scale)
     ctx.rel_move_to(-w*fx, h*fy)
     ctx.show_text(txt)
+    ctx.restore()
 
 def rounded_rect(ctx, x,y,w,h, r):
     if h < r * 2:
@@ -238,7 +241,14 @@ def draw_grid_front(ctx, graph_width, graph_height, start, stop):
 
     for i in range(0, math.ceil((graph_width+0.0001)/increment)):
         
-        nub_len = 3 if i%10 == 0 else 2
+        nub_len = 2
+
+        if i%10 == 0:
+            nub_len = 3
+            time = int(i/10 + start)
+            ctx.move_to(i*increment, graph_height + 4)
+            aligned_text(ctx, "%d ms" % time, 0.5, 1.0, 0.35);
+        
         ctx.move_to(i*increment,0)
         ctx.rel_line_to(0, -nub_len);
         
