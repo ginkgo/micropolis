@@ -91,7 +91,7 @@ Reyes::RendererCL::~RendererCL()
 
 void Reyes::RendererCL::prepare()
 {
-    _frame_event.begin();
+    _frame_event.begin(CL::Event());
     
     CL::Event e = _framebuffer.acquire(_framebuffer_queue, CL::Event());
     e = _framebuffer.clear(_framebuffer_queue, e);
@@ -190,6 +190,7 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
                              _tile_locks, _framebuffer.get_buffer(), _depth_buffer);
     e = _rasterization_queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
                                         "sample", _framebuffer_cleared | e);
+    _framebuffer_cleared = CL::Event();
 
     //_rasterization_queue.flush();
     return e;

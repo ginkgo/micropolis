@@ -60,7 +60,7 @@ namespace CL
         Event insert_event(const string& name, const string& queue_name, cl_event event, const Event& dependencies);
         size_t setup_event_pad(const Event& event, vector<cl_event>& event_pad, cl_event*& event_pad_ptr);
 
-        int insert_user_event(const string& name, cl_event event);
+        int insert_user_event(const string& name, cl_event event, const Event& dependencies);
         void end_user_event(int id);
         
         void dump_trace();

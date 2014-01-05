@@ -308,7 +308,7 @@ def draw_dependencies(ctx, trace_items, height_per_entry, width_per_ms, color_sc
 
     trace_index = {ti.index:ti for ti in trace_items}
 
-    ctx.set_source_rgb(1,0,0)
+    ctx.set_source_rgba(0.2,0.2,1,0.5)
     for e in trace_items:
         for d in e.dependencies:
             s = trace_index[d]

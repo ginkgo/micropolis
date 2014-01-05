@@ -78,9 +78,9 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
     BatchRecord& record = _batch_records[_next_batch_record % ring_size];
     _next_batch_record++;
 
-    record.finish(_queue);
+    CL::Event waited_for = record.finish(_queue);
     
-    _bound_n_split_event.begin();
+    _bound_n_split_event.begin(waited_for);
     statistics.start_bound_n_split();
     
     const vector<BezierPatch>& patches = _patch_index->get_patch_vector(_active_handle);
@@ -138,7 +138,7 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
 
     }
 
-    record.transfer(_queue, patch_count);
+    record.transfer(_queue, patch_count, CL::Event());
     
     statistics.stop_bound_n_split();
     _bound_n_split_event.end();
@@ -171,14 +171,14 @@ Reyes::BoundNSplitCLCPU::BatchRecord::BatchRecord(BatchRecord&& other)
 }
 
 
-void Reyes::BoundNSplitCLCPU::BatchRecord::transfer(CL::CommandQueue& queue, size_t patch_count)
+void Reyes::BoundNSplitCLCPU::BatchRecord::transfer(CL::CommandQueue& queue, size_t patch_count, const CL::Event& events)
 {
     CL::Event a,b,c;
 
     if (patch_count > 0) {
-        a = queue.enq_write_buffer(patch_ids, patch_ids.void_ptr(), patch_count * sizeof(int), "write patch ids" , CL::Event());
-        b = queue.enq_write_buffer(patch_min, patch_min.void_ptr(), patch_count * sizeof(vec2), "write patch mins", CL::Event());
-        c = queue.enq_write_buffer(patch_max, patch_max.void_ptr(), patch_count * sizeof(vec2), "write patch maxs", CL::Event());
+        a = queue.enq_write_buffer(patch_ids, patch_ids.void_ptr(), patch_count * sizeof(int), "write patch ids" , events);
+        b = queue.enq_write_buffer(patch_min, patch_min.void_ptr(), patch_count * sizeof(vec2), "write patch mins", events);
+        c = queue.enq_write_buffer(patch_max, patch_max.void_ptr(), patch_count * sizeof(vec2), "write patch maxs", events);
 
         //queue.flush();
         status = SET_UP;
@@ -194,19 +194,25 @@ void Reyes::BoundNSplitCLCPU::BatchRecord::accept(CL::Event& event)
 }
 
 
-void Reyes::BoundNSplitCLCPU::BatchRecord::finish(CL::CommandQueue& queue)
+CL::Event Reyes::BoundNSplitCLCPU::BatchRecord::finish(CL::CommandQueue& queue)
 {
+    CL::Event waited_for;
+    
     if (status == INACTIVE) {
-        return;
+        return waited_for;
     } else if (status == ACCEPTED) {
+        waited_for = rasterizer_done;
         queue.wait_for_events(rasterizer_done);
     } else if (status == SET_UP) {
+        waited_for = transferred;
         queue.wait_for_events(transferred);
     }
 
     rasterizer_done = CL::Event();
     transferred = CL::Event();
-    status = INACTIVE;    
+    status = INACTIVE;
+
+    return waited_for;
 }
 
 

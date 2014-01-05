@@ -82,14 +82,14 @@ CL::UserEvent::~UserEvent()
 }
 
 
-void CL::UserEvent::begin()
+void CL::UserEvent::begin(const CL::Event& dependencies)
 {
     cl_int status;
     
     _event = clCreateUserEvent(_device.get_context(), &status);
     OPENCL_ASSERT(status);
 
-    _id = _device.insert_user_event(_name, _event);
+    _id = _device.insert_user_event(_name, _event, dependencies);
     _active = true;
 }
 

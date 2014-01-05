@@ -46,7 +46,7 @@ namespace CL
         UserEvent(Device& device, const string& name);
         ~UserEvent();
 
-        void begin();
+        void begin(const CL::Event& dependencies);
         void end();
         
         Event event() const { return Event(_id); }

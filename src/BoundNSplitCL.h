@@ -102,10 +102,10 @@ namespace Reyes
             BatchRecord(BatchRecord&& other);         
             BatchRecord& operator=(BatchRecord&& other);
 
-            void transfer(CL::CommandQueue& queue, size_t patch_count);
+            void transfer(CL::CommandQueue& queue, size_t patch_count, const CL::Event& events);
             
             void accept(CL::Event& event);
-            void finish(CL::CommandQueue& queue);
+            CL::Event finish(CL::CommandQueue& queue);
         };
 
         vector<BatchRecord> _batch_records;
