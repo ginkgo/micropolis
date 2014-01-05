@@ -68,10 +68,10 @@ trace_file = reyes.trace
 backface_culling = true
 
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = true
+do_event_polling = false
 
 // Number of patch buffers used for transferring patch data to device.
-bns_pipeline_length = 8
+bns_pipeline_length = 4
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
 bound_n_split_method = CPU

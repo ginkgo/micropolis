@@ -176,9 +176,9 @@ void Reyes::BoundNSplitCLCPU::BatchRecord::transfer(CL::CommandQueue& queue, siz
     CL::Event a,b,c;
 
     if (patch_count > 0) {
-        a = queue.enq_write_buffer(patch_ids, patch_ids.void_ptr(), patch_count * sizeof(int), "write patch ids" , events);
-        b = queue.enq_write_buffer(patch_min, patch_min.void_ptr(), patch_count * sizeof(vec2), "write patch mins", events);
-        c = queue.enq_write_buffer(patch_max, patch_max.void_ptr(), patch_count * sizeof(vec2), "write patch maxs", events);
+        a = queue.enq_write_buffer(patch_ids, patch_ids.void_ptr(), patch_count * sizeof(int), "write patch data" , events);
+        b = queue.enq_write_buffer(patch_min, patch_min.void_ptr(), patch_count * sizeof(vec2), "write patch data", events);
+        c = queue.enq_write_buffer(patch_max, patch_max.void_ptr(), patch_count * sizeof(vec2), "write patch data", events);
 
         //queue.flush();
         status = SET_UP;

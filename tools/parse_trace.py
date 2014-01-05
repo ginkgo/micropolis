@@ -4,6 +4,8 @@ import sys
 import re
 import colorsys
 
+from optparse import OptionParser
+
 import random
 import math
 
@@ -308,7 +310,7 @@ def draw_dependencies(ctx, trace_items, height_per_entry, width_per_ms, color_sc
 
     trace_index = {ti.index:ti for ti in trace_items}
 
-    ctx.set_source_rgba(0.2,0.2,1,0.5)
+    ctx.set_source_rgba(0.2,0.2,1,1)
     for e in trace_items:
         for d in e.dependencies:
             s = trace_index[d]
@@ -365,8 +367,9 @@ def draw_trace(trace_items, outfilename, show_dependencies):
         context.clip()
         offset(legend_width+padding-tmin_p*width_per_ms,0, draw_items, context, trace_items,
                height_per_entry, width_per_ms, color_scheme, command_height_dict)
-        offset(legend_width+padding-tmin_p*width_per_ms,0, draw_dependencies, context, trace_items,
-               height_per_entry, width_per_ms, color_scheme, command_height_dict)
+        if show_dependencies:
+            offset(legend_width+padding-tmin_p*width_per_ms,0, draw_dependencies, context, trace_items,
+                height_per_entry, width_per_ms, color_scheme, command_height_dict)
         context.restore()
         offset(legend_width+padding,0, draw_grid_front, context, graph_width, graph_height, tmin_p, tmax_p)
 
@@ -375,19 +378,29 @@ def draw_trace(trace_items, outfilename, show_dependencies):
     surface.finish()
 
 
+def parse_args():
+    parser = OptionParser(usage='Usage: %prog [options] <tracefile> <outfile>')
+    parser.add_option('-d', '--dependencies',
+                      action='store_true', dest='show_dependencies', default=False,
+                      help='Show command dependencies in output')
+    options, args = parser.parse_args()
+
+    if len(args) < 2:
+        parser.print_help()
+        exit(0)
+    elif len(args) > 2:
+        parser.print_help()
+        exit(1)
+
+    return options, args[0], args[1]
+
         
 if __name__=='__main__':
 
-    print("TODO: Add optarg parsing")
-    show_dependencies = True
-    
-    if (len(sys.argv) != 3):
-        print('Usage: %s <tracefile> <outfile>' % sys.argv[0])
-        exit(1)
+    options, infile, outfile = parse_args()
 
-    with open(sys.argv[1], 'r') as tracefile:
+    with open(infile, 'r') as tracefile:
         traceitems = parse(tracefile)
 
-
-    draw_trace(traceitems, sys.argv[2], show_dependencies)
+    draw_trace(traceitems, outfile, options.show_dependencies)
     

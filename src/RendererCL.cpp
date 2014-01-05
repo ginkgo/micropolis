@@ -192,6 +192,7 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
                                         "sample", _framebuffer_cleared | e);
     _framebuffer_cleared = CL::Event();
 
-    //_rasterization_queue.flush();
+    _rasterization_queue.flush();
+
     return e;
 }
