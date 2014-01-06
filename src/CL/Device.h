@@ -66,6 +66,9 @@ namespace CL
         void dump_trace();
         void release_events();
 
+        size_t max_compute_units() const;
+        size_t preferred_work_group_size_multiple() const;
+
         
     };
 }

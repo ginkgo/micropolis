@@ -18,8 +18,8 @@ struct cl_projection
 
 
 #define BATCH_SIZE config.reyes_patches_per_pass()
-#define WORK_GROUP_CNT config.local_bns_work_groups()
-#define WORK_GROUP_SIZE (size_t)64
+#define WORK_GROUP_CNT (_queue.device().max_compute_units())
+#define WORK_GROUP_SIZE (_queue.device().preferred_work_group_size_multiple())
 #define MAX_SPLIT_DEPTH config.max_split_depth()
 
 Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
@@ -54,7 +54,7 @@ Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
     _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
     _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
     
-    _bound_n_split_program.compile(device, "bound_n_split.cl");
+    _bound_n_split_program.compile(device, "bound_n_split_local.cl");
     
     _bound_n_split_kernel.reset(_bound_n_split_program.get_kernel("bound_n_split"));
     _init_range_buffers_kernel.reset(_bound_n_split_program.get_kernel("init_range_buffers"));

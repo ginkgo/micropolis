@@ -34,10 +34,10 @@ verbosity_level = 1
 disable_buffer_sharing = false
 
 // Size used for bounding and dicing.
-reyes_patch_size = 16
+reyes_patch_size = 8
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 16
+bound_n_split_limit = 8
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
@@ -68,13 +68,13 @@ trace_file = reyes.trace
 backface_culling = true
 
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = false
+do_event_polling = true
 
 // Number of patch buffers used for transferring patch data to device.
-bns_pipeline_length = 4
+bns_pipeline_length = 8
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = CPU
+bound_n_split_method = LOCAL
 
 // Number of work groups for local bound n split operation.
 local_bns_work_groups = 4

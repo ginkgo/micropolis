@@ -289,6 +289,31 @@ void CL::Device::release_events()
 }
 
 
+
+size_t CL::Device::max_compute_units() const
+{
+    cl_uint retval;
+
+    cl_int status = clGetDeviceInfo(_device, CL_DEVICE_MAX_COMPUTE_UNITS,
+                                    sizeof(retval), &retval, nullptr);
+    OPENCL_ASSERT(status);
+    
+    return retval;
+}
+
+
+size_t CL::Device::preferred_work_group_size_multiple() const
+{
+#warning TODO: find a more elegant way to do this
+    
+    if (is_GPU_device(_device)) {
+        return 64;
+    } else {
+        return 1;
+    }
+}
+
+
 namespace
 {
     
@@ -447,3 +472,4 @@ namespace
     }
 
 }
+

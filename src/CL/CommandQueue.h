@@ -68,6 +68,9 @@ namespace CL
 
         void finish();
         void flush();
+
+        Device& device() {return _parent_device;}
+        const Device& device() const {return _parent_device;}
         
     };
 

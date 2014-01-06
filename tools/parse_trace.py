@@ -240,7 +240,7 @@ def draw_grid_back(ctx, graph_width, graph_height, start, stop):
 
 
         
-def draw_grid_front(ctx, graph_width, graph_height, start, stop):
+def draw_grid_front(ctx, graph_width, graph_height, start, stop, scalefactor):
 
     increment = graph_width/((stop-start)*10)
     ctx.set_source_rgb(0.3,0.3,0.3)
@@ -251,7 +251,7 @@ def draw_grid_front(ctx, graph_width, graph_height, start, stop):
 
         if i%10 == 0:
             nub_len = 3
-            time = int(i/10 + start)
+            time = int((i/10 + start) * 1/scalefactor)
             ctx.move_to(i*increment, graph_height + 4)
             aligned_text(ctx, "%d ms" % time, 0.5, 1.0, 0.35);
         
@@ -320,7 +320,7 @@ def draw_dependencies(ctx, trace_items, height_per_entry, width_per_ms, color_sc
             
         
 
-def draw_trace(trace_items, outfilename, show_dependencies):
+def draw_trace(trace_items, outfilename, show_dependencies, scalefactor):
     tmin,tmax = find_time_range(traceitems)
     offset_time_ranges(traceitems, tmin)   
     tmin,tmax = find_time_range(traceitems)
@@ -371,7 +371,7 @@ def draw_trace(trace_items, outfilename, show_dependencies):
             offset(legend_width+padding-tmin_p*width_per_ms,0, draw_dependencies, context, trace_items,
                 height_per_entry, width_per_ms, color_scheme, command_height_dict)
         context.restore()
-        offset(legend_width+padding,0, draw_grid_front, context, graph_width, graph_height, tmin_p, tmax_p)
+        offset(legend_width+padding,0, draw_grid_front, context, graph_width, graph_height, tmin_p, tmax_p, scalefactor)
 
         context.show_page()
         
@@ -383,6 +383,9 @@ def parse_args():
     parser.add_option('-d', '--dependencies',
                       action='store_true', dest='show_dependencies', default=False,
                       help='Show command dependencies in output')
+    parser.add_option('-s', '--scalefactor',
+                      type='float', dest='scalefactor', default=1.0,
+                      help='Time scale factor')
     options, args = parser.parse_args()
 
     if len(args) < 2:
@@ -402,5 +405,11 @@ if __name__=='__main__':
     with open(infile, 'r') as tracefile:
         traceitems = parse(tracefile)
 
-    draw_trace(traceitems, outfile, options.show_dependencies)
+    for ti in traceitems:
+        ti.queued *= options.scalefactor
+        ti.submit *= options.scalefactor
+        ti.start *= options.scalefactor
+        ti.end *= options.scalefactor
+
+    draw_trace(traceitems, outfile, options.show_dependencies, options.scalefactor)
     
