@@ -18,7 +18,7 @@ struct cl_projection
 
 
 #define BATCH_SIZE config.reyes_patches_per_pass()
-#define WORK_GROUP_CNT (_queue.device().max_compute_units())
+#define WORK_GROUP_CNT std::min(_queue.device().max_compute_units(), config.local_bns_work_groups())
 #define WORK_GROUP_SIZE (_queue.device().preferred_work_group_size_multiple())
 #define MAX_SPLIT_DEPTH config.max_split_depth()
 
@@ -36,7 +36,7 @@ Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
     , _in_pids_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
     , _in_mins_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
     , _in_maxs_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _in_range_cnt_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
+    , _in_range_cnt_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY)
       
     , _out_pids_buffer(device, BATCH_SIZE * sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
     , _out_mins_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
@@ -99,7 +99,6 @@ void Reyes::BoundNSplitCLLocal::init(void* patches_handle, const mat4& matrix, c
         _ready = _queue.enq_kernel(*_init_projection_buffer_kernel, 1,1, "initialize projection buffer", _ready);
     }
 
-    
     _init_count_buffers_kernel->set_args(_in_range_cnt_buffer, _out_range_cnt_buffer, (cl_int)patch_count);
     _ready = _queue.enq_kernel(*_init_count_buffers_kernel, WORK_GROUP_CNT, WORK_GROUP_CNT,
                                "initialize counter buffers", _ready);
@@ -110,7 +109,6 @@ void Reyes::BoundNSplitCLLocal::init(void* patches_handle, const mat4& matrix, c
     _ready = _queue.enq_kernel(*_init_range_buffers_kernel,
                                (int)round_up_by(patch_count, WORK_GROUP_SIZE), WORK_GROUP_SIZE,
                                "initialize range buffers", _ready);
-
     
     //_queue.flush();
     _done = false;

@@ -51,6 +51,8 @@ class TraceItem:
 def parse(file):
     pattern = re.compile(r'([^@:]*)(@[^@:]*):(\d+):(\d+):(\d+):(\d+):(\d+):([0-9|]*)')
 
+    print( "Add fallback if dependency info is not available" )
+    
     items = []
 
     for line in file.readlines():
@@ -251,7 +253,7 @@ def draw_grid_front(ctx, graph_width, graph_height, start, stop, scalefactor):
 
         if i%10 == 0:
             nub_len = 3
-            time = int((i/10 + start) * 1/scalefactor)
+            time = int((i/10 + start) * scalefactor)
             ctx.move_to(i*increment, graph_height + 4)
             aligned_text(ctx, "%d ms" % time, 0.5, 1.0, 0.35);
         
@@ -406,10 +408,10 @@ if __name__=='__main__':
         traceitems = parse(tracefile)
 
     for ti in traceitems:
-        ti.queued *= options.scalefactor
-        ti.submit *= options.scalefactor
-        ti.start *= options.scalefactor
-        ti.end *= options.scalefactor
+        ti.queued /= options.scalefactor
+        ti.submit /= options.scalefactor
+        ti.start /= options.scalefactor
+        ti.end /= options.scalefactor
 
     draw_trace(traceitems, outfile, options.show_dependencies, options.scalefactor)
     

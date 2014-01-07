@@ -20,7 +20,7 @@ kernel_dir = kernels
 max_anisotropy = 1
 
 // OpenCL platform ID.
-platform_id = 0
+platform_id = 1
 
 // OpenCL device ID.
 device_id = 0
@@ -41,7 +41,7 @@ bound_n_split_limit = 8
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 2048
+reyes_patches_per_pass = 4096
 
 // Maximum number of times a surface patch can be split.
 max_split_depth = 15
@@ -50,7 +50,7 @@ max_split_depth = 15
 dice_group_width = 8
 
 // Number of sub-one bits for fixed precision pixel coordinates.
-subpixel_bits = 8
+subpixel_bits = 6
 
 // Clear color for framebuffer.
 clear_color = 0.1 0.2 1 0

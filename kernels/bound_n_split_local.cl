@@ -215,12 +215,16 @@ void bound_n_split(const global float4* patch_buffer,
         if (lid == BOUND_N_SPLIT_WORK_GROUP_SIZE - 1) {
 
             cnt = sum;
-            start = stack_height - 2;
+            start = stack_height;
             stack_height += cnt * 2;
 
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
+
+        // Prefix sum is inclusive, decrement it to get exclusive result
+        sum--;
+        
 
         if (bound_flags & 2) {
             depth_stack[start + sum * 2 + 0] = rdepth+1;
@@ -254,11 +258,14 @@ void bound_n_split(const global float4* patch_buffer,
 
         if (lid == BOUND_N_SPLIT_WORK_GROUP_SIZE - 1) {
             cnt = sum;
-            start = atomic_add(out_range_cnt, sum) - 1;
+            start = atomic_add(out_range_cnt, cnt);
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
 
+        // Prefix sum is inclusive, decrement it to get exclusive result
+        sum--;
+        
         if ((bound_flags & 1) != 0 && start + sum < BATCH_SIZE) {
             out_pids[start + sum] = rpid;
             out_mins[start + sum] = rmin;
@@ -271,12 +278,11 @@ void bound_n_split(const global float4* patch_buffer,
             
             local int offset;
             if (lid == 0) {
-                offset = max(0,in_range_cnt[wid]);              
-
-                //in_range_cnt[wid] = offset + stack_height + cnt - min(0,BATCH_SIZE - start);
-                in_range_cnt[wid] = offset + stack_height;
+                offset = max(0,in_range_cnt[wid]);
                 
-                //printf("%d\n", offset);
+                //in_range_cnt[wid] = offset + stack_height;
+                in_range_cnt[wid] = offset + stack_height + cnt - max(0,(int)BATCH_SIZE - start);
+                
             }
             
             barrier(CLK_LOCAL_MEM_FENCE);
@@ -296,16 +302,14 @@ void bound_n_split(const global float4* patch_buffer,
                 in_maxs[pos] = max_stack[lid + wi];
             }
 
-            // // Copy bounded, but overflowed ranges back to input buffer
-            // if ((bound_flags & 1) != 0 && start + sum >= BATCH_SIZE) {
-            //     int pos = sum - max(0,BATCH_SIZE - start) + stack_height + offset + wid * in_buffer_stride;
+            // Copy bounded, but overflowed ranges back to input buffer
+            if ((bound_flags & 1) != 0 && start + sum >= BATCH_SIZE) {
+                size_t pos = sum - max(0,(int)BATCH_SIZE - start) + stack_height + offset + wid * in_buffer_stride;
 
-            //     //printf("%d %d+%d=%d\n", lid, start, sum, start+sum);
-                
-            //     in_pids[pos] = rpid;
-            //     in_mins[pos] = rmin;
-            //     in_maxs[pos] = rmax;                
-            // }
+                in_pids[pos] = rpid;
+                in_mins[pos] = rmin;
+                in_maxs[pos] = rmax;                
+            }
 
             return;
         }
@@ -368,12 +372,9 @@ void init_count_buffers(global int* in_range_cnt,
                         int patch_count)
 {
     size_t lid = get_global_id(0);
-    size_t ilid = BOUND_N_SPLIT_WORK_GROUP_SIZE - lid - 1;
-    in_range_cnt[lid] = (patch_count+ilid)/BOUND_N_SPLIT_WORK_GROUP_CNT;
+    size_t ilid = BOUND_N_SPLIT_WORK_GROUP_CNT - lid - 1;
 
-    if (get_global_id(0) == 0) {
-        *out_range_cnt = 0;
-    }
+    in_range_cnt[lid] = (patch_count+ilid)/BOUND_N_SPLIT_WORK_GROUP_CNT;
 }
                        
  
