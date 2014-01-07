@@ -41,7 +41,7 @@ bound_n_split_limit = 8
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 2048
+reyes_patches_per_pass = 32768
 
 // Maximum number of times a surface patch can be split.
 max_split_depth = 15
@@ -56,7 +56,7 @@ subpixel_bits = 6
 clear_color = 0.1 0.2 1 0
 
 // Patch data input file.
-input_file = mscene/teapots.mscene
+input_file = mscene/teapot.mscene
 
 // Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
 dump_kernel_files = true

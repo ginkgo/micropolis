@@ -51,7 +51,7 @@ class TraceItem:
 def parse(file):
     pattern = re.compile(r'([^@:]*)(@[^@:]*):(\d+):(\d+):(\d+):(\d+):(\d+):([0-9|]*)')
 
-    print( "Add fallback if dependency info is not available" )
+    fallback_id_count = -1
     
     items = []
 
@@ -59,8 +59,12 @@ def parse(file):
         match = pattern.match(line)
 
         if not match:
-            print('Input file format mismatch.')
-            exit(1)
+            match = pattern.match(line.strip()+":0:")
+            fallback_id_count -= 1
+
+            if not match:
+                print('Input file format mismatch.')
+                exit(1)
         
         item = TraceItem(match.group(1),
                          match.group(2)[1:],

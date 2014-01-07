@@ -155,12 +155,13 @@ Reyes::Batch Reyes::BoundNSplitCLLocal::do_bound_n_split(CL::Event& ready)
     _active_handle = nullptr;
 
     out_range_cnt = std::min((int)BATCH_SIZE, out_range_cnt);
-
+    
     if (out_range_cnt <= 0) {
         _done = true;
-    }
-
-
+    } else {
+        statistics.inc_pass_count(1);
+        statistics.add_patches(out_range_cnt);
+    }    
     
     return {(size_t)out_range_cnt, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }
