@@ -241,21 +241,33 @@ def draw_grid_back(ctx, graph_width, graph_height, start, stop):
         ctx.stroke()
 
 
+def digit_cnt(f):
+    f = f-math.floor(f)
+
+    d = 0
+    while f > 0.00001:
+        f *= 10
+        f = f-math.floor(f)
+        d += 1
+
+    return d
         
 def draw_grid_front(ctx, graph_width, graph_height, start, stop, scalefactor):
 
     increment = graph_width/((stop-start)*10)
     ctx.set_source_rgb(0.3,0.3,0.3)
 
+    digits = digit_cnt(scalefactor)
+    
     for i in range(0, math.ceil((graph_width+0.0001)/increment)):
         
-        nub_len = 2
+        nub_len = 1.5
 
         if i%10 == 0:
             nub_len = 3
-            time = int((i/10 + start) * scalefactor)
+            time = float((i/10 + start) * scalefactor)
             ctx.move_to(i*increment, graph_height + 4)
-            aligned_text(ctx, "%d ms" % time, 0.5, 1.0, 0.35);
+            aligned_text(ctx, ("%" + (".%df ms" % digits)) % time, 0.5, 1.0, 0.35);
         
         ctx.move_to(i*increment,0)
         ctx.rel_line_to(0, -nub_len);

@@ -20,7 +20,7 @@ kernel_dir = kernels
 max_anisotropy = 1
 
 // OpenCL platform ID.
-platform_id = 1
+platform_id = 0
 
 // OpenCL device ID.
 device_id = 0
@@ -41,7 +41,7 @@ bound_n_split_limit = 8
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 4096
+reyes_patches_per_pass = 2048
 
 // Maximum number of times a surface patch can be split.
 max_split_depth = 15
@@ -77,7 +77,7 @@ bns_pipeline_length = 8
 bound_n_split_method = LOCAL
 
 // Number of work groups for local bound n split operation.
-local_bns_work_groups = 4
+local_bns_work_groups = 32
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -99,4 +99,4 @@ cull_ribbon = 32
 
 
 
-#hash:8876316114339624694
+#hash:172547322565459630

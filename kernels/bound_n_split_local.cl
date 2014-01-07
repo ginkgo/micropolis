@@ -1,6 +1,7 @@
 
 #include "utility.h"
 
+#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 // Compile time constants:
 // BATCH_SIZE                    - size_t
@@ -150,7 +151,7 @@ void bound_n_split(const global float4* patch_buffer,
         stack_height = 0;
         stack_cnt = 0;
         start = 0;
-        top = 42;
+        top = 0;
         cnt = 0;
     }
     
@@ -256,9 +257,15 @@ void bound_n_split(const global float4* patch_buffer,
         // Move bounded ranges to output buffer
         sum = prefix_sum(lid, BOUND_N_SPLIT_WORK_GROUP_SIZE, (bound_flags & 1) >> 0, prefix_pad);
 
+        local int offset;
         if (lid == BOUND_N_SPLIT_WORK_GROUP_SIZE - 1) {
             cnt = sum;
             start = atomic_add(out_range_cnt, cnt);
+
+            if (cnt + start >= BATCH_SIZE) {
+                offset = max(0,in_range_cnt[wid]);
+                in_range_cnt[wid] = offset + stack_height + cnt - max(0,(int)BATCH_SIZE - start);
+            }
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -271,22 +278,12 @@ void bound_n_split(const global float4* patch_buffer,
             out_mins[start + sum] = rmin;
             out_maxs[start + sum] = rmax;
         }
-        
-        if (start + cnt >= BATCH_SIZE) {
+
+        if (cnt + start >= BATCH_SIZE) {
+            
             // Output buffer overflow
             // Put local/private patches back in input buffer and exit;
-            
-            local int offset;
-            if (lid == 0) {
-                offset = max(0,in_range_cnt[wid]);
-                
-                //in_range_cnt[wid] = offset + stack_height;
-                in_range_cnt[wid] = offset + stack_height + cnt - max(0,(int)BATCH_SIZE - start);
-                
-            }
-            
-            barrier(CLK_LOCAL_MEM_FENCE);
-            
+                        
             // Copy stack content back to input buffer
             int wi = 0;
             for (wi = 0; wi+BOUND_N_SPLIT_WORK_GROUP_SIZE < stack_height; wi += BOUND_N_SPLIT_WORK_GROUP_SIZE) {
@@ -313,6 +310,7 @@ void bound_n_split(const global float4* patch_buffer,
 
             return;
         }
+        
 
         barrier(CLK_LOCAL_MEM_FENCE);
         

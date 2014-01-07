@@ -153,7 +153,7 @@ Reyes::Batch Reyes::BoundNSplitCLLocal::do_bound_n_split(CL::Event& ready)
 
     _ready = CL::Event();
     _active_handle = nullptr;
-    
+
     out_range_cnt = std::min((int)BATCH_SIZE, out_range_cnt);
 
     if (out_range_cnt <= 0) {
