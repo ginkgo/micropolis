@@ -1,37 +1,14 @@
 // Size of the window in pixels.
-window_size = 1024 768
-
-// Number of anti-aliasing samples. (0 means no AA)
-fsaa_samples = 0
+window_size = 800 600
 
 // Application window title.
 window_title = MICROPOLIS
 
-// Framebuffer tile size.
-framebuffer_tile_size = 8
+// Patch data input file.
+input_file = mscene/teapot.mscene
 
-// Search directory for GLSL shader files.
-shader_dir = shaders
-
-// Search directory for OpenCL kernels.
-kernel_dir = kernels
-
-// Maximum anisotropy for texture filtering.
-max_anisotropy = 1
-
-// OpenCL platform ID.
-platform_id = 0
-
-// OpenCL device ID.
-device_id = 0
-
-// 0...(Almost) no output
-// 1...Regular performance information and warnings posted
-// 2...Lots of information posted, can be detrimental to render performance
-verbosity_level = 1
-
-// Force slow path for OpenCL/OpenGL buffer sharing.
-disable_buffer_sharing = false
+// Clear color for framebuffer.
+clear_color = 0.1 0.2 1 0
 
 // Size used for bounding and dicing.
 reyes_patch_size = 8
@@ -39,52 +16,8 @@ reyes_patch_size = 8
 // Maximum size for patches before they can be sent to the dicing stage.
 bound_n_split_limit = 8
 
-// Number of patches that get cached and are submitted as a
-// single rendering pass together.
-reyes_patches_per_pass = 32768
-
-// Maximum number of times a surface patch can be split.
-max_split_depth = 15
-
-// Width of the work-group for the dicing kernel.
-dice_group_width = 8
-
-// Number of sub-one bits for fixed precision pixel coordinates.
-subpixel_bits = 6
-
-// Clear color for framebuffer.
-clear_color = 0.1 0.2 1 0
-
-// Patch data input file.
-input_file = mscene/teapot.mscene
-
-// Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
-dump_kernel_files = true
-
-// Target file for writing OpenCL trace to.
-trace_file = reyes.trace
-
-// Controls backface-culling.
-backface_culling = true
-
-// Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = true
-
-// Number of patch buffers used for transferring patch data to device.
-bns_pipeline_length = 8
-
-// Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = LOCAL
-
-// Number of work groups for local bound n split operation.
-local_bns_work_groups = 32
-
-// Number of samples per side for doing calculating patch range bound.
-bound_sample_rate = 3
-
-// Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
-// PINNED should be a lot faster.
-transfer_buffer_mode = PINNED
+// The number of pixels a surface can be outside of the viewport without being culled.
+cull_ribbon = 32
 
 // Defines which renderer implementation to use.
 // Either OPENCL or GLTESS.
@@ -94,9 +27,83 @@ renderer_type = OPENCL
 // Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
 shading_mode = FLAT
 
-// The number of pixels a surface can be outside of the viewport without being culled.
-cull_ribbon = 32
+// Controls backface-culling.
+backface_culling = true
+
+// Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
+bound_n_split_method = LOCAL
+
+// Number of samples per side for doing calculating patch range bound.
+bound_sample_rate = 3
+
+// Maximum number of times a surface patch can be split.
+max_split_depth = 15
+
+// Number of patches that get cached and are submitted as a
+// single rendering pass together.
+reyes_patches_per_pass = 32768
+
+// Framebuffer tile size.
+framebuffer_tile_size = 8
+
+// Number of sub-one bits for fixed precision pixel coordinates.
+subpixel_bits = 6
+
+// Width of the work-group for the dicing kernel.
+dice_group_width = 8
+
+// Number of patch buffers used for transferring patch data to device.
+bns_pipeline_length = 8
+
+// Number of work groups for local bound n split operation.
+local_bns_work_groups = 16
+
+// Number of anti-aliasing samples. (0 means no AA)
+fsaa_samples = 0
+
+// Search directory for GLSL shader files.
+shader_dir = shaders
+
+// Maximum anisotropy for texture filtering.
+max_anisotropy = 1
+
+// Search directory for OpenCL kernels.
+kernel_dir = kernels
+
+// OpenCL platform ID.
+platform_id = 0
+
+// OpenCL device ID.
+device_id = 0
+
+// Force slow path for OpenCL/OpenGL buffer sharing.
+disable_buffer_sharing = false
+
+// Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
+do_event_polling = true
+
+// Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
+// PINNED should be a lot faster.
+transfer_buffer_mode = PINNED
+
+// Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
+dump_kernel_files = true
+
+// Target file for writing OpenCL trace to.
+trace_file = reyes.trace
+
+// Enables dump mode.
+// The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
+dump_mode = false
+
+// Controls after which frame the application dumps a trace and exits in trace dump mode.
+dump_after = 10
+
+// 0...(Almost) no output
+// 1...Regular performance information and warnings posted
+// 2...Lots of information posted, can be detrimental to render performance
+verbosity_level = 1
 
 
 
-#hash:172547322565459630
+#hash:7629561434447766022

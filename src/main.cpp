@@ -68,11 +68,6 @@ int main(int argc, char** argv)
 
 void mainloop(GLFWwindow* window)
 {
-    // CL::Device device(config.platform_id(), config.device_id());
-
-    // if (config.verbose()) {
-    //     device.print_info();
-    // }
 
     Reyes::Scene scene(config.input_file());
     
@@ -107,6 +102,8 @@ void mainloop(GLFWwindow* window)
     //     else                           cout << format("Prefix sum on %1% items failed") % N << endl;
     // }    
     // return;
+
+    long long frame_no = 0;
     
     while (running) {
 
@@ -182,6 +179,11 @@ void mainloop(GLFWwindow* window)
         }
         last_f9_state = f9_state;
 
+
+        if (config.dump_mode() && frame_no >= config.dump_after()) {
+            renderer->dump_trace();
+        }
+        
         // Render scene
         statistics.start_render();
         if (in_wire_mode) {
@@ -201,6 +203,11 @@ void mainloop(GLFWwindow* window)
 		running = running && !glfwWindowShouldClose( window );
 
         		
+        if (config.dump_mode() && frame_no >= config.dump_after()) {
+            running = false;
+        }
+
+        frame_no++;
     }
 }
 

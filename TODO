@@ -1,20 +1,15 @@
 
 TODO:
 
+* Add config options to dump trace and exit app after N frames
+  * also dump options and build version
 * Implement BoundNSplitCLMultipass
 * Find clCreateUserEvent leak CodeXL is reporting
-* Handle output buffer overflow by writing stack back to input queue
-  * Implement task donation/stealing on top of this
+* Implement task donation/stealing on top of this
 * Rename reyes_patches_per_pass to grids_per_pass or something like that
   * Consider generally cleaning up config options
-* Debug regression with Intel rasterizer black pixels
-  * Only happens in debug build
-  * Same thing happens in AMD CPU backend
 * Investigate Intel vectorization problems in bound_n_split kernel
   * Maybe there's Intel tools that help with finding vectorization problems?
-* Improve pipelining of local Bound&Split calculation
-  * Thread over items
-  * Implement Multipass variant
 * Clean up Projection class
   * Only update when necessary
 * Replace "CL/OpenCL.h" includes with direct includes to necessary classes.
@@ -23,9 +18,6 @@ TODO:
 * Implement dynamic-rate dicing
 * Switch readme to markdown/textile or something like that
 * Add SCons build dir and config-option
-* Add config options to dump trace and exit app after N frames
-  * for scripted performance measurement
-  * also dump options and build version
 * Query ideal work group size and use that for bound_n_split kernels
   * Also pick local stack size (vs. spill region) that way
   
@@ -39,13 +31,10 @@ TODO:
   * Rename script to something more fitting
   * Queue name in bold
   * (Colored) vertical lines for orientation?
-  * Make paper size adapt to trace-length
   * Method for combining commands into single one
-  * Visualize event dependencies
 
 * Debug weird trace behavior where patch-range transfer seem to happen after depending dice/shade/sample
 * Investigate cause of ~2ms extra latency when creating framebuffers >800x600
-* Create command-dependency graph dump (In DOT format)
 
 * Find source for FPS-counter/trace time discrepancy
 * Check for potential ways to get direct access to default framebuffer
@@ -65,13 +54,21 @@ TODO:
 * Implement stochastic rasterization
 
 
-
 DONE:
 
-* Rename *BoundNSplit* classes to BoundNSplit(CL|GL)(CPU|Local|Multipass)
-* Rename *Renderer classes to Renderer(CL|GL)*
+* Add config options to dump trace and exit app after N frames
+  * for scripted performance measurement
+* Create command-dependency graph dump (In DOT format)
+  * Integrated in trace instead
 * Clean up parse_trace.py
   * Time markers on scale
+  * Visualize event dependencies
+* Debug regression with Intel rasterizer black pixels
+  * Only happens in debug build
+  * Same thing happens in AMD CPU backend
+* Handle output buffer overflow by writing stack back to input queue
+* Rename *BoundNSplit* classes to BoundNSplit(CL|GL)(CPU|Local|Multipass)
+* Rename *Renderer classes to Renderer(CL|GL)*
 * Use distributed queuing to parallelize bns
 * Make number of work groups in local bound-n-split kernel configurable
 * Read Stanley & Anjul's scheduling paper!

@@ -44,50 +44,23 @@
   </enums>
 
   <values>
+    
+    <!-- Window properties -->
     <value name="window_size" type="ivec2" default="800 600">
       Size of the window in pixels.
     </value>
-
-    <value name="fsaa_samples" type="int" default="0">
-      Number of anti-aliasing samples. (0 means no AA)
-    </value>
-
+    
     <value name="window_title" type="string" default="MICROPOLIS">
       Application window title.
     </value>
-
-    <value name="framebuffer_tile_size" type="int" default="8">
-      Framebuffer tile size.
+    
+    <!-- Reyes renderer properties -->
+    <value name="input_file" type="string" default="mscene/teapot.mscene">
+      Patch data input file.
     </value>
-
-    <value name="shader_dir" type="string" default="shaders">
-      Search directory for GLSL shader files.
-    </value>
-
-    <value name="kernel_dir" type="string" default="kernels">
-      Search directory for OpenCL kernels.
-    </value>
-
-    <value name="max_anisotropy" type="float" default="1.0">
-      Maximum anisotropy for texture filtering.
-    </value>
-
-    <value name="platform_id" type="int" default="0">
-      OpenCL platform ID.
-    </value>
-
-    <value name="device_id" type="int" default="0">
-      OpenCL device ID.
-    </value>
-
-    <value name="verbosity_level" type="int" default="1">
-      0...(Almost) no output
-      1...Regular performance information and warnings posted
-      2...Lots of information posted, can be detrimental to render performance
-    </value>
-
-    <value name="disable_buffer_sharing" type="bool" default="true">
-      Force slow path for OpenCL/OpenGL buffer sharing.
+    
+    <value name="clear_color" type="vec4" default="0.1 0.2 1.0 0.0">
+      Clear color for framebuffer.
     </value>
 
     <value name="reyes_patch_size" type="size_t" default="128">
@@ -97,67 +70,9 @@
     <value name="bound_n_split_limit" type="float" default="100">
       Maximum size for patches before they can be sent to the dicing stage.
     </value>
-    
-    <value name="reyes_patches_per_pass" type="size_t" default="64">
-      Number of patches that get cached and are submitted as a 
-      single rendering pass together.
-    </value>
 
-    <value name="max_split_depth" type="size_t" default="20">
-      Maximum number of times a surface patch can be split.
-    </value>
-
-    <value name="dice_group_width" type="size_t" default="32">
-      Width of the work-group for the dicing kernel.
-    </value>
-
-    <value name="subpixel_bits" type="size_t" default="8">
-      Number of sub-one bits for fixed precision pixel coordinates.
-    </value>
-
-    <value name="clear_color" type="vec4" default="0.1 0.2 1.0 0.0">
-      Clear color for framebuffer.
-    </value>
-
-    <value name="input_file" type="string" default="mscene/teapot.mscene">
-      Patch data input file.
-    </value>
-
-    <value name="dump_kernel_files" type="bool" default="false">
-      Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
-    </value>
-
-    <value name="trace_file" type="string" default="reyes.trace">
-      Target file for writing OpenCL trace to.
-    </value>
-
-    <value name="backface_culling" type="bool" default="true">
-      Controls backface-culling.
-    </value>
-
-    <value name="do_event_polling" type="bool" default="true">
-      Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-    </value>
-
-    <value name="bns_pipeline_length" type="int" default="3">
-      Number of patch buffers used for transferring patch data to device.
-    </value>
-
-    <value name="bound_n_split_method" type="BoundNSplitMethod" default="LOCAL">
-      Method used to implement Bound&amp;Split. Either CPU, MULTIPASS or LOCAL.
-    </value>
-
-    <value name="local_bns_work_groups" type="size_t" default="32">
-      Number of work groups for local bound n split operation.
-    </value>
-
-    <value name="bound_sample_rate" type="int" default="3">
-      Number of samples per side for doing calculating patch range bound.
-    </value>
-
-    <value name="transfer_buffer_mode" type="TransferBufferMode" default="PINNED">
-      Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
-      PINNED should be a lot faster.
+    <value name="cull_ribbon" type="float" default="32">
+      The number of pixels a surface can be outside of the viewport without being culled.
     </value>
 
     <value name="renderer_type" type="RendererType" default="OPENCL">
@@ -170,9 +85,112 @@
       Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
     </value>
 
-    <value name="cull_ribbon" type="float" default="32">
-      The number of pixels a surface can be outside of the viewport without being culled.
+    <value name="backface_culling" type="bool" default="true">
+      Controls backface-culling.
     </value>
+    
+    <value name="bound_n_split_method" type="BoundNSplitMethod" default="LOCAL">
+      Method used to implement Bound&amp;Split. Either CPU, MULTIPASS or LOCAL.
+    </value>
+    
+    <value name="bound_sample_rate" type="int" default="3">
+      Number of samples per side for doing calculating patch range bound.
+    </value>
+
+    <value name="max_split_depth" type="size_t" default="20">
+      Maximum number of times a surface patch can be split.
+    </value>
+    
+    <value name="reyes_patches_per_pass" type="size_t" default="64">
+      Number of patches that get cached and are submitted as a 
+      single rendering pass together.
+    </value>
+
+    <!-- CL Renderer properties -->
+    <value name="framebuffer_tile_size" type="int" default="8">
+      Framebuffer tile size.
+    </value>
+    
+    <value name="subpixel_bits" type="size_t" default="8">
+      Number of sub-one bits for fixed precision pixel coordinates.
+    </value>    
+
+    <value name="dice_group_width" type="size_t" default="32">
+      Width of the work-group for the dicing kernel.
+    </value>
+
+    <value name="bns_pipeline_length" type="int" default="3">
+      Number of patch buffers used for transferring patch data to device.
+    </value>
+
+    <value name="local_bns_work_groups" type="size_t" default="32">
+      Number of work groups for local bound n split operation.
+    </value>
+
+
+    <!-- OpenGL properties -->
+    <value name="fsaa_samples" type="int" default="0">
+      Number of anti-aliasing samples. (0 means no AA)
+    </value>
+
+    <value name="shader_dir" type="string" default="shaders">
+      Search directory for GLSL shader files.
+    </value>
+
+    <value name="max_anisotropy" type="float" default="1.0">
+      Maximum anisotropy for texture filtering.
+    </value>
+    
+    <!-- OpenCL properties -->
+    <value name="kernel_dir" type="string" default="kernels">
+      Search directory for OpenCL kernels.
+    </value>
+
+    <value name="platform_id" type="int" default="0">
+      OpenCL platform ID.
+    </value>
+
+    <value name="device_id" type="int" default="0">
+      OpenCL device ID.
+    </value>
+    
+    <value name="disable_buffer_sharing" type="bool" default="true">
+      Force slow path for OpenCL/OpenGL buffer sharing.
+    </value>
+
+    <value name="do_event_polling" type="bool" default="true">
+      Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
+    </value>
+    
+    <value name="transfer_buffer_mode" type="TransferBufferMode" default="PINNED">
+      Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
+      PINNED should be a lot faster.
+    </value>
+    
+    <value name="dump_kernel_files" type="bool" default="false">
+      Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
+    </value>
+    
+    <value name="trace_file" type="string" default="reyes.trace">
+      Target file for writing OpenCL trace to.
+    </value>
+
+    <!-- Debug properties -->      
+    <value name="dump_mode" type="bool" default="false">
+      Enables dump mode.
+      The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
+    </value>
+
+    <value name="dump_after" type="long long" default="10">
+      Controls after which frame the application dumps a trace and exits in trace dump mode.
+    </value>
+    
+    <value name="verbosity_level" type="int" default="1">
+      0...(Almost) no output
+      1...Regular performance information and warnings posted
+      2...Lots of information posted, can be detrimental to render performance
+    </value>
+
 
   </values>
 
