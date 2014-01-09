@@ -1,8 +1,9 @@
 
 TODO:
 
-* Add config options to dump trace and exit app after N frames
-  * also dump options and build version
+* Use dump-mode to write a benchmark script that tries out many different setting combinations
+  * use trace parsing code to calculate performance characteristics
+  
 * Implement BoundNSplitCLMultipass
 * Find clCreateUserEvent leak CodeXL is reporting
 * Implement task donation/stealing on top of this
@@ -56,6 +57,7 @@ TODO:
 
 DONE:
 
+* rename parse_trace.py and  and move actual trace parsing into separate file for reuse
 * Add config options to dump trace and exit app after N frames
   * for scripted performance measurement
 * Create command-dependency graph dump (In DOT format)
