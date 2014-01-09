@@ -35,8 +35,6 @@ class TraceItem:
 
 def parse(file):
     pattern = re.compile(r'([^@:]*)(@[^@:]*):(\d+):(\d+):(\d+):(\d+):(\d+):([0-9|]*)')
-
-    fallback_id_count = -1
     
     items = []
 
@@ -45,7 +43,6 @@ def parse(file):
 
         if not match:
             match = pattern.match(line.strip()+":0:")
-            fallback_id_count -= 1
 
             if not match:
                 print('Input file format mismatch.')
