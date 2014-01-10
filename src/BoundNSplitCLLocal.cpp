@@ -21,6 +21,7 @@ struct cl_projection
 #define WORK_GROUP_CNT std::min(_queue.device().max_compute_units(), config.local_bns_work_groups())
 #define WORK_GROUP_SIZE (_queue.device().preferred_work_group_size_multiple())
 #define MAX_SPLIT_DEPTH config.max_split_depth()
+#define MAX_BNS_ITERATIONS 200
 
 Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
                                               CL::CommandQueue& queue,
@@ -112,6 +113,7 @@ void Reyes::BoundNSplitCLLocal::init(void* patches_handle, const mat4& matrix, c
     
     //_queue.flush();
     _done = false;
+    _iteration_count = 0;
 }
 
 
@@ -155,13 +157,15 @@ Reyes::Batch Reyes::BoundNSplitCLLocal::do_bound_n_split(CL::Event& ready)
     _active_handle = nullptr;
 
     out_range_cnt = std::min((int)BATCH_SIZE, out_range_cnt);
+
+    _iteration_count++;
     
-    if (out_range_cnt <= 0) {
+    if (out_range_cnt <= 0 || _iteration_count > MAX_BNS_ITERATIONS) {
         _done = true;
     } else {
         statistics.inc_pass_count(1);
         statistics.add_patches(out_range_cnt);
-    }    
+    }
     
     return {(size_t)out_range_cnt, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }

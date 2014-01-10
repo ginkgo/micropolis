@@ -1,4 +1,7 @@
 
+#ifndef UTILITY_H
+#define UTILITY_H
+
 #ifdef __CL_VERSION_2_0
 #warning replace prefix_sum() with work_group_scan_*_*()
 #endif
@@ -144,3 +147,4 @@ inline int round_up_by(int n, int d)
     return round_up_div(n,d) * n;
 }
 
+#endif

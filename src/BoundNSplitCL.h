@@ -159,6 +159,7 @@ namespace Reyes
         CL::Event _ready;
 
         bool _done;
+        int _iteration_count;
         
     public:
 
