@@ -19,6 +19,7 @@
 #include "common.h"
 
 #include "CL/OpenCL.h"
+#include "CL/PrefixSum.h"
 #include "Config.h"
 #include "GL/Buffer.h"
 #include "GL/PrefixSum.h"
@@ -31,7 +32,8 @@
 #include <GL/glx.h>
 
 void mainloop(GLFWwindow* window);
-bool test_prefix_sum(const int N, bool print);
+bool test_GL_prefix_sum(const int N, bool print);
+bool test_CL_prefix_sum(const int N, bool print);
 void handle_arguments(int argc, char** argv);
 GLFWwindow* init_opengl(ivec2 window_size);
 void get_framebuffer_info();
@@ -97,9 +99,12 @@ void mainloop(GLFWwindow* window)
     bool last_f3_state = glfwGetKey(window, GLFW_KEY_F3);
     bool last_f9_state = glfwGetKey(window, GLFW_KEY_F9);
 
-    // for (auto N : {2, 20, 100, 128, 200, 512, 800, 1000, 1024, 2048, 4096, 5000, 128*128, 128*128*128, 50000}) {
-    //     if (test_prefix_sum(N, false)) cout << format("Prefix sum on %1% items succeeded") % N << endl;
-    //     else                           cout << format("Prefix sum on %1% items failed") % N << endl;
+    // for (auto N : {1,2, 20, 100,
+    //             128, 200, 512, 800, 1000,
+    //             1024, 2048, 4096, 5000,
+    //             128*128, 128*128*128, 1024*1024*128, 50000}) {
+    //     if (test_CL_prefix_sum(N, false)) cout << format("Prefix sum on %1% items succeeded") % N << endl;
+    //     else                              cout << format("Prefix sum on %1% items failed") % N << endl;
     // }    
     // return;
 
@@ -214,7 +219,7 @@ void mainloop(GLFWwindow* window)
 
 
 
-bool test_prefix_sum(const int N, bool print)
+bool test_GL_prefix_sum(const int N, bool print)
 {
     bool retval = true;
     
@@ -275,6 +280,65 @@ bool test_prefix_sum(const int N, bool print)
     }
 
     if (print) cout << boost::format("TOTAL: (%1%, %2%)") % total.x % total.y << endl;
+    
+    return retval;
+}
+
+bool test_CL_prefix_sum(const int N, bool print)
+{
+    bool retval = true;
+
+    CL::Device device(config.platform_id(), config.device_id());
+    CL::CommandQueue queue(device, "prefix sum test");
+    
+    CL::PrefixSum prefix_sum(device, N);
+
+    CL::Buffer i_buffer(device, N * sizeof(int), CL_MEM_READ_WRITE);
+    CL::Buffer o_buffer(device, N * sizeof(int), CL_MEM_READ_WRITE);
+    CL::Buffer t_buffer(device, sizeof(int), CL_MEM_READ_WRITE);
+
+    vector<int> i_vec(N);
+    vector<int> o_vec(N);
+
+    srand(43);
+    if (print) cout << "INPUT: "; 
+    for (size_t i = 0; i < (size_t)N; ++i) {
+        i_vec[i] = rand()%8+1;
+        o_vec[i] = 0;
+
+        if (print) cout << i_vec[i] << " ";
+    }
+    if (print) cout << endl;
+
+    int total;
+
+    CL::Event event;
+
+    event = queue.enq_write_buffer(i_buffer, i_vec.data(), i_vec.size() * sizeof(int), "fill input buffer", CL::Event());
+    event = prefix_sum.apply(N, queue, i_buffer, o_buffer, t_buffer, event);
+    event = queue.enq_read_buffer(o_buffer, o_vec.data(), o_vec.size() * sizeof(int), "read prefix results", event);
+    event = queue.enq_read_buffer(t_buffer, &total, sizeof(int), "read prefix total", event);
+
+    queue.wait_for_events(event);
+
+    int sum = 0;
+    if (print) cout << "OUTPUT: "; 
+    for (size_t i = 0; i < (size_t)N; ++i) {
+        sum += i_vec[i];
+
+        if (sum != o_vec[i]) {
+            retval = false;
+        }
+        
+        if (print) cout << o_vec[i] << " ";
+    }
+    if (print) cout << endl;
+
+    if (sum != total) {
+        retval = false;
+    }
+    
+    if (print) cout << boost::format("TOTAL: %1%") % total << endl;
     
     return retval;
 }
