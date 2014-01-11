@@ -238,7 +238,7 @@ void Reyes::BoundNSplitCLCPU::bound_patch_range (const PatchRange& r, const Bezi
                                                      const mat4& mv, const mat4& mvp,
                                                      BBox& box, float& vlen, float& hlen)
 {
-    const size_t RES = config.bound_sample_rate();
+    const size_t RES = 3;
         
     //vec2 pp[RES][RES];
     vec3 ps[RES][RES];

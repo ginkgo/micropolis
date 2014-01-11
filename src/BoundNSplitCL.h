@@ -3,6 +3,7 @@
 #include "common.h"
 
 #include "CL/OpenCL.h"
+#include "CL/PrefixSum.h"
 #include "GL/Texture.h"
 #include "GL/VBO.h"
 #include "Patch.h"
@@ -183,6 +184,10 @@ namespace Reyes
         CL::CommandQueue& _queue;
         shared_ptr<PatchIndex> _patch_index;
         
+        CL::Program _bound_n_split_program;
+
+        shared_ptr<CL::Kernel> _bound_kernel;
+        
         void* _active_handle;
         CL::Buffer* _active_patch_buffer;
         mat4 _active_matrix;
@@ -195,6 +200,8 @@ namespace Reyes
         CL::Buffer _projection_buffer;
 
         CL::Event _ready;
+
+        CL::PrefixSum _prefix_sum;
         
     public:
 

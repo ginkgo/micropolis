@@ -1,10 +1,9 @@
 
 TODO:
-
-* Use dump-mode to write a benchmark script that tries out many different setting combinations
-  * use trace parsing code to calculate performance characteristics
   
 * Implement BoundNSplitCLMultipass
+* Debug deadlock/artifact problems in LOCAL B&S kernels
+* Plot figures in benchmark.py with matplotlib
 * Find clCreateUserEvent leak CodeXL is reporting
 * Implement task donation/stealing on top of this
 * Rename reyes_patches_per_pass to grids_per_pass or something like that
@@ -29,7 +28,6 @@ TODO:
   * __attribute__((reqd_work_group_size(X,Y,Z)))
 
 * Improve on parse_trace.py output
-  * Rename script to something more fitting
   * Queue name in bold
   * (Colored) vertical lines for orientation?
   * Method for combining commands into single one
@@ -42,7 +40,6 @@ TODO:
 
 * Read:
   * 'Fast GPU-based Adaptive Tessellation with CUDA'
-  * 'Task Management for Irregular-Parallel Workloads on the GPU'
 
 * Shader system
   * Use Python for generation/compilation
@@ -57,12 +54,15 @@ TODO:
 
 DONE:
 
+* Use dump-mode to write a benchmark script that tries out many different setting combinations
+  * use trace parsing code to calculate performance characteristics
 * rename parse_trace.py and  and move actual trace parsing into separate file for reuse
 * Add config options to dump trace and exit app after N frames
   * for scripted performance measurement
 * Create command-dependency graph dump (In DOT format)
   * Integrated in trace instead
 * Clean up parse_trace.py
+  * Rename script to something more fitting
   * Time markers on scale
   * Visualize event dependencies
 * Debug regression with Intel rasterizer black pixels
@@ -125,4 +125,5 @@ DONE:
 * Read:
   * '3D Rasterization: A Bridge between Rasterization and Ray Casting'
   * 'Fragment-Parallel Composite and Filter'
+  * 'Task Management for Irregular-Parallel Workloads on the GPU'
 

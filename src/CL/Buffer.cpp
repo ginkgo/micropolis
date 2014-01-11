@@ -47,6 +47,38 @@ CL::Buffer::~Buffer()
     }
 }
 
+
+
+CL::Buffer::Buffer(Buffer&& other)
+    : _device(other._device)
+    , _flags(other._flags)
+    , _size(other._size)
+    , _buffer(other._buffer)
+{
+    other._device = nullptr;
+    other._flags = 0;
+    other._size = 0;
+    other._buffer = 0;
+}
+
+
+CL::Buffer& CL::Buffer::operator=(Buffer&& other)
+{
+    _device = other._device;
+    _flags = other._flags;
+    _size = other._size;
+    _buffer = other._buffer;
+        
+    other._device = nullptr;
+    other._flags = 0;
+    other._size = 0;
+    other._buffer = 0;
+
+    return *this;
+}
+
+
+
 size_t CL::Buffer::get_size() const
 {
 

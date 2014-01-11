@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "common.h"
@@ -25,10 +26,14 @@ namespace CL
         
     public:
         
+        
         Buffer(Device& device, size_t size, cl_mem_flags flags);
         Buffer(Device& device, GLuint GL_buffer);
         virtual ~Buffer();
 
+        Buffer(Buffer&& other);
+        Buffer& operator=(Buffer&& other);
+        
         cl_mem get() const { return _buffer; }
         
         size_t get_size() const;

@@ -32,8 +32,19 @@ Reyes::BoundNSplitCLMultipass::BoundNSplitCLMultipass(CL::Device& device,
     , _out_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY)
 
     , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
-{
 
+    , _prefix_sum(device, BATCH_SIZE)
+{
+    _patch_index->enable_load_opencl_buffer(device, queue);
+
+    
+    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", config.bound_sample_rate());
+    _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
+    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
+
+    _bound_n_split_program.compile(device, "bound_n_split_multipass.cl");
+
+    _bound_kernel.reset(_bound_n_split_program.get_kernel("bound_kernel"));
 }
 
 

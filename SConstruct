@@ -9,10 +9,24 @@ if False:
     optimization_flags = ['-O0', '-ggdb']
     defines = ['linux', 'DEBUG_OPENCL']
 
+    
+#used_toolchain = 'Clang'
+used_toolchain = 'GCC'
+    
 env['CPPPATH'] = ['#/external', '#/generated', '#src']
-env['LINK'] = 'g++'
-env['CC'] = 'gcc'
-env['CXX'] = 'g++'
+
+if used_toolchain=='GCC':
+    env['LINK'] = 'g++'
+    env['CC'] = 'gcc'
+    env['CXX'] = 'g++'
+elif used_toolchain=='Clang':
+    env['LINK'] = 'clang++'
+    env['CC'] = 'clang'
+    env['CXX'] = 'clang++'
+else:
+    #TODO: Add warning
+    None
+    
 env['LIBS'] = ['GL', 'glfw', 'boost_regex', 'IL', 'OpenCL', 'Xrandr', 'rt', 'capnp', 'kj']
 env['CCFLAGS'] = optimization_flags + warning_flags 
 env['CXXFLAGS'] = ['-std=c++11']

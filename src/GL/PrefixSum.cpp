@@ -26,8 +26,13 @@ void GL::PrefixSum::apply(size_t batch_size, GL::Buffer& input, GL::Buffer& outp
         do_reduce(batch_size, input, output, total);
         return;
     }
-    
-    int level = 0;
+
+    size_t reduced_size = (batch_size-1)/128+1;
+    int level = buffer_pyramid.size()-1;
+    while (level >= 0 && buffer_pyramid[level].get_size() < reduced_size) {
+        level--;
+    }
+    assert(level >= 0);
 
     do_reduce (batch_size, input, output, buffer_pyramid.at(level));
 

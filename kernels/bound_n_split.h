@@ -3,6 +3,8 @@
 
 // Compile time constants:
 // CULL_RIBBON                   - float
+// BOUND_SAMPLE_RATE             - int
+// MAX_SPLIT_DEPTH               - int
 
 
 bool outside_frustum(float3 pmin, float3 pmax, constant const projection* P)

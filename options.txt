@@ -31,7 +31,7 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = LOCAL
+bound_n_split_method = MULTIPASS
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -71,7 +71,7 @@ max_anisotropy = 1
 kernel_dir = kernels
 
 // OpenCL platform ID.
-platform_id = 0
+platform_id = 1
 
 // OpenCL device ID.
 device_id = 0

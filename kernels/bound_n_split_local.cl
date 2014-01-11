@@ -7,7 +7,7 @@
 // BOUND_N_SPLIT_LIMIT           - float
 // BOUND_N_SPLIT_WORK_GROUP_CNT  - int
 // BOUND_N_SPLIT_WORK_GROUP_SIZE - int
-// BOUND_SAMPLE_RATE             - int
+// BOUND_SAMPLE_RATE             - int 
 // CULL_RIBBON                   - float
 // MAX_SPLIT_DEPTH               - int
 
