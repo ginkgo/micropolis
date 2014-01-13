@@ -6,10 +6,10 @@ kernel void bound_kernel(const global float4* patch_buffer,
                          int batch_size,
                          int batch_offset,
                          
-                         global const int* pids,
-                         global const uchar* depths,
-                         global const float2* mins,
-                         global const float2* maxs,
+                         global const int* pid_stack,
+                         global const uchar* depth_stack,
+                         global const float2* min_stack,
+                         global const float2* max_stack,
 
                          global uchar* bound_flags,
                          global int* split_flags,
@@ -29,10 +29,10 @@ kernel void bound_kernel(const global float4* patch_buffer,
 
     if (lid >= batch_size) return;
 
-    int rpid = pids[gid];
-    uchar rdepth = depths[gid];
-    float2 rmax = maxs[gid];
-    float2 rmin = mins[gid];
+    int rpid = pid_stack[gid];
+    uchar rdepth = depth_stack[gid];
+    float2 rmax = max_stack[gid];
+    float2 rmin = min_stack[gid];
     
     uchar flags = bound(patch_buffer,
                         rpid, rmin, rmax, rdepth,
@@ -124,3 +124,23 @@ kernel void move(int batch_size,
         }
     }
 }
+
+
+kernel void init_ranges(int patch_count,
+                 
+                 global int* pid_stack,
+                 global uchar* depth_stack,
+                 global float2* min_stack,
+                 global float2* max_stack)
+{
+    int gid = get_global_id(0);
+
+    if (gid > patch_count) return;
+
+    pid_stack[gid] = gid;
+    depth_stack[gid] = 0;
+    min_stack[gid] = (float2)(0,0);
+    max_stack[gid] = (float2)(1,1);
+}
+                 
+                 

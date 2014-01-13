@@ -91,7 +91,7 @@ if __name__=='__main__':
 
     benchmark_file = '/tmp/benchmark.trace'
     
-    benchmark = Benchmark(binary_name, benchmark_file, timeout=5, repeat=1)
+    benchmark = Benchmark(binary_name, benchmark_file, timeout=5, repeat=5)
 
     benchmark.add_option('dump_mode', 'true')
     benchmark.add_option('dump_after', 10)
@@ -100,7 +100,7 @@ if __name__=='__main__':
 
     benchmark.add_alternative_options('input_file', glob('mscene/*.mscene'))
 
-    benchmark.add_alternative_options('bound_n_split_method', ['CPU', 'LOCAL'])
+    benchmark.add_alternative_options('bound_n_split_method', ['CPU', 'LOCAL', 'MULTIPASS'])
     # benchmark.add_alternative_options('transfer_buffer_mode', ['PINNED', 'UNPINNED'])
 
     # benchmark.add_option('bound_n_split_method', 'LOCAL')

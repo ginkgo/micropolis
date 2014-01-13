@@ -250,27 +250,6 @@ void init_range_buffers(global int* pids,
 }
 
 
-kernel __attribute__((reqd_work_group_size(1,1,1)))
-void init_projection_buffer(global projection* P,
-                       
-                            matrix4 proj,
-                            matrix2 screen_matrix,
-                            float fovy,
-                            float2 f,
-                            float near,
-                            float far,
-                            int2 screen_size)
-{
-    P->proj = proj;
-    P->screen_matrix = screen_matrix;
-    P->fovy = fovy;
-    P->f = f;
-    P->near = near;
-    P->far = far;
-    P->screen_size = screen_size;
-}
-
-
 kernel __attribute__((reqd_work_group_size(BOUND_N_SPLIT_WORK_GROUP_CNT,1,1)))
 void init_count_buffers(global int* in_range_cnt,
                         global int* out_range_cnt,
