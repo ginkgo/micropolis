@@ -97,13 +97,13 @@ void CL::Buffer::resize(size_t new_size)
         _buffer = 0;
         _size = 0;
     }
-
+    
+    _size = new_size;
     if (new_size == 0) return;
     
     _buffer = clCreateBuffer(_device->get_context(), _flags, new_size, NULL, &status);
     OPENCL_ASSERT(status);
 
-    _size = new_size;
     statistics.alloc_opencl_memory(_size);
 }
 

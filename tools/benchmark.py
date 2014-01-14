@@ -91,12 +91,13 @@ if __name__=='__main__':
 
     benchmark_file = '/tmp/benchmark.trace'
     
-    benchmark = Benchmark(binary_name, benchmark_file, timeout=5, repeat=5)
+    benchmark = Benchmark(binary_name, benchmark_file, timeout=5, repeat=4)
 
     benchmark.add_option('dump_mode', 'true')
     benchmark.add_option('dump_after', 10)
     benchmark.add_option('verbosity_level', 0)
     benchmark.add_option('trace_file', benchmark_file)
+    
 
     benchmark.add_alternative_options('input_file', glob('mscene/*.mscene'))
 

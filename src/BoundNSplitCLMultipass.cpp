@@ -65,6 +65,12 @@ Reyes::BoundNSplitCLMultipass::BoundNSplitCLMultipass(CL::Device& device,
     _move_kernel.reset(_bound_n_split_program.get_kernel("move"));
     _init_ranges_kernel.reset(_bound_n_split_program.get_kernel("init_ranges"));
     _init_projection_buffer_kernel.reset(_bound_n_split_program.get_kernel("init_projection_buffer"));
+
+    _ready = CL::Event();
+
+    _ready = _queue.enq_fill_buffer(_bound_flags, (cl_uchar)0, BATCH_SIZE, "Init bound flags buffer", _ready);
+    _ready = _queue.enq_fill_buffer(_draw_flags, (cl_int)0, BATCH_SIZE, "Init bound flags buffer", _ready);
+    _ready = _queue.enq_fill_buffer(_split_flags, (cl_int)0, BATCH_SIZE, "Init bound flags buffer", _ready);
 }
 
 
@@ -79,14 +85,15 @@ void Reyes::BoundNSplitCLMultipass::init(void* patches_handle, const mat4& matri
     size_t stack_size = patch_count + PROCESS_CNT * MAX_SPLIT_DEPTH;
     
     _stack_height = patch_count;
-    
+
+    cout << _depth_pad.get_size() << endl;
     if (_depth_stack.get_size() < stack_size) {
         _pid_stack.resize(stack_size * sizeof(cl_int));
         _depth_stack.resize(stack_size * sizeof(cl_uchar));
         _min_stack.resize(stack_size * sizeof(cl_float2));
         _max_stack.resize(stack_size * sizeof(cl_float2));
     }
-        
+    
     {
         // TODO: Redo this only when projection has changed
         mat4 proj;
@@ -101,6 +108,7 @@ void Reyes::BoundNSplitCLMultipass::init(void* patches_handle, const mat4& matri
         _ready = _queue.enq_kernel(*_init_projection_buffer_kernel, 1,1, "initialize projection buffer", _ready);
     }
 
+    //_queue.finish();
     _init_ranges_kernel->set_args((cl_int)patch_count, _pid_stack, _depth_stack, _min_stack, _max_stack);
     _ready = _queue.enq_kernel(*_init_ranges_kernel, round_up_by((int)patch_count, 64), 64, "init patch ranges", _ready);
 }
@@ -123,8 +131,10 @@ void Reyes::BoundNSplitCLMultipass::finish()
 
 Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
 {
+    CL::Event prefix_sum_ready, mapping_ready;
+    
     int batch_size = std::min((int)_stack_height, (int)BATCH_SIZE);
-
+    
     _stack_height -= batch_size;
     
     _bound_kernel->set_args(*_active_patch_buffer,
@@ -135,8 +145,12 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
                             _active_matrix, _projection_buffer, config.bound_n_split_limit());
     _ready = _queue.enq_kernel(*_bound_kernel, round_up_by(batch_size, 64), 64, "bound patches", ready | _ready);
 
-    _ready = _prefix_sum.apply(batch_size, _queue, _split_flags, _split_flags, _split_ranges_cnt_buffer, _ready);
-    _ready = _prefix_sum.apply(batch_size, _queue, _draw_flags, _draw_flags, _out_range_cnt_buffer, _ready);
+    prefix_sum_ready = _prefix_sum.apply(batch_size, _queue,
+                                         _split_flags, _split_flags, _split_ranges_cnt_buffer,
+                                         _ready);
+    prefix_sum_ready = _prefix_sum.apply(batch_size, _queue,
+                                         _draw_flags, _draw_flags, _out_range_cnt_buffer,
+                                         _ready) | prefix_sum_ready;
 
     _move_kernel->set_args(batch_size, _stack_height,
                            _pid_pad, _depth_pad, _min_pad, _max_pad,
@@ -144,15 +158,20 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
                            _pid_stack, _depth_stack, _min_stack, _max_stack,
                            _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer);
     _ready = _queue.enq_kernel(*_move_kernel, round_up_by(batch_size, 64), 64, "split patches", _ready);
-
-    _ready = _queue.enq_map_buffer(_out_range_cnt_buffer, CL_MAP_READ, "map draw count", _ready, true);
-    int draw_count = _out_range_cnt_buffer.host_ref<int>();
-    _ready = _queue.enq_unmap_buffer(_out_range_cnt_buffer, "unmap draw count", _ready);
     
-    _ready = _queue.enq_map_buffer(_split_ranges_cnt_buffer, CL_MAP_READ, "map ranges count", _ready, true);
+    mapping_ready = _queue.enq_map_buffer(_out_range_cnt_buffer, CL_MAP_READ, "map draw count", prefix_sum_ready);
+    mapping_ready = _queue.enq_map_buffer(_split_ranges_cnt_buffer, CL_MAP_READ, "map ranges count", prefix_sum_ready) | mapping_ready;
+
+    _queue.wait_for_events(mapping_ready);
+    
+    int draw_count = _out_range_cnt_buffer.host_ref<int>();
     int split_count = _split_ranges_cnt_buffer.host_ref<int>(); 
     _stack_height += split_count * 2;
-    _ready = _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "unmap ranges count", _ready);
+
+    _queue.enq_unmap_buffer(_out_range_cnt_buffer, "unmap draw count", CL::Event());
+    _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "unmap ranges count", CL::Event());
+    
+    //cout << split_count << "split, " << draw_count << "drawn" << endl;
     
     return {(size_t)draw_count, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }

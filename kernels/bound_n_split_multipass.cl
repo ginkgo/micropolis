@@ -47,6 +47,7 @@ kernel void bound_kernel(const global float4* patch_buffer,
     depth_pad[lid] = rdepth+1;
     min_pad[lid] = rmin;
     max_pad[lid] = rmax;
+
 }
 
 
@@ -141,6 +142,7 @@ kernel void init_ranges(int patch_count,
     depth_stack[gid] = 0;
     min_stack[gid] = (float2)(0,0);
     max_stack[gid] = (float2)(1,1);
+    
 }
                  
                  
