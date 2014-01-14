@@ -288,7 +288,7 @@ bool test_CL_prefix_sum(const int N, bool print)
 {
     bool retval = true;
 
-    CL::Device device(config.platform_id(), config.device_id());
+    CL::Device device(config.opencl_device_id().x, config.opencl_device_id().y);
     CL::CommandQueue queue(device, "prefix sum test");
     
     CL::PrefixSum prefix_sum(device, N);

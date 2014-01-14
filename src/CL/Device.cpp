@@ -6,6 +6,8 @@
 #include <CL/cl_gl.h>
 #include <fstream>
 
+#include <signal.h>
+
 #ifdef linux
 #define GLFW_EXPOSE_NATIVE_X11
 #define GLFW_EXPOSE_NATIVE_GLX
@@ -28,6 +30,9 @@ namespace
                                                   const string& indent);
     void print_device_workgroup_size(cl_device_id device, const string& indent);
     void print_device_queue_properties(cl_device_id device, const string& indent);
+
+    void CL_CALLBACK opencl_error_callback(const char* errinfo, const void* private_info, size_t cb, void* user_data);
+                               
 }
 
 
@@ -309,7 +314,7 @@ size_t CL::Device::preferred_work_group_size_multiple() const
     if (is_GPU_device(_device)) {
         return 64;
     } else {
-        return 1;
+        return 4;
     }
 }
 
@@ -376,7 +381,7 @@ namespace
         
         cl_context context = clCreateContext(props, 
                                              1, &device,
-                                             NULL, NULL, &status);
+                                             opencl_error_callback, NULL, &status);
         
         OPENCL_ASSERT(status);
 
@@ -391,7 +396,7 @@ namespace
             {CL_CONTEXT_PLATFORM, (cl_context_properties)platform, 0};
         cl_context context = clCreateContext(props, 
                                              1, &device,
-                                             NULL, NULL, &status);
+                                             opencl_error_callback, NULL, &status);
 
         OPENCL_ASSERT(status);
 
@@ -469,6 +474,15 @@ namespace
         }
 
         cout << endl;
+    }
+
+    void CL_CALLBACK opencl_error_callback(const char* errinfo, const void* private_info, size_t cb, void* user_data)
+    {
+        cout << errinfo << endl;
+        
+#ifdef DEBUG_OPENCL
+        raise(SIGTRAP);
+#endif
     }
 
 }

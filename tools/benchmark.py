@@ -101,10 +101,11 @@ if __name__=='__main__':
 
     benchmark.add_alternative_options('input_file', glob('mscene/*.mscene'))
 
-    benchmark.add_alternative_options('bound_n_split_method', ['CPU', 'LOCAL', 'MULTIPASS'])
+    # benchmark.add_alternative_options('bound_n_split_method', ['CPU', 'LOCAL', 'MULTIPASS'])
     # benchmark.add_alternative_options('transfer_buffer_mode', ['PINNED', 'UNPINNED'])
+    # benchmark.add_alternative_options('do_event_polling', ['true', 'false'])
 
-    # benchmark.add_option('bound_n_split_method', 'LOCAL')
+    benchmark.add_option('bound_n_split_method', 'LOCAL')
     # benchmark.add_alternative_options('local_bns_work_groups', [1,2,4,8,16,32])
     
     benchmark.perform()

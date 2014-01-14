@@ -14,7 +14,7 @@
 #define _bound_n_split_queue _rasterization_queue
 
 Reyes::RendererCL::RendererCL()
-    : _device(config.platform_id(), config.device_id())
+    : _device(config.opencl_device_id().x, config.opencl_device_id().y)
       
     // , _framebuffer_queue(_device, "framebuffer")
     // , _bound_n_split_queue(_device, "bound & split")
