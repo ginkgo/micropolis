@@ -86,7 +86,6 @@ void Reyes::BoundNSplitCLMultipass::init(void* patches_handle, const mat4& matri
     
     _stack_height = patch_count;
 
-    cout << _depth_pad.get_size() << endl;
     if (_depth_stack.get_size() < stack_size) {
         _pid_stack.resize(stack_size * sizeof(cl_int));
         _depth_stack.resize(stack_size * sizeof(cl_uchar));
@@ -172,6 +171,9 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "unmap ranges count", CL::Event());
     
     //cout << split_count << "split, " << draw_count << "drawn" << endl;
+
+    statistics.add_patches(draw_count);
+    statistics.inc_pass_count(1);
     
     return {(size_t)draw_count, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }

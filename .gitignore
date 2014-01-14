@@ -1,9 +1,11 @@
 
 traces/*.pdf
 *.o
-micropolis
+micropolis_*
 generated/*
 .sconsign.dblite
 reyes.trace
 AMDOpenCLDebugAPIUsage.log
 __pycache__
+debug/
+release/

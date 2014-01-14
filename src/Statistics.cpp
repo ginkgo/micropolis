@@ -145,8 +145,8 @@ void Statistics::print()
         cout << endl
              << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl
              // << ms_per_render_pass << " ms/render pass" << endl
-             << ms_bound_n_split << " ms spent on bound & split" << endl
-             << ms_dice_n_raster << " ms spent on dicing & rasterization" << endl
+             // << ms_bound_n_split << " ms spent on bound & split" << endl
+             // << ms_dice_n_raster << " ms spent on dicing & rasterization" << endl
              << patches_per_frame  << " bounded patches" << endl
              << _pass_count << " render passes" << endl
              // << with_commas(quad_count) << " polygons" << endl
