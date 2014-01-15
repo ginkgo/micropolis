@@ -149,17 +149,18 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
                                          _ready);
     prefix_sum_ready = _prefix_sum.apply(batch_size, _queue,
                                          _draw_flags, _draw_flags, _out_range_cnt_buffer,
-                                         _ready) | prefix_sum_ready;
+                                         prefix_sum_ready);
 
+    
     _move_kernel->set_args(batch_size, _stack_height,
                            _pid_pad, _depth_pad, _min_pad, _max_pad,
                            _bound_flags, _draw_flags, _split_flags,
                            _pid_stack, _depth_stack, _min_stack, _max_stack,
                            _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer);
-    _ready = _queue.enq_kernel(*_move_kernel, round_up_by(batch_size, 64), 64, "split patches", _ready);
-    
-    mapping_ready = _queue.enq_map_buffer(_out_range_cnt_buffer, CL_MAP_READ, "map draw count", prefix_sum_ready);
-    mapping_ready = _queue.enq_map_buffer(_split_ranges_cnt_buffer, CL_MAP_READ, "map ranges count", prefix_sum_ready) | mapping_ready;
+    _ready = _queue.enq_kernel(*_move_kernel, round_up_by(batch_size, 64), 64, "split patches", _ready | prefix_sum_ready);
+
+    mapping_ready = _queue.enq_map_buffer(_out_range_cnt_buffer, CL_MAP_READ, "buffer map", prefix_sum_ready);
+    mapping_ready = _queue.enq_map_buffer(_split_ranges_cnt_buffer, CL_MAP_READ, "buffer map", mapping_ready);
 
     _queue.wait_for_events(mapping_ready);
     
@@ -167,8 +168,8 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     int split_count = _split_ranges_cnt_buffer.host_ref<int>(); 
     _stack_height += split_count * 2;
 
-    _queue.enq_unmap_buffer(_out_range_cnt_buffer, "unmap draw count", CL::Event());
-    _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "unmap ranges count", CL::Event());
+    _queue.enq_unmap_buffer(_out_range_cnt_buffer, "buffer map", CL::Event());
+    _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "buffer map", CL::Event());
     
     //cout << split_count << "split, " << draw_count << "drawn" << endl;
 
