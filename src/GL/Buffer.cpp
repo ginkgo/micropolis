@@ -65,6 +65,20 @@ size_t GL::Buffer::get_size() const
     return _size;
 }
 
+
+void GL::Buffer::resize(size_t new_size)
+{
+    statistics.free_opengl_memory(_size);
+    
+    _size = new_size;
+    
+    glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+    glBufferData(GL_ARRAY_BUFFER, _size, NULL, GL_STREAM_COPY);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    statistics.alloc_opengl_memory(_size);
+}
+
 GLuint GL::Buffer::get_target_index() const
 {
     assert(_index >= 0);

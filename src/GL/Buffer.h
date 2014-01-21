@@ -25,6 +25,8 @@ namespace GL
         GLuint get_id() const;
         size_t get_size() const;
 
+        void resize(size_t new_size);
+        
         GLuint get_target_index() const;
 
         void bind(GLenum target) const;

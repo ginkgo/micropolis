@@ -209,8 +209,8 @@ namespace Reyes
         CL::TransferBuffer _out_range_cnt_buffer;
 
         CL::Buffer _bound_flags;
-        CL::Buffer _split_flags;
         CL::Buffer _draw_flags;
+        CL::Buffer _split_flags;
         
         CL::Buffer _pid_pad;
         CL::Buffer _depth_pad;

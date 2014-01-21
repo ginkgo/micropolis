@@ -29,8 +29,8 @@ out vec4 frag_color;
 
 void main()
 {
-    vec3 n = normalize(cross(dFdx(p_eye), dFdy(p_eye)));
-	frag_color = color * max(0, 0.15 + 0.85 * dot(n, vec3(0,0,1)));
+    // vec3 n = normalize(cross(dFdx(p_eye), dFdy(p_eye)));
+	// frag_color = color * max(0, 0.15 + 0.85 * dot(n, vec3(0,0,1)));
 
-    // frag_color = color * max(0, dot(n_eye, vec3(0,0,1)));
+    frag_color = color * max(0, dot(n_eye, vec3(0,0,1)));
 }

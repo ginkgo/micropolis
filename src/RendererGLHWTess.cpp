@@ -37,8 +37,7 @@ Reyes::RendererGLHWTess::RendererGLHWTess()
         _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
     case Config::LOCAL:
-        cerr << "Warning: LOCAL Bound&Split not supported for OpenGL. Falling back to MULTIPASS." << endl;
-        _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
+        _bound_n_split.reset(new BoundNSplitGLLocal(_patch_index));
         break;
     }
     

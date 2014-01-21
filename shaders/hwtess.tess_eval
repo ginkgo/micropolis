@@ -41,9 +41,9 @@ void main()
     vec3 py = eval_patch(t+vec2(0,0.001), patch_id);
     vec3 n = normalize(cross(px-p,py-p));
 
-    float disp = snoise(p*0.5) + snoise(p*1.0) * 0.5 + snoise(p*2.0) * 0.25;
-    disp = snoise(vec3(disp * 8,0,0) * 0.25);
-    p += 0.04 * n * disp;
+    // float disp = snoise(p*0.5) + snoise(p*1.0) * 0.5 + snoise(p*2.0) * 0.25;
+    // disp = snoise(vec3(disp * 8,0,0) * 0.25);
+    // p += 0.04 * n * disp;
     
     tex_coord = vec3(t, patch_id);
     p_eye = vec3(mv * vec4(p,1));
