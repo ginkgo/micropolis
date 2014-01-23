@@ -20,6 +20,8 @@ GL::ComputeShader::ComputeShader(const string& shader_name)
     ShaderObject compute_shader(shader_name, "", GL_COMPUTE_SHADER);
 
     if (compute_shader.invalid()) {
+        cout << boost::format("Compiling compute-shader \"%1%\" FAILED") % _name << endl;
+        exit(1);
         return;
     }
     
@@ -44,6 +46,6 @@ void GL::ComputeShader::dispatch(ivec3 group_count)
                       (GLuint)group_count.z);
     // Force sync
     GLsync sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    glWaitSync(sync, 0, GL_TIMEOUT_IGNORED);    
+    //glWaitSync(sync, 0, GL_TIMEOUT_IGNORED);
     glDeleteSync(sync);
 }

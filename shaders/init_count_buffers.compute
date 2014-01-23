@@ -1,0 +1,21 @@
+
+
+#define WORK_GROUP_CNT 32
+#define WORK_GROUP_SIZE 64
+
+layout (local_size_x = WORK_GROUP_CNT) in;
+
+layout (std430) buffer in_range_cnt
+{
+    uint in_range_cnt[];
+};
+
+uniform uint patch_count;
+
+void main ()
+{
+    uint lid  = gl_GlobalInvocationID.x;
+    uint ilid = WORK_GROUP_CNT - lid - 1;
+
+    in_range_cnt[lid] = (patch_count+ilid)/WORK_GROUP_CNT;
+}

@@ -4,8 +4,10 @@
 #include "Config.h"
 #include "Statistics.h"
 
+#include "utility.h"
+
 #define BATCH_SIZE config.reyes_patches_per_pass()
-#define WORK_GROUP_CNT config.local_bns_work_groups()
+#define WORK_GROUP_CNT 32
 #define WORK_GROUP_SIZE 64
 #define MAX_SPLIT_DEPTH config.max_split_depth()
 #define MAX_BNS_ITERATIONS 200
@@ -13,9 +15,11 @@
 Reyes::BoundNSplitGLLocal::BoundNSplitGLLocal(shared_ptr<PatchIndex>& patch_index)
     : _patch_index(patch_index)
 
-    , _bound_n_split_kernel("local_bound_n_split")
-    , _init_range_buffers_kernel("init_range_buffers")
+    , _bound_n_split_kernel("bound_n_split_local")
+    , _clear_out_range_cnt_kernel("clear_out_range_cnt")
     , _init_count_buffers_kernel("init_count_buffers")
+    , _init_range_buffers_kernel("init_range_buffers")
+    , _setup_indirection_for_local_bns_kernel("setup_indirection_for_local_bns")
 
     , _in_buffer_size(0)
     , _in_buffer_stride(0)
@@ -24,9 +28,6 @@ Reyes::BoundNSplitGLLocal::BoundNSplitGLLocal(shared_ptr<PatchIndex>& patch_inde
     , _in_maxs_buffer(0)
     , _in_range_cnt_buffer(WORK_GROUP_CNT * sizeof(GLint))
 
-    , _out_pids_buffer(BATCH_SIZE * sizeof(int))
-    , _out_mins_buffer(BATCH_SIZE * sizeof(vec2))
-    , _out_maxs_buffer(BATCH_SIZE * sizeof(vec2))
     , _out_range_cnt_buffer(sizeof(GLint))
 {
     patch_index->enable_load_texture();
@@ -50,7 +51,7 @@ void Reyes::BoundNSplitGLLocal::init(void* patches_handle, const mat4& matrix, c
     if (_in_buffer_size < patch_count) {
         _in_buffer_size = patch_count;
 
-        size_t item_count = round_up_by(_in_buffer_size, WORK_GROUP_CNT) + MAX_SPLIT_DEPTH * WORK_GROUP_SIZE * WORK_GROUP_CNT;
+        size_t item_count = round_up_by<size_t>(_in_buffer_size, WORK_GROUP_CNT) + MAX_SPLIT_DEPTH * WORK_GROUP_SIZE * WORK_GROUP_CNT;
 
         assert(item_count % WORK_GROUP_CNT == 0);        
         _in_buffer_stride = item_count / WORK_GROUP_CNT;
@@ -60,18 +61,93 @@ void Reyes::BoundNSplitGLLocal::init(void* patches_handle, const mat4& matrix, c
         _in_maxs_buffer.resize(item_count * sizeof(vec2));
     }
 
+    // Init count buffers
+    _init_count_buffers_kernel.bind();
+    GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0, _in_range_cnt_buffer);
     
+    _init_count_buffers_kernel.set_uniform("patch_count", (GLuint)patch_count);
+    _init_count_buffers_kernel.set_buffer("in_range_cnt", _in_range_cnt_buffer);
+    
+    _init_count_buffers_kernel.dispatch(1);
+    
+    GL::Buffer::unbind_all(_in_range_cnt_buffer);
+    _init_count_buffers_kernel.unbind();
+
+    // Init range buffers
+    _init_range_buffers_kernel.bind();
+    GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
+                         _in_pids_buffer, _in_mins_buffer, _in_maxs_buffer);
+    
+    _init_range_buffers_kernel.set_uniform("patch_count", (GLuint)patch_count);
+    _init_range_buffers_kernel.set_uniform("buffer_stride", (GLuint)_in_buffer_stride);
+    _init_range_buffers_kernel.set_buffer("in_pids", _in_pids_buffer);
+    _init_range_buffers_kernel.set_buffer("in_mins", _in_mins_buffer);
+    _init_range_buffers_kernel.set_buffer("in_maxs", _in_maxs_buffer);
+    
+    _init_range_buffers_kernel.dispatch(round_up_div<int>(patch_count, WORK_GROUP_SIZE));
+    GL::Buffer::unbind_all(_in_pids_buffer, _in_mins_buffer, _in_maxs_buffer);
+    _init_range_buffers_kernel.unbind();
+
+    _done = false;
 }
 
 
 bool Reyes::BoundNSplitGLLocal::done()
 {
-    return true;
+    return _done;
 }
 
 
 void Reyes::BoundNSplitGLLocal::do_bound_n_split(GL::IndirectVBO& vbo)
 {
+    // Init out_range_cnt buffer
+    _clear_out_range_cnt_kernel.bind();
+    GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0, _out_range_cnt_buffer);
+    _clear_out_range_cnt_kernel.set_buffer("out_range_cnt", _out_range_cnt_buffer);
 
+    _clear_out_range_cnt_kernel.dispatch(1);
+    GL::Buffer::unbind_all(_out_range_cnt_buffer);
+    _clear_out_range_cnt_kernel.unbind();
+
+
+    //glFinish();
+    
+    // Start bound&split kernel
+    _bound_n_split_kernel.bind();
+    GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
+                         _in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,
+                         vbo.get_vertex_buffer(), _out_range_cnt_buffer);
+    _bound_n_split_kernel.set_buffer("in_pids", _in_pids_buffer);
+    _bound_n_split_kernel.set_buffer("in_mins", _in_mins_buffer);
+    _bound_n_split_kernel.set_buffer("in_maxs", _in_maxs_buffer);
+    _bound_n_split_kernel.set_buffer("in_range_cnt", _in_range_cnt_buffer);
+    _bound_n_split_kernel.set_buffer("vertex_buffer", vbo.get_vertex_buffer());
+    _bound_n_split_kernel.set_buffer("out_range_cnt", _out_range_cnt_buffer);
+
+    _bound_n_split_kernel.set_uniform("in_buffer_stride", (GLuint)_in_buffer_stride);
+    
+    _bound_n_split_kernel.dispatch(WORK_GROUP_CNT);
+    GL::Buffer::unbind_all(_in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,
+                           vbo.get_vertex_buffer(), _out_range_cnt_buffer);
+    _bound_n_split_kernel.unbind();
+
+    //glFinish();
+
+    // Setup indirection buffer from result of bound&split kernel
+    _setup_indirection_for_local_bns_kernel.bind();
+    GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
+                         _out_range_cnt_buffer, vbo.get_indirection_buffer());
+    _setup_indirection_for_local_bns_kernel.set_uniform("batch_size", vbo.get_max_vertex_count());
+    _setup_indirection_for_local_bns_kernel.set_buffer("out_range_cnt", _out_range_cnt_buffer);
+    _setup_indirection_for_local_bns_kernel.set_buffer("indirection_buffer", vbo.get_indirection_buffer());
+
+    _setup_indirection_for_local_bns_kernel.dispatch(1);
+    
+    GL::Buffer::unbind_all(_out_range_cnt_buffer, vbo.get_indirection_buffer());
+    _setup_indirection_for_local_bns_kernel.unbind();
+
+    _done = true;
+
+    
 }
     

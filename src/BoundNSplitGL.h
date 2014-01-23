@@ -37,8 +37,10 @@ namespace Reyes
         shared_ptr<PatchIndex> _patch_index;
 
         GL::ComputeShader _bound_n_split_kernel;
-        GL::ComputeShader _init_range_buffers_kernel;
+        GL::ComputeShader _clear_out_range_cnt_kernel;
         GL::ComputeShader _init_count_buffers_kernel;
+        GL::ComputeShader _init_range_buffers_kernel;
+        GL::ComputeShader _setup_indirection_for_local_bns_kernel;
 
         void* _active_handle;
         mat4 _active_matrix;
@@ -51,9 +53,6 @@ namespace Reyes
         GL::Buffer _in_maxs_buffer;
         GL::Buffer _in_range_cnt_buffer;
 
-        GL::Buffer _out_pids_buffer;
-        GL::Buffer _out_mins_buffer;
-        GL::Buffer _out_maxs_buffer;
         GL::Buffer _out_range_cnt_buffer;
 
         bool _done;

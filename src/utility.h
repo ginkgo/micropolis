@@ -319,5 +319,11 @@ inline I round_up_by(I i, I n)
     return (i % n == 0) ? i : (i/n+1)*n;
 }
 
+template <typename I>
+inline I round_up_div(I n, I d)
+{
+    return n/d + ((n%d == 0) ? 0 : 1);
+}
+
 
 #endif

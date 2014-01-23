@@ -1,0 +1,42 @@
+
+
+@include <utility.h>
+
+#define WORK_GROUP_CNT 32
+#define WORK_GROUP_SIZE 64
+
+layout (local_size_x = WORK_GROUP_SIZE) in;
+
+layout (std430) buffer in_pids
+{
+    uint pids[];
+};
+
+layout (std430) buffer in_mins
+{
+    vec2 mins[];
+};
+
+layout (std430) buffer in_maxs
+{
+    vec2 maxs[];
+};
+
+uniform uint patch_count;
+uniform uint buffer_stride;
+
+void main ()
+{
+    uint items_per_work_group = round_up_div(patch_count, WORK_GROUP_CNT);
+    
+    uint gid = gl_GlobalInvocationID.x;
+    uint wid = gid / items_per_work_group;
+    uint lid = gid % items_per_work_group;
+    
+    if (gid < patch_count) {
+        uint pos = lid + wid * buffer_stride;
+        pids[pos] = gid;
+        mins[pos] = vec2(0,0);
+        maxs[pos] = vec2(1,1);
+    }
+}

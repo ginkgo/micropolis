@@ -1,0 +1,73 @@
+
+#define WORK_GROUP_SIZE 64
+#define WORK_GROUP_CNT 32
+
+
+layout (local_size_x = WORK_GROUP_SIZE) in;
+
+layout (std430) buffer in_pids
+{
+    uint pids[];
+};
+
+layout (std430) buffer in_mins
+{
+    vec2 mins[];
+};
+
+layout (std430) buffer in_maxs
+{
+    vec2 maxs[];
+};
+
+
+layout (std430) buffer in_range_cnt
+{
+    uint in_range_cnt_buf[];
+};
+
+layout (std430) buffer vertex_buffer
+{
+    vec4 vbuffer[];
+};
+
+layout (std430) buffer out_range_cnt
+{
+    uint out_range_count;
+};
+
+uniform uint in_buffer_stride;
+
+shared uint in_range_cnt;
+shared uint out_range_start;
+
+void main (void)
+{
+    uint lid = gl_LocalInvocationID.x;
+    uint wid = gl_WorkGroupID.x;
+
+    if (lid == 0) {
+        in_range_cnt = in_range_cnt_buf[wid];
+        in_range_cnt_buf[wid] = 0;
+        out_range_start = atomicAdd(out_range_count, in_range_cnt);
+    }
+
+    memoryBarrierShared();
+
+    for (uint wi = 0; wi < in_range_cnt; wi += WORK_GROUP_SIZE) {
+        if (wi + lid < in_range_cnt) {
+            uint ipos = (wi+lid) + wid * in_buffer_stride;
+
+            uint rpid = pids[ipos];
+            vec2 rmin = mins[ipos];
+            vec2 rmax = maxs[ipos];
+            
+            uint opos = (wi+lid + out_range_start) * 4;
+            
+            vbuffer[opos+0] = vec4(mix(rmin,rmax, vec2(0,0)), float(rpid), 1);
+            vbuffer[opos+1] = vec4(mix(rmin,rmax, vec2(1,0)), float(rpid), 1);
+            vbuffer[opos+2] = vec4(mix(rmin,rmax, vec2(1,1)), float(rpid), 1);
+            vbuffer[opos+3] = vec4(mix(rmin,rmax, vec2(0,1)), float(rpid), 1);
+        }
+    }
+}
