@@ -185,8 +185,8 @@ void Reyes::BoundNSplitGLMultipass::do_bound_n_split(GL::IndirectVBO& vbo)
     _bound_n_split.set_uniform("mv", _mv);
     _bound_n_split.set_uniform("proj", _proj);
     _bound_n_split.set_uniform("screen_matrix", _screen_matrix);
-    _bound_n_split.set_uniform("screen_min", _screen_min);
-    _bound_n_split.set_uniform("screen_max", _screen_max);
+    // _bound_n_split.set_uniform("screen_min", _screen_min);
+    // _bound_n_split.set_uniform("screen_max", _screen_max);
     _bound_n_split.set_uniform("max_split_depth", (GLuint)config.max_split_depth());
     _bound_n_split.set_uniform("split_limit", config.bound_n_split_limit());
     _bound_n_split.set_uniform("patches", patches_texture);

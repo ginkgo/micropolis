@@ -2,28 +2,15 @@
 
 layout (local_size_x = 64) in;
 
-const float infinity = 999999999999.0;
+
+#line 1
+@include <utility.h>
+#line 1
+@include <bound_n_split.h>
+#line 10
 
 uniform uint batch_size;
 uniform uint batch_offset;
-
-uniform mat4 mv;
-uniform mat4 proj;
-uniform mat3 screen_matrix;
-
-uniform float near;
-uniform float far;
-uniform vec2 proj_f;
-uniform vec2 screen_size;
-uniform float cull_ribbon;
-
-// uniform vec3 screen_min;
-// uniform vec3 screen_max;
-
-uniform float split_limit;
-uniform uint max_split_depth;
-
-uniform samplerBuffer patches;
 
 // Patch range stack arrays
 layout (std430) buffer stack_min
@@ -78,27 +65,6 @@ layout (std430) buffer split_pad2_max
     vec2 sp2_max[];
 };
 
-vec3 eval_patch(vec2 t, int patch_id)
-{
-    vec2 s = 1 - t;
-
-    mat4 B = outerProduct(vec4(s.x*s.x*s.x, 3*s.x*s.x*t.x, 3*s.x*t.x*t.x, t.x*t.x*t.x),
-                          vec4(s.y*s.y*s.y, 3*s.y*s.y*t.y, 3*s.y*t.y*t.y, t.y*t.y*t.y));
-    
-    vec3 sum = vec3(0,0,0);
-    for (int u = 0; u < 4; ++u) {
-        for (int v = 0; v < 4; ++v) {
-            sum += B[v][u] * texelFetch(patches, u + v * 4 + patch_id * 16).xyz;
-        }
-    }
-
-    return sum;
-}
-
-bool intersects (vec3 min1, vec3 max1, vec3 min2, vec3 max2)
-{
-    return all(lessThan(min1, max2)) && all(lessThan(min2, max1));
-}
 
 void do_vsplit(uint bid, vec2 pmin, vec2 pmax, uint pid, uint depth)
 {
@@ -126,51 +92,6 @@ void do_hsplit(uint bid, vec2 pmin, vec2 pmax, uint pid, uint depth)
     sp2_max[bid] = pmax;
 }
 
-bool intersects_frustum(vec3 pmin, vec3 pmax)
-{
-    vec2 smin,smax;
-
-    float n = -pmax.z;
-    float f = -pmin.z;
-
-    if (f < near || n > far) {
-        return false;
-    }
-
-    n = max(near, n);
-
-    if (pmin.x < 0) {
-        smin.x = pmin.x/n * proj_f.x + screen_size.x * 0.5;
-    } else {
-        smin.x = pmin.x/f * proj_f.x + screen_size.x * 0.5;
-    }
-
-    if (pmin.y < 0) {
-        smin.y = pmin.y/n * proj_f.y + screen_size.y * 0.5;
-    } else {
-        smin.y = pmin.y/f * proj_f.y + screen_size.y * 0.5;
-    }
-
-    if (pmax.x > 0) {
-        smax.x = pmax.x/n * proj_f.x + screen_size.x * 0.5;
-    } else {
-        smax.x = pmax.x/f * proj_f.x + screen_size.x * 0.5;
-    }
-
-    if (pmax.y > 0) {
-        smax.y = pmax.y/n * proj_f.y + screen_size.y * 0.5;
-    } else {
-        smax.y = pmax.y/f * proj_f.y + screen_size.y * 0.5;
-    }
-
-
-    if (smin.x > screen_size.x-1 + cull_ribbon || smax.x < -cull_ribbon ||
-        smin.y > screen_size.y-1 + cull_ribbon || smax.y < -cull_ribbon ){
-        return false;
-    }
-
-    return true;
-}
 
 void main (void)
 {
@@ -183,74 +104,85 @@ void main (void)
     uint rdepth = spid[sid] >> 24;
     vec2 rmin = smin[sid];
     vec2 rmax = smax[sid];
-    
-    vec3 pmin = vec3( infinity);
-    vec3 pmax = vec3(-infinity);
 
-    vec2 ppos[4][4];
-    
-    for (int v = 0; v < 4; ++v) {
-        for (int u = 0; u < 4; ++u) {
-            vec2 lt = vec2(u / 3.0, v / 3.0);
-            vec4 p = mv * vec4(eval_patch(mix(rmin,rmax,lt), int(rpid)),1);
-            
-            pmin = min(p.xyz, pmin);
-            pmax = max(p.xyz, pmax);            
-            
-            vec4 pp = proj * p;
+    uint bound_flag = bound(rpid, rmin, rmax, rdepth);
 
-            ppos[v][u] = mat2(screen_matrix) * (pp.xy / pp.w);
-        }
-    }
+    fpad[bid] = uvec2((bound_flag>>1)&1, (bound_flag>>0)&1);
 
-    uvec2 flag;
-    bool vsplit;
-    
-    if (!intersects_frustum(pmin, pmax)) {
-        flag = uvec2(0,0); // CULL
-    } else if (pmin.z < 0 && pmax.z > 0) {
-        if (rdepth < max_split_depth-1) {
-            flag = uvec2(1,0); // SPLIT
-            // Pick split direction from parameter space
-            vsplit = (rmax.x - rmin.x) < (rmax.y - rmin.y);
-        } else { 
-            // Max split depth reached
-            flag = uvec2(0,1); // CULL
-        }
-    } else {
-        float hlen = 0;
-        float vlen = 0;
-        for (int i = 0; i < 4; ++i) {
-            float ht = 0;
-            float vt = 0;
-            for (int j = 0; j < 3; ++j) {
-                ht += distance(ppos[i][j].xy, ppos[i][j+1]);
-                vt += distance(ppos[j][i].xy, ppos[j+1][i]);
-            }
-            
-            hlen = max(ht, hlen);
-            vlen = max(vt, vlen);
-        }
-
-        if (hlen <= split_limit && vlen <= split_limit) {
-            flag = uvec2(0,1); // DRAW
-        } else if (rdepth >= max_split_depth-2) {
-            // Max split depth reached
-            flag = uvec2(0,1); // CULL
-        } else {
-            flag = uvec2(1,0); // SPLIT
-            vsplit = hlen < vlen;
-        }
-    }
-
-    fpad[bid] = flag;
-    
-    if (flag == uvec2(1,0)) {
-        if (vsplit) {
+    if ((bound_flag & 2) != 0) {
+        if ((bound_flag & 4) != 0) {
             do_vsplit(bid, rmin, rmax, rpid, rdepth+1);
         } else {
             do_hsplit(bid, rmin, rmax, rpid, rdepth+1);
         }
     }
+    
+    // vec3 pmin = vec3( infinity);
+    // vec3 pmax = vec3(-infinity);
+
+    // vec2 ppos[4][4];
+    
+    // for (int v = 0; v < 4; ++v) {
+    //     for (int u = 0; u < 4; ++u) {
+    //         vec2 lt = vec2(u / 3.0, v / 3.0);
+    //         vec4 p = mv * vec4(eval_patch(mix(rmin,rmax,lt), int(rpid)),1);
+            
+    //         pmin = min(p.xyz, pmin);
+    //         pmax = max(p.xyz, pmax);            
+            
+    //         vec4 pp = proj * p;
+    //         ppos[v][u] = mat2(screen_matrix) * (pp.xy / pp.w);
+    //     }
+    // }
+
+    // uvec2 flag;
+    // bool vsplit;
+    
+    // if (!intersects_frustum(pmin, pmax)) {
+    //     flag = uvec2(0,0); // CULL
+    // } else if (pmin.z < 0 && pmax.z > 0) {
+    //     if (rdepth < max_split_depth-1) {
+    //         flag = uvec2(1,0); // SPLIT
+    //         // Pick split direction from parameter space
+    //         vsplit = (rmax.x - rmin.x) < (rmax.y - rmin.y);
+    //     } else { 
+    //         // Max split depth reached
+    //         flag = uvec2(0,1); // CULL
+    //     }
+    // } else {
+    //     float hlen = 0;
+    //     float vlen = 0;
+    //     for (int i = 0; i < 4; ++i) {
+    //         float ht = 0;
+    //         float vt = 0;
+    //         for (int j = 0; j < 3; ++j) {
+    //             ht += distance(ppos[i][j].xy, ppos[i][j+1]);
+    //             vt += distance(ppos[j][i].xy, ppos[j+1][i]);
+    //         }
+            
+    //         hlen = max(ht, hlen);
+    //         vlen = max(vt, vlen);
+    //     }
+
+    //     if (hlen <= split_limit && vlen <= split_limit) {
+    //         flag = uvec2(0,1); // DRAW
+    //     } else if (rdepth >= max_split_depth-2) {
+    //         // Max split depth reached
+    //         flag = uvec2(0,1); // CULL
+    //     } else {
+    //         flag = uvec2(1,0); // SPLIT
+    //         vsplit = hlen < vlen;
+    //     }
+    // }
+
+    // fpad[bid] = flag;
+    
+    // if (flag == uvec2(1,0)) {
+    //     if (vsplit) {
+    //         do_vsplit(bid, rmin, rmax, rpid, rdepth+1);
+    //     } else {
+    //         do_hsplit(bid, rmin, rmax, rpid, rdepth+1);
+    //     }
+    // }
             
 }

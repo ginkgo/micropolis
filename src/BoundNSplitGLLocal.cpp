@@ -108,9 +108,6 @@ void Reyes::BoundNSplitGLLocal::do_bound_n_split(GL::IndirectVBO& vbo)
     _clear_out_range_cnt_kernel.dispatch(1);
     GL::Buffer::unbind_all(_out_range_cnt_buffer);
     _clear_out_range_cnt_kernel.unbind();
-
-
-    //glFinish();
     
     // Start bound&split kernel
     _bound_n_split_kernel.bind();
@@ -131,13 +128,12 @@ void Reyes::BoundNSplitGLLocal::do_bound_n_split(GL::IndirectVBO& vbo)
                            vbo.get_vertex_buffer(), _out_range_cnt_buffer);
     _bound_n_split_kernel.unbind();
 
-    //glFinish();
 
     // Setup indirection buffer from result of bound&split kernel
     _setup_indirection_for_local_bns_kernel.bind();
     GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
                          _out_range_cnt_buffer, vbo.get_indirection_buffer());
-    _setup_indirection_for_local_bns_kernel.set_uniform("batch_size", vbo.get_max_vertex_count());
+    _setup_indirection_for_local_bns_kernel.set_uniform("batch_size", vbo.get_max_vertex_count()/4);
     _setup_indirection_for_local_bns_kernel.set_buffer("out_range_cnt", _out_range_cnt_buffer);
     _setup_indirection_for_local_bns_kernel.set_buffer("indirection_buffer", vbo.get_indirection_buffer());
 

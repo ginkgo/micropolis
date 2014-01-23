@@ -31,7 +31,7 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = LOCAL
+bound_n_split_method = MULTIPASS
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
