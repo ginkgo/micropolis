@@ -2,8 +2,8 @@
 
 
 GL::PrefixSum::PrefixSum(size_t max_input_items)
-    : reduce("reduce")
-    , accumulate("accumulate")
+    : reduce("prefixsum_reduce")
+    , accumulate("prefixsum_accumulate")
     , max_input_items(max_input_items)
 {
     for (int i = (max_input_items-1)/128+1; i > 1; i = (i-1)/128+1) {

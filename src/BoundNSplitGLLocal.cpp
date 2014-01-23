@@ -15,11 +15,11 @@
 Reyes::BoundNSplitGLLocal::BoundNSplitGLLocal(shared_ptr<PatchIndex>& patch_index)
     : _patch_index(patch_index)
 
-    , _bound_n_split_kernel("bound_n_split_local")
-    , _clear_out_range_cnt_kernel("clear_out_range_cnt")
-    , _init_count_buffers_kernel("init_count_buffers")
-    , _init_range_buffers_kernel("init_range_buffers")
-    , _setup_indirection_for_local_bns_kernel("setup_indirection_for_local_bns")
+    , _bound_n_split_kernel("local_bound_n_split")
+    , _clear_out_range_cnt_kernel("local_clear_out_range_cnt")
+    , _init_count_buffers_kernel("local_init_count_buffers")
+    , _init_range_buffers_kernel("local_init_range_buffers")
+    , _setup_indirection_kernel("local_setup_indirection")
 
     , _in_buffer_size(0)
     , _in_buffer_stride(0)
@@ -130,17 +130,17 @@ void Reyes::BoundNSplitGLLocal::do_bound_n_split(GL::IndirectVBO& vbo)
 
 
     // Setup indirection buffer from result of bound&split kernel
-    _setup_indirection_for_local_bns_kernel.bind();
+    _setup_indirection_kernel.bind();
     GL::Buffer::bind_all(GL_SHADER_STORAGE_BUFFER, 0,
                          _out_range_cnt_buffer, vbo.get_indirection_buffer());
-    _setup_indirection_for_local_bns_kernel.set_uniform("batch_size", vbo.get_max_vertex_count()/4);
-    _setup_indirection_for_local_bns_kernel.set_buffer("out_range_cnt", _out_range_cnt_buffer);
-    _setup_indirection_for_local_bns_kernel.set_buffer("indirection_buffer", vbo.get_indirection_buffer());
+    _setup_indirection_kernel.set_uniform("batch_size", vbo.get_max_vertex_count()/4);
+    _setup_indirection_kernel.set_buffer("out_range_cnt", _out_range_cnt_buffer);
+    _setup_indirection_kernel.set_buffer("indirection_buffer", vbo.get_indirection_buffer());
 
-    _setup_indirection_for_local_bns_kernel.dispatch(1);
+    _setup_indirection_kernel.dispatch(1);
     
     GL::Buffer::unbind_all(_out_range_cnt_buffer, vbo.get_indirection_buffer());
-    _setup_indirection_for_local_bns_kernel.unbind();
+    _setup_indirection_kernel.unbind();
 
     _done = true;
 

@@ -32,11 +32,12 @@ Reyes::BoundNSplitGLMultipass::BoundNSplitGLMultipass(shared_ptr<PatchIndex>& pa
     , _flag_total(sizeof(uvec2))
     
     , _stack_height(0)
-    , _init_ranges("init_ranges")
-    , _bound_n_split("bound_n_split")
-    , _create_geometry_for_ranges("create_geometry_for_ranges")
-    , _copy_ranges("copy_ranges")
-    , _setup_indirection("setup_indirection")
+    
+    , _bound_n_split("multipass_bound")
+    , _copy_ranges("multipass_copy_ranges")
+    , _create_geometry_for_ranges("multipass_create_geometry_for_ranges")
+    , _init_ranges("multipass_init_ranges")
+    , _setup_indirection("multipass_setup_indirection")
 
     , _bound_n_split_timer(0)
     , _dice_n_raster_timer(0)

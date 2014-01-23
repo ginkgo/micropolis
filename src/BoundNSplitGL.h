@@ -40,7 +40,7 @@ namespace Reyes
         GL::ComputeShader _clear_out_range_cnt_kernel;
         GL::ComputeShader _init_count_buffers_kernel;
         GL::ComputeShader _init_range_buffers_kernel;
-        GL::ComputeShader _setup_indirection_for_local_bns_kernel;
+        GL::ComputeShader _setup_indirection_kernel;
 
         void* _active_handle;
         mat4 _active_matrix;
@@ -103,10 +103,10 @@ namespace Reyes
 
         size_t _stack_height;
         
-        GL::ComputeShader _init_ranges;
         GL::ComputeShader _bound_n_split;
-        GL::ComputeShader _create_geometry_for_ranges;
         GL::ComputeShader _copy_ranges;
+        GL::ComputeShader _create_geometry_for_ranges;
+        GL::ComputeShader _init_ranges;
         GL::ComputeShader _setup_indirection;
 
         GLuint _bound_n_split_timer;
