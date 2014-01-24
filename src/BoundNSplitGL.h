@@ -49,6 +49,7 @@ namespace Reyes
         size_t _in_buffer_stride;
 
         GL::Buffer _in_pids_buffer;
+        GL::Buffer _in_depths_buffer;
         GL::Buffer _in_mins_buffer;
         GL::Buffer _in_maxs_buffer;
         GL::Buffer _in_range_cnt_buffer;

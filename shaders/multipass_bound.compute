@@ -35,7 +35,6 @@ layout (std430) buffer flag_pad
 };
 
 // Pads for placing split patches 
-
 layout (std430) buffer split_pad_pid
 {
     uint sp_pid[];

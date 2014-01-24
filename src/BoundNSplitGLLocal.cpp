@@ -9,7 +9,7 @@
 #define BATCH_SIZE config.reyes_patches_per_pass()
 #define WORK_GROUP_CNT 32
 #define WORK_GROUP_SIZE 64
-#define MAX_SPLIT_DEPTH config.max_split_depth()
+#define MAX_SPLIT_DEPTH 8
 #define MAX_BNS_ITERATIONS 200
 
 Reyes::BoundNSplitGLLocal::BoundNSplitGLLocal(shared_ptr<PatchIndex>& patch_index)
@@ -24,6 +24,7 @@ Reyes::BoundNSplitGLLocal::BoundNSplitGLLocal(shared_ptr<PatchIndex>& patch_inde
     , _in_buffer_size(0)
     , _in_buffer_stride(0)
     , _in_pids_buffer(0)
+    , _in_depths_buffer(0)
     , _in_mins_buffer(0)
     , _in_maxs_buffer(0)
     , _in_range_cnt_buffer(WORK_GROUP_CNT * sizeof(GLint))
@@ -56,7 +57,8 @@ void Reyes::BoundNSplitGLLocal::init(void* patches_handle, const mat4& matrix, c
         assert(item_count % WORK_GROUP_CNT == 0);        
         _in_buffer_stride = item_count / WORK_GROUP_CNT;
         
-        _in_pids_buffer.resize(item_count * sizeof(int));
+        _in_pids_buffer.resize(item_count * sizeof(GLint));
+        _in_depths_buffer.resize(item_count * sizeof(GLint));
         _in_mins_buffer.resize(item_count * sizeof(vec2));
         _in_maxs_buffer.resize(item_count * sizeof(vec2));
     }
@@ -122,6 +124,7 @@ void Reyes::BoundNSplitGLLocal::do_bound_n_split(GL::IndirectVBO& vbo)
     _bound_n_split_kernel.set_buffer("out_range_cnt", _out_range_cnt_buffer);
 
     _bound_n_split_kernel.set_uniform("in_buffer_stride", (GLuint)_in_buffer_stride);
+    _bound_n_split_kernel.set_uniform("out_buffer_size", (GLuint)BATCH_SIZE);
     
     _bound_n_split_kernel.dispatch(WORK_GROUP_CNT);
     GL::Buffer::unbind_all(_in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,

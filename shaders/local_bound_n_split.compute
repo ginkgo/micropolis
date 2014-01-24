@@ -1,13 +1,26 @@
+#version 430
 
+// TODO: Add these options at compile time
 #define WORK_GROUP_SIZE 64
 #define WORK_GROUP_CNT 32
-
+#define MAX_SPLIT_DEPTH 8
+#define STACK_SIZE WORK_GROUP_SIZE * MAX_SPLIT_DEPTH
 
 layout (local_size_x = WORK_GROUP_SIZE) in;
+
+@include <utility.h>
+@include <bound_n_split.h>
+@include <local_prefixsum.h>
+
 
 layout (std430) buffer in_pids
 {
     uint pids[];
+};
+
+layout (std430) buffer in_depths
+{
+    uint depths[];
 };
 
 layout (std430) buffer in_mins
@@ -23,7 +36,7 @@ layout (std430) buffer in_maxs
 
 layout (std430) buffer in_range_cnt
 {
-    uint in_range_cnt_buf[];
+    int in_range_counts[];
 };
 
 layout (std430) buffer vertex_buffer
@@ -36,10 +49,18 @@ layout (std430) buffer out_range_cnt
     uint out_range_count;
 };
 
-uniform uint in_buffer_stride;
 
-shared uint in_range_cnt;
-shared uint out_range_start;
+uniform uint in_buffer_stride;
+uniform uint out_buffer_size;
+
+
+// Number of items to be copied from input/output buffer
+shared uint in_cnt;
+shared uint in_start;
+shared uint out_cnt;
+shared uint out_start;
+
+shared uint stack_height;
 
 void main (void)
 {
@@ -47,22 +68,22 @@ void main (void)
     uint wid = gl_WorkGroupID.x;
 
     if (lid == 0) {
-        in_range_cnt = in_range_cnt_buf[wid];
-        in_range_cnt_buf[wid] = 0;
-        out_range_start = atomicAdd(out_range_count, in_range_cnt);
+        in_cnt = in_range_counts[wid];
+        in_range_counts[wid] = 0;
+        out_start = atomicAdd(out_range_count, in_cnt);
     }
 
     memoryBarrierShared();
 
-    for (uint wi = 0; wi < in_range_cnt; wi += WORK_GROUP_SIZE) {
-        if (wi + lid < in_range_cnt) {
+    for (uint wi = 0; wi < in_cnt; wi += WORK_GROUP_SIZE) {
+        if (wi + lid < in_cnt) {
             uint ipos = (wi+lid) + wid * in_buffer_stride;
 
             uint rpid = pids[ipos];
             vec2 rmin = mins[ipos];
             vec2 rmax = maxs[ipos];
             
-            uint opos = (wi+lid + out_range_start) * 4;
+            uint opos = (wi+lid + out_start) * 4;
             
             vbuffer[opos+0] = vec4(mix(rmin,rmax, vec2(0,0)), float(rpid), 1);
             vbuffer[opos+1] = vec4(mix(rmin,rmax, vec2(1,0)), float(rpid), 1);
@@ -71,3 +92,121 @@ void main (void)
         }
     }
 }
+
+// void main (void)
+// {
+//     uint lid = gl_LocalInvocationID.x;
+//     uint wid = gl_WorkGroupID.x;
+
+//     // stack item properties
+//     uint rpid;
+//     uint rdepth;
+//     vec2 rmin;
+//     vec2 rmax;
+//     bool occupied;
+
+//     if (lid == 0) {
+//         stack_height = in_range_counts[wid];
+//     }
+
+//     memoryBarrierShared();
+
+//     while (1) {
+
+//         // Load range elements (source from stack first and fall back to input buffer if necessary)
+//         if (lid == 0) {
+//             in_cnt = min(stack_height, WORK_GROUP_SIZE);
+//             in_start = stack_height - in_cnt;
+
+//             in_range_counts[wid] = int(in_start);
+//         }
+
+//         memoryBarrierShared();
+
+//         if (in_cnt == 0) {
+//             return; // All patches processed
+//         }
+
+//         if (lid < in_cnt) {
+//             uint pos = wid * in_buffer_stride + in_start + lid;
+
+//             rpid = pids[pos];
+//             rdepth = 0;
+//             rmin = mins[pos];
+//             rmax = maxs[pos];
+
+//             occupied = true;
+//         } else {
+//             occupied = false;
+//         }
+
+//         uint bound_flags = CULL;
+
+//         if (occupied) {
+//             bound_flags = bound(rpid, rmin, rmax, rdepth);
+//         }
+
+//         // Perform split
+//         uint split_sum = prefix_sum((bound_flags & 2)>>1);
+
+//         if (lid == WORK_GROUP_SIZE-1) {
+//             in_cnt = split_sum;
+//             in_start = stack_height;
+//             stack_height += in_cnt * 2;
+//             in_range_counts[wid] = int(stack_height);
+//         }
+
+//         memoryBarrierShared();
+
+//         split_sum--; // prefix sum is inclusive, decrement to make exclusive
+
+//         if (bound_flags & 2) {
+//             uint pos0 = wid * in_buffer_stride + in_start + split_sum * 2;
+//             uint pos1 = pos0 + 1;
+            
+//             pids[pos0] = rpid;
+//             pids[pos1] = rpid;
+            
+//             depths[pos0] = rdepth+1;
+//             depths[pos1] = rdepth+1;
+            
+//             vec2 c = (rmin+rmax)*0.5;
+
+//             mins[pos0] = rmin;
+//             maxs[pos1] = rmax;
+        
+//             // Check split direction
+//             if (bound_flags & 4) {
+//                 // Vertical
+//                 maxs[pos0] = vec2(c.x, rmax.y);
+//                 mins[pos1] = vec2(c.x, rmin.y);
+//             } else {
+//                 // Horizontal
+//                 maxs[pos0] = vec2(rmax.x, c.y);
+//                 mins[pos1] = vec2(rmin.x, c.y);
+//             }
+//         }
+
+//         // Perform draw copy
+//         uint draw_sum = prefix_sum((bound_flags & 1) >> 0);
+
+//         if (lid == WORK_GROUP_SIZE-1) {
+//             out_cnt = draw_sum;
+//             out_start = atomicAdd(out_range_count, out_cnt);            
+//         }
+
+//         memoryBarrierShared();
+
+//         draw_sum--; // prefix sum is inclusive, decrement to make exclusive
+
+//         if ((bound_flags & 1) != 0 && out_start + draw_sum < out_buffer_size) {
+//             uint pos = (out_start + draw_sum) * 4;
+
+//             vbuffer[pos+0] = vec4(mix(rmin,rmax, vec2(0,0)), float(rpid), 1);
+//             vbuffer[pos+1] = vec4(mix(rmin,rmax, vec2(1,0)), float(rpid), 1);
+//             vbuffer[pos+2] = vec4(mix(rmin,rmax, vec2(1,1)), float(rpid), 1);
+//             vbuffer[pos+3] = vec4(mix(rmin,rmax, vec2(0,1)), float(rpid), 1);
+//         }
+//     }
+    
+// }
