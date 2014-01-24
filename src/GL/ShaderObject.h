@@ -8,7 +8,12 @@ namespace GL
     class ShaderObject
     {
         GLuint shader_handle;
-
+        string shadername;
+        
+        std::stringstream ss;
+        map<string, int> file_to_index_map;
+        map<int, string> index_to_file_map;
+        
     public:
 
         ShaderObject(const string& shader, const string& material, GLenum shader_type);
@@ -25,8 +30,13 @@ namespace GL
                                      GLenum type);
         bool load_shader_source(const string& shader,
                                 const string& material,
-                                const string& file_extension,
-                                std::stringstream& ss);
+                                const string& file_extension);
+
+        bool read_file(const string& filename);
+
+        void print_shader_log();
+
+            
     };
 
 

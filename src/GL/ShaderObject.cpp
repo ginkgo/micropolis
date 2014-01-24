@@ -7,8 +7,10 @@
 #include <boost/regex.hpp>
 #include <boost/format.hpp>
 
+#define LOG_BUFFER_SIZE 1024*64
 
 GL::ShaderObject::ShaderObject(const string& shader, const string& material, GLenum shader_type)
+    : shadername(shader)
 {
     shader_handle = compile_shader_object(shader, material, shader_type);
 }
@@ -44,44 +46,53 @@ void GL::ShaderObject::attach_to(GLuint program_handle) const
 
 bool GL::ShaderObject::load_shader_source(const string& shader, 
                                           const string& material,
-                                          const string& file_extension,
-                                          std::stringstream& ss)
+                                          const string& file_extension)
 {
-    const int MAX_LENGTH = 1024;
-    char buffer[MAX_LENGTH];
+    string shaderfile   = config.shader_dir() +"/"+shader  +file_extension;
 
+    return read_file(shaderfile);
+}
+
+bool GL::ShaderObject::read_file(const string& filename)
+{
     const boost::regex include_pattern("@include\\s+<(.+)>.*");
     boost::match_results<std::string::const_iterator> match;
-
-
-    string shaderfile   = config.shader_dir() +"/"+shader  +file_extension;
     
-    std::ifstream is(shaderfile.c_str());
+    if (file_to_index_map.count(filename) > 0) return true;
+
+    int fileno = file_to_index_map.size();
+
+    file_to_index_map[filename] = fileno;
+    index_to_file_map[fileno] = filename;
+
+    ss << "#line 1 " << fileno << endl;
+
+    std::ifstream is(filename.c_str());
 
     if (!is) {
         return false;
     }
-
-    while (is.getline(buffer, MAX_LENGTH)) {
-        std::string line(buffer);
+    
+    std::string line;
         
+    int lineno = 0;
+    while (std::getline(is,line)) {
+        lineno++;
+
         if (boost::regex_match(line, match, include_pattern)) {
-            //Note: using match.str(1) instead of match[1] is a workaround
-            //for VS2010
             string includefile = config.shader_dir()+"/"+match.str(1);
 
-            if (!file_exists(includefile)) {
-                cerr << "Could not find file " << includefile << endl;
+            if (!read_file(includefile)) {
                 return false;
             }
-            
-            ss << read_file(includefile);
+
+            ss << "#line " << lineno+1 << " " << fileno << endl;
         } else {
             ss << line << endl;
         }
     }
 
-    return true;
+    return true;            
 }
 
 /**
@@ -94,8 +105,6 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
                                                const string& material,
                                                GLenum type) 
 {
-    std::stringstream ss;
-
     string file_extension;
 
     switch(type) {
@@ -113,7 +122,7 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
         assert(0);
     }
 
-    if (!load_shader_source(shader, material, file_extension, ss)) {
+    if (!load_shader_source(shader, material, file_extension)) {
         return 0;
     }
 
@@ -123,11 +132,11 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
     
     string source = ss.str();
 
-    GLuint shader_handle = glCreateShader(type);
+    shader_handle = glCreateShader(type);
 
     const char * csource = source.c_str();
     GLint source_length = source.size();
-
+    
     glShaderSource(shader_handle, 1, &csource, &source_length);
 
     glCompileShader(shader_handle);
@@ -137,7 +146,7 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
     glGetShaderiv(shader_handle, GL_COMPILE_STATUS, &status);
     
     if (config.verbosity_level() > 0 || status == GL_FALSE) {
-        print_shader_log(shader_handle, config.shader_dir() +"/"+shader+file_extension);
+        print_shader_log();
     }
 
     if (status == GL_FALSE) {
@@ -146,4 +155,34 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
     }
 
     return shader_handle;
+}
+
+
+void GL::ShaderObject::print_shader_log()
+{
+    const boost::regex pattern("(.+)([0-9]+):([0-9]+)(.+)");
+    boost::match_results<std::string::const_iterator> match;
+    
+    char logBuffer[LOG_BUFFER_SIZE];
+    GLsizei length;
+  
+    logBuffer[0] = '\0';
+    glGetShaderInfoLog(shader_handle, LOG_BUFFER_SIZE, &length,logBuffer);
+
+    if (length == 0) return;
+    
+    cout << "--------------------------------------------------------------------------------" << endl;
+    cout << shadername << " shader build log:" << endl;
+
+    string line;
+    
+    std::stringstream ss(logBuffer);
+
+    while(std::getline(ss, line)) {
+        if (boost::regex_match(line, match, pattern)) {
+            cout << match.str(1) << index_to_file_map[stoi(match.str(2))] << ":" << match.str(3) << match.str(4) << endl;
+        } else {
+            cout << line << endl;
+        }
+    }
 }
