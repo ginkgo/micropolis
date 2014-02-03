@@ -6,6 +6,8 @@
 #define MAX_SPLIT_DEPTH 8
 #define STACK_SIZE WORK_GROUP_SIZE * MAX_SPLIT_DEPTH
 
+#define max_split_depth MAX_SPLIT_DEPTH
+
 layout (local_size_x = WORK_GROUP_SIZE) in;
 
 @include <utility.h>

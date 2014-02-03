@@ -31,7 +31,8 @@ Reyes::RendererGLWire::RendererGLWire()
     , _patch_index(new PatchIndex())
 {
     switch(config.bound_n_split_method()) {
-    case Config::CPU:
+        //switch(Config::LOCAL) {
+        case Config::CPU:
         cerr << "Warning: CPU Bound&Split not supported for OpenGL. Falling back to MULTIPASS." << endl;
         _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
@@ -48,7 +49,6 @@ Reyes::RendererGLWire::RendererGLWire()
 
 void Reyes::RendererGLWire::prepare()
 {
-    glDisable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

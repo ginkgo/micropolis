@@ -1,5 +1,5 @@
 // Size of the window in pixels.
-window_size = 800 600
+window_size = 1280 1024
 
 // Application window title.
 window_title = MICROPOLIS
@@ -21,7 +21,7 @@ cull_ribbon = 32
 
 // Defines which renderer implementation to use.
 // Either OPENCL or GLTESS.
-renderer_type = GLTESS
+renderer_type = OPENCL
 
 // Defines how micropolygons are shaded.
 // Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
@@ -31,7 +31,7 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = LOCAL
+bound_n_split_method = MULTIPASS
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -41,7 +41,7 @@ max_split_depth = 15
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 2048
+reyes_patches_per_pass = 8192
 
 // Framebuffer tile size.
 framebuffer_tile_size = 8
@@ -103,4 +103,4 @@ verbosity_level = 1
 
 
 
-#hash:3609977311893568557
+#hash:-8747905501521008872

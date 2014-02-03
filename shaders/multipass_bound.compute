@@ -2,11 +2,13 @@
 
 layout (local_size_x = 64) in;
 
+uniform uint batch_size;
+uniform uint batch_offset;
+uniform uint max_split_depth;
+
 @include <utility.h>
 @include <bound_n_split.h>
 
-uniform uint batch_size;
-uniform uint batch_offset;
 
 // Patch range stack arrays
 layout (std430) buffer stack_min

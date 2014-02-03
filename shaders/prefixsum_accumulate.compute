@@ -6,18 +6,19 @@ uniform uint batch_size;
 
 layout (std430) buffer accumulated
 {
-    ivec2 accumulated[];
+    ivec2 abuf[];
 };
 
 layout (std430) buffer reduced
 {
-    ivec2 reduced[];
+    ivec2 rbuf[];
 };
 
 
 void main (void)
 {
     if (gl_GlobalInvocationID.x + 128 < batch_size) {
-        accumulated[gl_GlobalInvocationID.x + 128] += reduced[gl_WorkGroupID.x];
+        abuf[gl_GlobalInvocationID.x + 128] += rbuf[gl_WorkGroupID.x];
     }
 }
+

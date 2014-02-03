@@ -1,8 +1,6 @@
 
 
 uniform float split_limit;
-//uniform uint max_split_depth;
-#define max_split_depth MAX_SPLIT_DEPTH
 
 uniform samplerBuffer patches;
 
