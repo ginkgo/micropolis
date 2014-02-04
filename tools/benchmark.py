@@ -6,10 +6,12 @@ import signal
 import itertools
 
 from subprocess import call, DEVNULL, TimeoutExpired
+import numpy as np
 from numpy import linspace
 from optparse import OptionParser
 from glob import glob
 
+import matplotlib.pyplot as plt
 
 from trace_summary import *
 
@@ -89,21 +91,30 @@ class Benchmark:
     
         
 def parse_args():
-    parser = OptionParser(usage='Usage: %prog <tracefile>')
+    parser = OptionParser(usage='Usage: %prog <tracefile> <csvfile>')
     options, args = parser.parse_args()
 
-    if len(args) < 1:
+    if len(args) < 2:
         parser.print_help()
         exit(0)
-    elif len(args) > 1:
+    elif len(args) > 2:
         parser.print_help()
         exit(1)
 
-    return options, args[0]
-        
+    return options, args[0], args[1]
+
+def scatter_and_fit(x,y):
+    coefficients = np.polyfit(x,y,4)
+    polynomial = np.poly1d(coefficients)
+
+    fy = polynomial(x)
+
+    plt.plot(x,y,'o')
+    plt.plot(x,fy)
+
 if __name__=='__main__':
 
-    options, binary_name = parse_args()
+    options, binary_name, outfile = parse_args()
 
     benchmark_file = '/tmp/benchmark.trace'
     stat_file = '/tmp/benchmark.statistics'
@@ -125,7 +136,7 @@ if __name__=='__main__':
     benchmark.add_option('bound_n_split_method', 'MULTIPASS')
     benchmark.add_option('window_size', '1280 1024')
     benchmark.add_option('input_file', 'mscene/teapot.mscene')
-    benchmark.add_int_range_options('reyes_patches_per_pass', 32, 8192, 5)
+    benchmark.add_int_range_options('reyes_patches_per_pass', 1, 8192, 50)
 
     duration_list = []
     memory_list = []
@@ -140,8 +151,28 @@ if __name__=='__main__':
     
     benchmark.perform()
 
-    print (duration_list)
-    print (memory_list)
-    print (batch_size_list)
+    duration_list = np.array(duration_list)
+    memory_list = np.array(memory_list)
+    batch_size_list = np.array(batch_size_list)
+
+    speedup = duration_list[0]*batch_size_list[0]/duration_list
+
+    plt.figure()
+    scatter_and_fit(memory_list / 1000000.0, speedup)
+    plt.xlabel('memory[MB]')
+    plt.ylabel('speedup')
+    plt.show()
+
+    plt.figure()
+    scatter_and_fit(batch_size_list, speedup)
+    plt.xlabel('batch size')
+    plt.ylabel('speedup')
+    plt.show()
+    
+    with open(outfile, 'w') as f:
+        for line in zip(duration_list, memory_list, batch_size_list, speedup):
+            f.write(';'.join((str(x) for x in line))+'\n')
+
+    
     
     

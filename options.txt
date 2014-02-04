@@ -104,6 +104,9 @@ dump_after = 10
 // 2...Lots of information posted, can be detrimental to render performance
 verbosity_level = 1
 
+// If set to true, the patches are split but not diced and rasterized.
+dummy_render = false
 
 
-#hash:3291426669230045073
+
+#hash:-5928518295551461957

@@ -191,6 +191,9 @@
       2...Lots of information posted, can be detrimental to render performance
     </value>
 
+    <value name="dummy_render" type="bool" default="false">
+      If set to true, the patches are split but not diced and rasterized.
+    </value>
 
   </values>
 
