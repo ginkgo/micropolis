@@ -171,6 +171,10 @@
       Target file for writing OpenCL trace to.
     </value>
 
+    <value name="statistics_file" type="string" default="reyes.statistics">
+      Target file for writing program stats to.
+    </value>
+
     <!-- Debug properties -->      
     <value name="dump_mode" type="bool" default="false">
       Enables dump mode.

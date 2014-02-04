@@ -3,13 +3,13 @@ used_toolchain = 'GCC'
 python3 = 'python3'
 
 
-def setup_env(toolchain, optimization_flags, defines):
+def setup_env(toolchain, optimization_flags, defines, config):
     
     env = Environment()
 
     warning_flags = ['-Wall', '-Wno-unknown-pragmas', '-Wno-unused-variable', '-Wno-unused-but-set-variable']
 
-    env['CPPPATH'] = ['#/external', '#/generated', '#src']
+    env['CPPPATH'] = ['#/external', '#/%s/generated' % config, '#src']
 
     if toolchain=='GCC':
         env['LINK'] = 'g++'
@@ -33,8 +33,8 @@ def setup_env(toolchain, optimization_flags, defines):
 
     return env
 
-release_env = setup_env(used_toolchain, optimization_flags=['-O3', '-msse4'], defines=['linux', 'NDEBUG'])
-debug_env = setup_env(used_toolchain, optimization_flags=['-O0', '-ggdb'], defines=['linux', 'DEBUG_OPENCL'])
+release_env = setup_env(used_toolchain, optimization_flags=['-O3', '-msse4'], defines=['linux', 'NDEBUG'], config='release')
+debug_env = setup_env(used_toolchain, optimization_flags=['-O0', '-ggdb'], defines=['linux', 'DEBUG_OPENCL'], config='debug')
 
 
 SConscript('SConscript', variant_dir='release', exports={'env':release_env, 'python3':python3, 'config':'release'})

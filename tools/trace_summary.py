@@ -8,14 +8,16 @@ from collections import defaultdict
 from tabulate import tabulate
 
 class Summary:
-    def __init__(self, traceitems):
+    def __init__(self, traceitems, statistics={}):
         
         tmin,tmax = find_time_range(traceitems)
 
         self.duration = milliseconds(tmax - tmin)
         self.percentages = {}
         self.times = {}
-    
+
+        self.statistics = statistics
+        
         ti_times  = defaultdict(float)
         
         for ti in traceitems:
@@ -35,6 +37,7 @@ class Summary:
         self.print_duration()
         self.print_times()
         self.print_percentages()
+        self.print_stats()
 
     def print_duration(self):
         print('total frame time: %.2fms' % self.duration)
@@ -49,29 +52,52 @@ class Summary:
         header = ["Task", "ms"]
         print (tabulate(table, header, tablefmt='simple', floatfmt=".3f"))
 
-def parse_trace_file_and_create_summary(filename):
-    with open(filename, 'r') as tracefile:
+    def print_stats(self):
+        for k,v in self.statistics.items():
+            print ('{0} = {1}'.format(k,str(v)))
+
+def parse_stats(statfile):
+    int_pattern = re.compile(r'(\w+)\s*=\s*(\d+);')
+
+    stats = {}
+    
+    for line in statfile.readlines():
+        line = line.strip()
+        match = int_pattern.match(line)
+
+        if match:
+            stats[match.group(1)] = int(match.group(2))
+            
+    return stats
+        
+def parse_trace_file_and_create_summary(tracefile_name, statistics_file_name=''):
+    with open(tracefile_name, 'r') as tracefile:
         traceitems = parse(tracefile)
 
-    return Summary(traceitems)
-        
+    statistics = {}
+    if statistics_file_name:
+        with open(statistics_file_name, 'r') as statfile:
+            statistics = parse_stats(statfile)
+
+    return Summary(traceitems, statistics)
+
 def parse_args():
-    parser = OptionParser(usage='Usage: %prog <tracefile>')
+    parser = OptionParser(usage='Usage: %prog <tracefile> <statfile>')
     options, args = parser.parse_args()
 
-    if len(args) < 1:
+    if len(args) < 2:
         parser.print_help()
         exit(0)
-    elif len(args) > 1:
+    elif len(args) > 2:
         parser.print_help()
         exit(1)
 
-    return options, args[0]
+    return options, args[0], args[1]
 
 if __name__=='__main__':
     
-    options, filename = parse_args()
+    options, filename, statfilename = parse_args()
 
-    summary = parse_trace_file_and_create_summary(filename)
+    summary = parse_trace_file_and_create_summary(filename, statfilename)
 
     summary.print()

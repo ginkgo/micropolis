@@ -137,9 +137,6 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
     const char * csource = source.c_str();
     GLint source_length = source.size();
 
-    cout << "--------------------------------------------------------------------------------" << endl;
-    cout << csource << endl;
-    cout << "--------------------------------------------------------------------------------" << endl;
     
     glShaderSource(shader_handle, 1, &csource, &source_length);
 

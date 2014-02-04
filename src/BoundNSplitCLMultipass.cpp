@@ -176,5 +176,5 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     statistics.add_patches(draw_count);
     statistics.inc_pass_count(1);
     
-    return {(size_t)draw_count, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
+    return {(size_t)0, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }

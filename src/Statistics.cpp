@@ -20,6 +20,8 @@
 
 #include "utility.h"
 #include "Config.h"
+
+#include <fstream>
     
 Statistics statistics;
 
@@ -156,4 +158,16 @@ void Statistics::print()
     } else {
         cout  << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl;
     }
+}
+
+
+void Statistics::dump_stats()
+{
+    std::ofstream fs(config.statistics_file().c_str());
+
+    fs << "opencl_mem = " << opencl_memory << ";" << endl;
+    fs << "opengl_mem = " << opengl_memory << ";" << endl;
+    fs << "patches_per_frame = " << patches_per_frame << ";" << endl;
+    fs << "pass_count = " << _pass_count << ";" << endl;
+    
 }

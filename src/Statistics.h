@@ -73,6 +73,7 @@ class Statistics
     void reset_timer();
 
     void print();
+    void dump_stats();
         
 };
 

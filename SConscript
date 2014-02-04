@@ -20,7 +20,7 @@ env.Command(['#/%s/generated/mscene.capnp.c++' % config, '#/%s/generated/mscene.
             'capnpc src/mscene.capnp --src-prefix=src -oc++:%s/generated' % config)
 
 env.Program('#/micropolis_%s' % config, Glob('src/*cpp') + Glob('src/*/*cpp') + 
-            ['generated/flextGL.c', 
-             'generated/Config.cpp', 
-             'generated/format_map.cpp',
-             'generated/mscene.capnp.c++'])
+            ['#/%s/generated/flextGL.c' % config, 
+             '#/%s/generated/Config.cpp' % config, 
+             '#/%s/generated/format_map.cpp' % config,
+             '#/%s/generated/mscene.capnp.c++' % config])

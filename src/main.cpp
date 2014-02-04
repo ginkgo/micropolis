@@ -187,6 +187,7 @@ void mainloop(GLFWwindow* window)
 
         if (config.dump_mode() && frame_no >= config.dump_after()) {
             renderer->dump_trace();
+            statistics.dump_stats();
         }
         
         // Render scene

@@ -5,6 +5,7 @@ micropolis_*
 generated/*
 .sconsign.dblite
 reyes.trace
+reyes.statistics
 AMDOpenCLDebugAPIUsage.log
 __pycache__
 debug/
