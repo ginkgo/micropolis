@@ -109,6 +109,9 @@ void mainloop(GLFWwindow* window)
     // return;
 
     long long frame_no = 0;
+
+    string trace_file = config.trace_file();
+    string statistics_file = config.statistics_file();
     
     while (running) {
 
@@ -186,6 +189,11 @@ void mainloop(GLFWwindow* window)
 
 
         if (config.dump_mode() && frame_no >= config.dump_after()) {
+            int dump_id = frame_no - config.dump_after();
+            
+            config.set_trace_file(trace_file + lexical_cast<string>(dump_id));
+            config.set_statistics_file(statistics_file + lexical_cast<string>(dump_id));
+                
             renderer->dump_trace();
             statistics.dump_stats();
         }
@@ -209,7 +217,7 @@ void mainloop(GLFWwindow* window)
 		running = running && !glfwWindowShouldClose( window );
 
         		
-        if (config.dump_mode() && frame_no >= config.dump_after()) {
+        if (config.dump_mode() && frame_no + 1 >= config.dump_after() + config.dump_count()) {
             running = false;
         }
 

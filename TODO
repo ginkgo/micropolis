@@ -1,11 +1,14 @@
 
 TODO:
-  
-* Implement BoundNSplitCLMultipass
+
+* Dump several traces in trace dump mode
+* Implement PASSTHRU B&S method
+* Implement BREADTHFIRST B&S method
+* Find source for driver crash when switching to OpenGL backend
+* Add save-scene feature to save camera position (and perhaps other stuff)
 * Debug deadlock/artifact problems in LOCAL B&S kernels
-* Plot figures in benchmark.py with matplotlib
 * Find clCreateUserEvent leak CodeXL is reporting
-* Implement task donation/stealing on top of this
+* Implement task donation/stealing on top of Local B&S kernels
 * Rename reyes_patches_per_pass to grids_per_pass or something like that
   * Consider generally cleaning up config options
 * Investigate Intel vectorization problems in bound_n_split kernel
@@ -21,7 +24,6 @@ TODO:
 * Query ideal work group size and use that for bound_n_split kernels
   * Also pick local stack size (vs. spill region) that way
   
-* Add save-scene feature to save camera position (and perhaps other stuff)
   
 * Make more use of
   * __attribute__((work_group_size_hint(X,Y,Z)))
@@ -42,7 +44,7 @@ TODO:
   * 'Fast GPU-based Adaptive Tessellation with CUDA'
 
 * Shader system
-  * Use Python for generation/compilation
+  * Use Python for generation/compilation?
   * Noise functions
 
 * Use GL sync objects once available
@@ -53,7 +55,9 @@ TODO:
 
 
 DONE:
+* Plot figures in benchmark.py with matplotlib
 
+* Implement BoundNSplitCLMultipass
 * Use dump-mode to write a benchmark script that tries out many different setting combinations
   * use trace parsing code to calculate performance characteristics
 * rename parse_trace.py and  and move actual trace parsing into separate file for reuse

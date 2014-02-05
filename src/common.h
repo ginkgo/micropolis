@@ -25,8 +25,14 @@
 
 typedef unsigned char byte;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+
+#pragma GCC diagnostic pop
 
 using glm::vec2;
 using glm::vec3;
@@ -68,18 +74,20 @@ using std::endl;
 
 #include "utility.h"
 
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/noncopyable.hpp>
-#include <boost/unordered_map.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/noncopyable.hpp>
 #include <boost/range/irange.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 
-using boost::shared_ptr;
-using boost::scoped_ptr;
-using boost::noncopyable;
 using boost::format;
 using boost::irange;
+using boost::lexical_cast;
+using boost::noncopyable;
+using boost::scoped_ptr;
+using boost::shared_ptr;
 
 template<typename T>
 using shared_vector = vector<shared_ptr<T> >;

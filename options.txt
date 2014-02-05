@@ -5,7 +5,7 @@ window_size = 800 600
 window_title = MICROPOLIS
 
 // Patch data input file.
-input_file = mscene/teapot.mscene
+input_file = mscene/bigguy.mscene
 
 // Clear color for framebuffer.
 clear_color = 0.1 0.2 1 0
@@ -30,8 +30,8 @@ shading_mode = FLAT
 // Controls backface-culling.
 backface_culling = true
 
-// Method used to implement Bound&Split. Either CPU, MULTIPASS or LOCAL.
-bound_n_split_method = MULTIPASS
+// Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, PASSTHRU, BREADTHFIRST.
+bound_n_split_method = LOCAL
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -99,6 +99,9 @@ dump_mode = false
 // Controls after which frame the application dumps a trace and exits in trace dump mode.
 dump_after = 10
 
+// Number of frame dumps to perform per invocation.
+dump_count = 3
+
 // 0...(Almost) no output
 // 1...Regular performance information and warnings posted
 // 2...Lots of information posted, can be detrimental to render performance
@@ -109,4 +112,4 @@ dummy_render = false
 
 
 
-#hash:-5928518295551461957
+#hash:8960684804260589323

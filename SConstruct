@@ -7,7 +7,12 @@ def setup_env(toolchain, optimization_flags, defines, config):
     
     env = Environment()
 
-    warning_flags = ['-Wall', '-Wno-unknown-pragmas', '-Wno-unused-variable', '-Wno-unused-but-set-variable']
+    warning_flags = ['-Wall', '-Wextra',
+                     '-Wno-ignored-qualifiers',
+                     '-Wno-unused-but-set-variable',
+                     '-Wno-unused-parameter',
+                     '-Wno-unused-variable',
+                     '-Wno-unknown-pragmas']
 
     env['CPPPATH'] = ['#/external', '#/%s/generated' % config, '#src']
 
@@ -37,7 +42,7 @@ release_env = setup_env(used_toolchain, optimization_flags=['-O3', '-msse4'], de
 debug_env = setup_env(used_toolchain, optimization_flags=['-O0', '-ggdb'], defines=['linux', 'DEBUG_OPENCL'], config='debug')
 
 
-SConscript('SConscript', variant_dir='release', exports={'env':release_env, 'python3':python3, 'config':'release'})
-SConscript('SConscript', variant_dir='debug',   exports={'env':debug_env,   'python3':python3, 'config':'debug'})
+SConscript('SConscript', variant_dir='release', duplicate=0, exports={'env':release_env, 'python3':python3, 'config':'release'})
+SConscript('SConscript', variant_dir='debug',   duplicate=0, exports={'env':debug_env,   'python3':python3, 'config':'debug'})
 
 

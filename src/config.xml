@@ -40,6 +40,8 @@
       <element name="CPU"/>
       <element name="MULTIPASS"/>
       <element name="LOCAL"/>
+      <element name="PASSTHRU"/>
+      <element name="BREADTHFIRST"/>
     </enum>
   </enums>
 
@@ -90,7 +92,7 @@
     </value>
     
     <value name="bound_n_split_method" type="BoundNSplitMethod" default="LOCAL">
-      Method used to implement Bound&amp;Split. Either CPU, MULTIPASS or LOCAL.
+      Method used to implement Bound&amp;Split. Either CPU, MULTIPASS, LOCAL, PASSTHRU, BREADTHFIRST.
     </value>
     
     <value name="bound_sample_rate" type="int" default="3">
@@ -183,6 +185,10 @@
 
     <value name="dump_after" type="long long" default="10">
       Controls after which frame the application dumps a trace and exits in trace dump mode.
+    </value>
+
+    <value name="dump_count" type="long long" default="3">
+      Number of frame dumps to perform per invocation.
     </value>
     
     <value name="verbosity_level" type="int" default="1">

@@ -30,8 +30,8 @@ Reyes::RendererGLWire::RendererGLWire()
     , _vbo(4 * config.reyes_patches_per_pass())
     , _patch_index(new PatchIndex())
 {
-    switch(config.bound_n_split_method()) {
-        //switch(Config::LOCAL) {
+    //switch(config.bound_n_split_method()) {
+    switch(Config::LOCAL) {
         case Config::CPU:
         cerr << "Warning: CPU Bound&Split not supported for OpenGL. Falling back to MULTIPASS." << endl;
         _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
