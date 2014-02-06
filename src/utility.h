@@ -166,7 +166,24 @@ public:
 };
 
 
+class Keyboard
+{
 
+    int last_state[GLFW_KEY_LAST+1];
+    GLFWwindow* window;
+    
+public:
+
+    Keyboard(GLFWwindow* window);
+    
+    void update();
+
+    bool pressed(int key) const;
+    bool released(int key) const;
+    bool is_down(int key) const;
+    bool is_up(int key) const;
+    
+};
 
 
 template <typename T>

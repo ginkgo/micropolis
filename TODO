@@ -1,11 +1,8 @@
 
 TODO:
 
-* Implement/recover CPU B&S for GL backend
 * Implement PASSTHRU B&S method
 * Implement BREADTHFIRST B&S method
-* Find source for driver crash when switching to OpenGL backend
-* Add save-scene feature to save camera position (and perhaps other stuff)
 * Debug deadlock/artifact problems in LOCAL B&S kernels
 * Find clCreateUserEvent leak CodeXL is reporting
 * Implement task donation/stealing on top of Local B&S kernels
@@ -23,7 +20,11 @@ TODO:
 * Add SCons build dir and config-option
 * Query ideal work group size and use that for bound_n_split kernels
   * Also pick local stack size (vs. spill region) that way
-  
+
+* Find source for driver crash when switching to OpenGL backend
+  * This only happens on R9 290X -> Switched back to HD 7970
+  * Perhaps try setting up a minimal debug case for 
+
   
 * Make more use of
   * __attribute__((work_group_size_hint(X,Y,Z)))
@@ -55,6 +56,9 @@ TODO:
 
 
 DONE:
+
+* Add save-scene feature to save camera position (and perhaps other stuff)
+* Implement/recover CPU B&S for GL backend
 * Dump several traces in trace dump mode
 * Plot figures in benchmark.py with matplotlib
 

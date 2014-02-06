@@ -258,3 +258,45 @@ vec2 project (const vec4& p)
 {
     return vec2(p.x, p.y) / p.w;
 }
+
+
+
+Keyboard::Keyboard(GLFWwindow* window)
+    : window(window)
+{
+    update();
+}
+
+
+void Keyboard::update()
+{
+    for (int i = 0; i <= GLFW_KEY_LAST; ++i) {
+        last_state[i] = glfwGetKey(window, i);
+    }
+}
+
+
+
+
+bool Keyboard::pressed(int key) const
+{
+    return last_state[key] == GL_FALSE && glfwGetKey(window, key) == GL_TRUE;
+}
+
+
+bool Keyboard::released(int key) const
+{
+    return last_state[key] == GL_TRUE && glfwGetKey(window, key) == GL_FALSE;
+}
+
+
+bool Keyboard::is_down(int key) const
+{
+    return glfwGetKey(window,key) == GL_TRUE;
+}
+
+
+bool Keyboard::is_up(int key) const
+{
+    return glfwGetKey(window,key) == GL_FALSE;
+}

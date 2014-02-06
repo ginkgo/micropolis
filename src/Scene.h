@@ -79,6 +79,9 @@ namespace Reyes
         Camera& active_cam() { return *cameras[active_cam_id]; }
 
         void draw(Renderer& renderer) const;
+
+        void save(const string& filename, bool overwrite=false) const;
+        
     };
 }
 

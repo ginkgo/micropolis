@@ -41,17 +41,46 @@ namespace {
         return vec3(vec.getX(), vec.getY(), vec.getZ());
     }
 
+    void from_vec3(const vec3& v, ::Vec3::Builder& vec)
+    {
+        vec.setX(v.x);
+        vec.setY(v.y);
+        vec.setZ(v.z);
+    }
+
+    
     quat to_quat(const ::Quaternion::Reader& q)
     {
         return quat(q.getR(), q.getI(), q.getJ(), q.getK());
     }
 
-    mat4 transformToMatrix(const ::Transform::Reader& transform)
+    void from_quat(const quat& q, ::Quaternion::Builder& quat)
+    {
+        quat.setR(q.w);
+        quat.setI(q.x);
+        quat.setJ(q.y);
+        quat.setK(q.z);
+    }
+    
+
+    mat4 to_matrix(const ::Transform::Reader& transform)
     {
         vec3 translation = to_vec3(transform.getTranslation());
         quat rotation = to_quat(transform.getRotation());                      
                          
         return glm::translate(translation) * glm::mat4_cast(rotation);
+    }
+
+    void from_matrix(const mat4& matrix, ::Transform::Builder& transform)
+    {
+        vec3 translation(matrix[3]);
+        quat rotation = quat(mat3(matrix));
+
+        ::Vec3::Builder trl = transform.initTranslation();
+        ::Quaternion::Builder rot = transform.initRotation();
+
+        from_vec3(translation, trl);
+        from_quat(rotation, rot);
     }
 
 }
@@ -68,7 +97,7 @@ Reyes::Scene::Scene (const string& filename) :
     for (auto c : scene.getCameras()) {
         Camera* camera =
             new Camera{c.getName(),
-                       transformToMatrix(c.getTransform()),
+                       to_matrix(c.getTransform()),
                        shared_ptr<Projection>(new Projection(c.getFovy(),
                                                              c.getNear(),
                                                              config.window_size()))};
@@ -80,7 +109,7 @@ Reyes::Scene::Scene (const string& filename) :
             
         DirectionalLight* light =
             new DirectionalLight{l.getName(),
-                                 vec3(vec4(0,0,1,1) * transformToMatrix(l.getTransform())),
+                                 vec3(vec4(0,0,1,1) * to_matrix(l.getTransform())),
                                  to_vec3(l.getColor()) * l.getIntensity()};
 
         lights.push_back(shared_ptr<DirectionalLight>(light));
@@ -90,7 +119,7 @@ Reyes::Scene::Scene (const string& filename) :
     for (auto m : scene.getMeshes()) {
         assert(m.getType() == ::Mesh::Type::BEZIER);
 
-        BezierMesh* mesh = new BezierMesh{m.getName()};
+        BezierMesh* mesh = new BezierMesh{m.getName(), {}};
 
         int i = 0;
         vec3 v;
@@ -117,7 +146,7 @@ Reyes::Scene::Scene (const string& filename) :
 
         shared_ptr<BezierMesh> mesh = meshmap[o.getMeshname()];
         Object* object = new Object{o.getName(),
-                                    transformToMatrix(o.getTransform()),
+                                    to_matrix(o.getTransform()),
                                     vec4(to_vec3(o.getColor()),1),
                                     mesh};
             
@@ -150,4 +179,92 @@ void Reyes::Scene::draw(Renderer& renderer) const
         
     renderer.finish();
 }
-       
+
+
+void Reyes::Scene::save(const string& base_filename, bool overwrite) const
+{
+    string filename = base_filename;
+
+    if (!overwrite || file_exists(base_filename)) {
+        int i = 0;
+
+        while (file_exists(base_filename + lexical_cast<string>(i))) {
+            ++i;
+        }
+
+        filename = base_filename + lexical_cast<string>(i);
+    }
+
+    cout << "Saving to file '" << filename << "'" << endl;
+
+    ::capnp::MallocMessageBuilder message;
+    
+    ::Scene::Builder scene = message.initRoot<::Scene>();
+
+    ::capnp::List<::Camera>::Builder _cameras = scene.initCameras(cameras.size());
+    for (size_t i = 0; i < cameras.size(); ++i) {
+        auto cam = cameras[i];
+        _cameras[i].setName(cam->name);
+
+        ::Transform::Builder transform = _cameras[i].initTransform();
+        from_matrix(cam->transform, transform);
+        
+        _cameras[i].setNear(cam->projection->near());
+        _cameras[i].setFar(cam->projection->far());
+        _cameras[i].setFovy(cam->projection->fovy());        
+    }
+
+    ::capnp::List<::LightSource>::Builder _lights = scene.initLights(lights.size());
+    for (size_t i = 0; i < lights.size(); ++i) {
+        auto light = lights[i];
+
+        _lights[i].setName(light->name);
+        ::Transform::Builder transform = _lights[i].initTransform();
+        from_matrix(mat4(), transform); // TODO: implement properly
+
+        ::Vec3::Builder color = _lights[i].initColor();
+        from_vec3(light->color, color);
+
+        _lights[i].setIntensity(1.0f);
+        _lights[i].setType(::LightSource::Type::DIRECTIONAL);
+    }
+
+    ::capnp::List<::Object>::Builder _objects = scene.initObjects(objects.size());
+    for (size_t i = 0; i < objects.size(); ++i) {
+        auto object = objects[i];
+
+        _objects[i].setName(object->name);
+
+        ::Transform::Builder transform = _objects[i].initTransform();
+        from_matrix(object->transform, transform);
+
+        ::Vec3::Builder color = _objects[i].initColor();
+        from_vec3(vec3(object->color), color);
+        
+        _objects[i].setMeshname(object->mesh->name);
+    }
+
+    ::capnp::List<::Mesh>::Builder _meshes = scene.initMeshes(meshes.size());
+    for (size_t i = 0; i < meshes.size(); ++i) {
+        auto mesh = meshes[i];
+
+        _meshes[i].setName(mesh->name);
+        _meshes[i].setType(::Mesh::Type::BEZIER);
+
+        size_t fcount = mesh->patches.size() * 16 * 3;
+        float* meshdata = (float*)mesh->patches.data();
+        
+        ::capnp::List<float>::Builder _data = _meshes[i].initPositions(fcount);
+
+        for (size_t i = 0; i < fcount; ++i) {
+            _data.set(i, meshdata[i]);
+        }
+    }
+
+    int fd = creat(filename.c_str(), 0664);
+    
+    writePackedMessageToFd(fd, message);
+
+    close(fd);
+
+}

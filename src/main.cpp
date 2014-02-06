@@ -96,8 +96,8 @@ void mainloop(GLFWwindow* window)
     glfwGetCursorPos(window, &(last_cursor_pos.x), &(last_cursor_pos.y));
     
     bool in_wire_mode = false;
-    bool last_f3_state = glfwGetKey(window, GLFW_KEY_F3);
-    bool last_f9_state = glfwGetKey(window, GLFW_KEY_F9);
+
+    Keyboard keys(window);
 
     // for (auto N : {1,2, 20, 100,
     //             128, 200, 512, 800, 1000,
@@ -173,20 +173,21 @@ void mainloop(GLFWwindow* window)
             * glm::rotate<float>( zrotation, 0,0,1);
 
         // Wireframe toggle
-        bool f3_state = glfwGetKey(window, GLFW_KEY_F3);
-        if (f3_state && !last_f3_state) {
+        if (keys.pressed(GLFW_KEY_F3)) {
             in_wire_mode = !in_wire_mode;
             statistics.reset_timer();
         }
-        last_f3_state = f3_state;
         
         // Dump trace
-        bool f9_state = glfwGetKey(window, GLFW_KEY_F9);
-        if (f9_state && !last_f9_state) {
+        if (keys.pressed(GLFW_KEY_F9)) {
             renderer->dump_trace();
         }
-        last_f9_state = f9_state;
 
+        // Save scene
+        if (keys.pressed(GLFW_KEY_F12)) {
+            scene.save(config.input_file(), false);
+        }
+        
 
         if (config.dump_mode() && frame_no >= config.dump_after()) {
             int dump_id = frame_no - config.dump_after();
@@ -212,8 +213,8 @@ void mainloop(GLFWwindow* window)
         statistics.update();
 
         // Check if the window has been closed
-        running = running && !glfwGetKey( window, GLFW_KEY_ESCAPE );
-        running = running && !glfwGetKey( window,  'Q' );
+        running = running && keys.is_up(GLFW_KEY_ESCAPE);
+        running = running && keys.is_up('Q');
 		running = running && !glfwWindowShouldClose( window );
 
         		
@@ -222,6 +223,8 @@ void mainloop(GLFWwindow* window)
         }
 
         frame_no++;
+
+        keys.update();
     }
 }
 

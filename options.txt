@@ -31,7 +31,7 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = CPU
+bound_n_split_method = MULTIPASS
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -74,7 +74,7 @@ kernel_dir = kernels
 opencl_device_id = 0 0
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
-disable_buffer_sharing = false
+disable_buffer_sharing = true
 
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
 do_event_polling = true
@@ -112,4 +112,4 @@ dummy_render = false
 
 
 
-#hash:-3234913725617526836
+#hash:8960684804260589323

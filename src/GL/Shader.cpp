@@ -165,7 +165,6 @@ void GL::Shader::set_buffer(const string& buffer_name, const GL::Buffer& buffer)
 {
     GLuint storage_block = glGetProgramResourceIndex(_program, GL_SHADER_STORAGE_BLOCK, buffer_name.c_str());
 
-    assert(buffer.get_target_index() >= 0);
     if (storage_block == GL_INVALID_INDEX) {
         if (config.verbosity_level() > 1) {
             cout << "Couldn't find index for shader storage buffer \"" << buffer_name << "\"" << endl;
