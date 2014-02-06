@@ -1,7 +1,6 @@
 
 TODO:
 
-* React more elegantly on missing input files and misstyped arguments
 * Implement PASSTHRU B&S method
 * Implement BREADTHFIRST B&S method
 * Debug deadlock/artifact problems in LOCAL B&S kernels
@@ -58,6 +57,7 @@ TODO:
 
 DONE:
 
+* React more gracefully on missing input files and mistyped arguments
 * Add save-scene feature to save camera position (and perhaps other stuff)
 * Implement/recover CPU B&S for GL backend
 * Dump several traces in trace dump mode

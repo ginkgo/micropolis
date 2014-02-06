@@ -34,14 +34,23 @@
 void mainloop(GLFWwindow* window);
 bool test_GL_prefix_sum(const int N, bool print);
 bool test_CL_prefix_sum(const int N, bool print);
-void handle_arguments(int argc, char** argv);
+bool handle_arguments(int& argc, char** argv);
 GLFWwindow* init_opengl(ivec2 window_size);
 void get_framebuffer_info();
 
 int main(int argc, char** argv)
 {
-    handle_arguments(argc, argv);
+    // Parse config file and command line arguments
+    if (!handle_arguments(argc, argv)) {
+        return 1;
+    }
 
+    // Check if input file exists
+    if (!file_exists(config.input_file())) {
+        cerr << "Input file \"" << config.input_file() << "\" does not exist." << endl;
+        return 1;
+    }
+    
     ivec2 size = config.window_size();
 
 	GLFWwindow* window = init_opengl(size);
@@ -356,12 +365,13 @@ bool test_CL_prefix_sum(const int N, bool print)
 }
 
 
-void handle_arguments(int argc, char** argv)
+bool handle_arguments(int& argc, char** argv)
 {
     bool needs_resave;
 
     if (!Config::load_file("options.txt", config, needs_resave)) {
         cout << "Failed to load options.txt" << endl;
+        return false;
     }
 
     if (needs_resave) {
@@ -372,11 +382,11 @@ void handle_arguments(int argc, char** argv)
 
         if (!Config::save_file("options.txt", config)) {
             cout << "Failed to save options.txt" << endl;
+            return false;
         }
     }
 
-    argc = config.parse_args(argc, argv);
-    
+    return config.parse_args(argc, argv);    
 }
 
 
