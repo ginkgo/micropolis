@@ -185,7 +185,7 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
 {
     string filename = base_filename;
 
-    if (!overwrite || file_exists(base_filename)) {
+    if (!overwrite && file_exists(base_filename)) {
         int i = 0;
 
         while (file_exists(base_filename + lexical_cast<string>(i))) {

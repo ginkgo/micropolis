@@ -185,7 +185,7 @@ void mainloop(GLFWwindow* window)
 
         // Save scene
         if (keys.pressed(GLFW_KEY_F12)) {
-            scene.save(config.input_file(), false);
+            scene.save(config.input_file(), keys.is_down(GLFW_KEY_LEFT_SHIFT));
         }
         
 

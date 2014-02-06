@@ -1,6 +1,7 @@
 
 TODO:
 
+* React more elegantly on missing input files and misstyped arguments
 * Implement PASSTHRU B&S method
 * Implement BREADTHFIRST B&S method
 * Debug deadlock/artifact problems in LOCAL B&S kernels
