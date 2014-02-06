@@ -1,7 +1,7 @@
 
 TODO:
 
-* Dump several traces in trace dump mode
+* Implement/recover CPU B&S for GL backend
 * Implement PASSTHRU B&S method
 * Implement BREADTHFIRST B&S method
 * Find source for driver crash when switching to OpenGL backend
@@ -55,6 +55,7 @@ TODO:
 
 
 DONE:
+* Dump several traces in trace dump mode
 * Plot figures in benchmark.py with matplotlib
 
 * Implement BoundNSplitCLMultipass

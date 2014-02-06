@@ -146,7 +146,6 @@ void Reyes::BoundNSplitGLLocal::do_bound_n_split(GL::IndirectVBO& vbo)
     _setup_indirection_kernel.unbind();
 
     _done = true;
-
     
 }
     

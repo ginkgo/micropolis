@@ -143,7 +143,7 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
     statistics.stop_bound_n_split();
     _bound_n_split_event.end();
     
-    return {patch_count, *_active_patch_buffer, record.patch_ids, record.patch_min, record.patch_max, record.transferred};
+    return {config.dummy_render() ? 0 : patch_count, *_active_patch_buffer, record.patch_ids, record.patch_min, record.patch_max, record.transferred};
 }
 
 

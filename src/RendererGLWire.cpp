@@ -30,11 +30,9 @@ Reyes::RendererGLWire::RendererGLWire()
     , _vbo(4 * config.reyes_patches_per_pass())
     , _patch_index(new PatchIndex())
 {
-    //switch(config.bound_n_split_method()) {
-    switch(Config::LOCAL) {
-        case Config::CPU:
-        cerr << "Warning: CPU Bound&Split not supported for OpenGL. Falling back to MULTIPASS." << endl;
-        _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
+    switch(config.bound_n_split_method()) {
+    case Config::CPU:
+        _bound_n_split.reset(new BoundNSplitGLCPU(_patch_index));
         break;
     case Config::MULTIPASS:
         _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
@@ -99,13 +97,15 @@ void Reyes::RendererGLWire::draw_patches(void* patches_handle,
 
         _bound_n_split->do_bound_n_split(_vbo);
 
-        _shader.bind();
-        _shader.set_uniform("flip", GL_FALSE);
-        _vbo.draw(GL_PATCHES, _shader);
+        if (!config.dummy_render()) {
+            _shader.bind();
+            _shader.set_uniform("flip", GL_FALSE);
+            _vbo.draw(GL_PATCHES, _shader);
             
-        _shader.set_uniform("flip", GL_TRUE);
-        _vbo.draw(GL_PATCHES, _shader);
-        _shader.unbind();
+            _shader.set_uniform("flip", GL_TRUE);
+            _vbo.draw(GL_PATCHES, _shader);
+            _shader.unbind();
+        }
 
     } while (!_bound_n_split->done());
         
