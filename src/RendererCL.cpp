@@ -2,10 +2,12 @@
 
 #include "RendererCL.h"
 
+#include "BoundNSplitCLCPU.h"
+#include "BoundNSplitCLLocal.h"
+#include "BoundNSplitCLMultipass.h"
 #include "CL/OpenCL.h"
 #include "Config.h"
 #include "Framebuffer.h"
-#include "BoundNSplitCL.h"
 #include "PatchIndex.h"
 #include "Projection.h"
 #include "Statistics.h"

@@ -1,4 +1,4 @@
-#include "BoundNSplitCL.h"
+#include "BoundNSplitCLLocal.h"
 
 
 #include "PatchIndex.h"

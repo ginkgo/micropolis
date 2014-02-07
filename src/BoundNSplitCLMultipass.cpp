@@ -1,4 +1,4 @@
-#include "BoundNSplitCL.h"
+#include "BoundNSplitCLMultipass.h"
 
 #include "CL/PrefixSum.h"
 #include "Config.h"
