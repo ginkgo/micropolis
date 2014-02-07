@@ -1,4 +1,4 @@
-#include "BoundNSplitGL.h"
+#include "BoundNSplitGLLocal.h"
 
 #include "PatchIndex.h"
 #include "Config.h"

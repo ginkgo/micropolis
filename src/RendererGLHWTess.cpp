@@ -18,8 +18,11 @@
 
 #include "RendererGLHWTess.h"
 
-#include "Projection.h"
+#include "BoundNSplitGLCPU.h"
+#include "BoundNSplitGLLocal.h"
+#include "BoundNSplitGLMultipass.h"
 #include "Config.h"
+#include "Projection.h"
 #include "Statistics.h"
 
 
