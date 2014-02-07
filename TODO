@@ -1,7 +1,6 @@
 
 TODO:
 
-* Split B&S header files
 * Implement PASSTHRU B&S method
 * Implement BREADTHFIRST B&S method
 * Debug deadlock/artifact problems in LOCAL B&S kernels
@@ -57,6 +56,7 @@ TODO:
 
 DONE:
 
+* Split B&S header files
 * React more gracefully on missing input files and mistyped arguments
 * Add save-scene feature to save camera position (and perhaps other stuff)
 * Implement/recover CPU B&S for GL backend

@@ -51,6 +51,8 @@ Reyes::BoundNSplitCLMultipass::BoundNSplitCLMultipass(CL::Device& device,
     , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
 
     , _prefix_sum(device, BATCH_SIZE)
+
+    , _user_event(device, "bound&split")
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
 
@@ -130,6 +132,7 @@ void Reyes::BoundNSplitCLMultipass::finish()
 
 Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
 {
+    _user_event.begin(CL::Event());
     CL::Event prefix_sum_ready, mapping_ready;
     
     int batch_size = std::min((int)_stack_height, (int)BATCH_SIZE);
@@ -175,6 +178,7 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
 
     statistics.add_patches(draw_count);
     statistics.inc_pass_count(1);
+    _user_event.end();
     
     return {config.dummy_render() ? 0 : (size_t)draw_count, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }

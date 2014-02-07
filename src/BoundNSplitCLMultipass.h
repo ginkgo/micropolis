@@ -58,6 +58,8 @@ namespace Reyes
         CL::Event _ready;
 
         CL::PrefixSum _prefix_sum;
+
+        CL::UserEvent _user_event;
         
     public:
 

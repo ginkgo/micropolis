@@ -110,7 +110,7 @@ def parse_args():
     return options, args[0], args[1]
 
 def scatter_and_fit(x,y):
-    coefficients = np.polyfit(np.log(x+1),y,3)
+    coefficients = np.polyfit(np.log(x+1),y,2)
     polynomial = np.poly1d(coefficients)
 
     fy = polynomial(np.log(x+1))
@@ -140,17 +140,17 @@ if __name__=='__main__':
 
     benchmark.add_option('bound_n_split_method', 'MULTIPASS')
     benchmark.add_option('window_size', '1024 768')
-    benchmark.add_option('bound_n_split_limit', '3')
+    benchmark.add_option('bound_n_split_limit', '8')
     benchmark.add_option('input_file', 'mscene/teapot.mscene')
     benchmark.add_option('dummy_render', 'true')
-    benchmark.add_int_range_options('reyes_patches_per_pass', 128, 8192*4, 25)
+    benchmark.add_int_range_options('reyes_patches_per_pass', 1, 8192*8, 100)
 
     duration_list = []
     memory_list = []
     batch_size_list = []
     
     def datapoint_handler(config,summaries):
-        duration_list.append(sum((s.duration for s in summaries))/len(summaries))
+        duration_list.append(sum((s.duration_for_tasks(['bound&split']) for s in summaries))/len(summaries))
         memory_list.append(sum((s.statistics['opencl_mem'] for s in summaries))/len(summaries))
         batch_size_list.append(config['reyes_patches_per_pass'])
     

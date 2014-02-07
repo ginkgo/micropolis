@@ -56,6 +56,9 @@ class Summary:
         for k,v in self.statistics.items():
             print ('{0} = {1}'.format(k,str(v)))
 
+    def duration_for_tasks(self, task_names):
+        return sum((time for name,time in self.times.items() if name in task_names))        
+
 def parse_stats(statfile):
     int_pattern = re.compile(r'(\w+)\s*=\s*(\d+);')
 
