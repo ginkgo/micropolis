@@ -14,18 +14,22 @@
                                     Buffer
 \*****************************************************************************/
 
-CL::Buffer::Buffer(Device& device, size_t size, cl_mem_flags flags)
+CL::Buffer::Buffer(Device& device, size_t size, cl_mem_flags flags, const string& use)
     : _device(&device)
     , _flags(flags)
     , _buffer(0)
+    , _use(use)
+    , _shared(false)
 {
     resize(size);
 }
 
 
-CL::Buffer::Buffer(Device& device, GLuint GL_buffer)
+CL::Buffer::Buffer(Device& device, GLuint GL_buffer, const string& use)
     : _device(&device)
     , _flags(CL_MEM_WRITE_ONLY)
+    , _use(use)
+    , _shared(true)
 {
     cl_int status;
     
@@ -41,8 +45,8 @@ CL::Buffer::Buffer(Device& device, GLuint GL_buffer)
 
 CL::Buffer::~Buffer()
 {
-    if (_buffer != 0) {
-        statistics.free_opencl_memory(_size);
+    if (_buffer != 0 && !_shared) {
+        statistics.free_opencl_memory(_size, _use);
         clReleaseMemObject(_buffer);
     }
 }
@@ -54,11 +58,13 @@ CL::Buffer::Buffer(Buffer&& other)
     , _flags(other._flags)
     , _size(other._size)
     , _buffer(other._buffer)
+    , _use(other._use)
 {
     other._device = nullptr;
     other._flags = 0;
     other._size = 0;
     other._buffer = 0;
+    other._use = "";
 }
 
 
@@ -68,11 +74,13 @@ CL::Buffer& CL::Buffer::operator=(Buffer&& other)
     _flags = other._flags;
     _size = other._size;
     _buffer = other._buffer;
+    _use = other._use;
         
     other._device = nullptr;
     other._flags = 0;
     other._size = 0;
     other._buffer = 0;
+    other._use = "";
 
     return *this;
 }
@@ -81,7 +89,6 @@ CL::Buffer& CL::Buffer::operator=(Buffer&& other)
 
 size_t CL::Buffer::get_size() const
 {
-
     return _size;
 }
 
@@ -91,7 +98,7 @@ void CL::Buffer::resize(size_t new_size)
     cl_int status;
     
     if (_buffer != 0) {
-        statistics.free_opencl_memory(get_size());
+        statistics.free_opencl_memory(get_size(),_use);
         clReleaseMemObject(_buffer);
 
         _buffer = 0;
@@ -104,7 +111,7 @@ void CL::Buffer::resize(size_t new_size)
     _buffer = clCreateBuffer(_device->get_context(), _flags, new_size, NULL, &status);
     OPENCL_ASSERT(status);
 
-    statistics.alloc_opencl_memory(_size);
+    statistics.alloc_opencl_memory(_size, _use);
 }
 
 
@@ -135,8 +142,8 @@ CL::ImageBuffer::~ImageBuffer()
 \*****************************************************************************/
 
 
-CL::TransferBuffer::TransferBuffer(Device& device, size_t size, cl_mem_flags flags)
-    : CL::Buffer(device, flags | CL_MEM_ALLOC_HOST_PTR)
+CL::TransferBuffer::TransferBuffer(Device& device, size_t size, cl_mem_flags flags, const string& use)
+    : CL::Buffer(device, flags | CL_MEM_ALLOC_HOST_PTR, use)
     , _host_ptr(nullptr)
 {
     resize(size);
@@ -155,15 +162,11 @@ CL::TransferBuffer::~TransferBuffer()
 
 
 CL::TransferBuffer::TransferBuffer(TransferBuffer&& other)
-    : Buffer(*other._device, other._flags)
+    : Buffer(std::move(other))
 {
-    _buffer = std::move(other._buffer);
     _host_ptr = std::move(other._host_ptr);
-    _size = std::move(other._size);
     
-    other._buffer = 0;
     other._host_ptr = 0;
-    other._size = 0;    
 }
 
 

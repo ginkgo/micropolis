@@ -44,6 +44,9 @@ class Statistics
     int      patches_per_frame;
     uint64_t opencl_memory;
     uint64_t opengl_memory;
+    size_t   max_patches;
+
+    map<string, uint64_t> opencl_memory_by_use;
     
     public:
         
@@ -63,12 +66,14 @@ class Statistics
 
     void inc_pass_count(uint64_t cnt);
 
-    void alloc_opencl_memory(long mem_size);
-    void free_opencl_memory(long mem_size);
+    void alloc_opencl_memory(long mem_size, const string& use);
+    void free_opencl_memory(long mem_size, const string& use);
 
     void alloc_opengl_memory(long mem_size);
     void free_opengl_memory(long mem_size);
 
+    void update_max_patches(size_t current_patches);
+    
     void update();
     void reset_timer();
 

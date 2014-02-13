@@ -83,7 +83,7 @@ namespace Reyes
         if (_shared) {
             _cl_buffer = new CL::Buffer(device, _tex_buffer.get_buffer().get_id());
         } else {
-            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_size(), CL_MEM_READ_WRITE);
+            _cl_buffer = new CL::Buffer(device, _tex_buffer.get_size(), CL_MEM_READ_WRITE, "framebuffer");
             _local = malloc(_tex_buffer.get_size());
         }
     }

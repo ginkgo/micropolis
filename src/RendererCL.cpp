@@ -5,6 +5,7 @@
 #include "BoundNSplitCLCPU.h"
 #include "BoundNSplitCLLocal.h"
 #include "BoundNSplitCLMultipass.h"
+#include "BoundNSplitCLBreadthFirst.h"
 #include "CL/OpenCL.h"
 #include "Config.h"
 #include "Framebuffer.h"
@@ -29,20 +30,20 @@ Reyes::RendererCL::RendererCL()
     , _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass())
     , _pos_grid(_device, 
                 config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
-                CL_MEM_READ_WRITE)
+                CL_MEM_READ_WRITE, "grid-data")
     , _pxlpos_grid(_device, 
                    config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(ivec2),
-                   CL_MEM_READ_WRITE)
+                   CL_MEM_READ_WRITE, "grid-data")
     , _color_grid(_device, 
                   config.reyes_patches_per_pass() * square(config.reyes_patch_size()) * sizeof(vec4),
-                  CL_MEM_READ_WRITE)
+                  CL_MEM_READ_WRITE, "grid-data")
     , _depth_grid(_device, 
                   config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(float),
-                  CL_MEM_READ_WRITE)
-    , _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE)
+                  CL_MEM_READ_WRITE, "grid-data")
+    , _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE, "block-index")
     , _tile_locks(_device,
-                  _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE)
-	, _depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_int), CL_MEM_READ_WRITE)
+                  _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE, "tile-locks")
+	, _depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_int), CL_MEM_READ_WRITE, "framebuffer")
     , _reyes_program()
     , _frame_event(_device, "frame")
 {
@@ -51,11 +52,16 @@ Reyes::RendererCL::RendererCL()
     case Config::CPU:
         _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
-    case Config::MULTIPASS:
-        _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
-        break;
     case Config::LOCAL:
         _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
+        break;
+    case Config::BREADTHFIRST:
+        _bound_n_split.reset(new BoundNSplitCLBreadthFirst(_device, _bound_n_split_queue, _patch_index));
+        break;
+    default:
+        cerr << "Configured bound&split method not supported. Falling back to multipass" << endl;
+    case Config::MULTIPASS:
+        _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
         break;
     }
     
@@ -159,10 +165,11 @@ void Reyes::RendererCL::draw_patches(void* patches_handle,
 
 
 CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
-                                            const mat4& matrix, const mat4& proj, const vec4& color,
-                                            const CL::Event& ready)
+                                        const mat4& matrix, const mat4& proj, const vec4& color,
+                                        const CL::Event& ready)
 {
-    int patch_count = batch.patch_count;
+    // We can't handle more patches on the fly atm
+    int patch_count = std::min<int>(config.reyes_patches_per_pass(), batch.patch_count);
     
     if (patch_count == 0) {
         return _last_batch;

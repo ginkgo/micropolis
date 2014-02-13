@@ -36,6 +36,8 @@ Reyes::RendererGLWire::RendererGLWire()
     case Config::CPU:
         _bound_n_split.reset(new BoundNSplitGLCPU(_patch_index));
         break;
+    default:
+        cerr << "Unsupported bound&split method. Falling back to multipass" << endl;
     case Config::MULTIPASS:
         _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;

@@ -74,7 +74,7 @@ kernel_dir = kernels
 opencl_device_id = 0 0
 
 // Force slow path for OpenCL/OpenGL buffer sharing.
-disable_buffer_sharing = true
+disable_buffer_sharing = false
 
 // Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
 do_event_polling = true
@@ -112,4 +112,4 @@ dummy_render = false
 
 
 
-#hash:-4949291824782268865
+#hash:3798215916623289269

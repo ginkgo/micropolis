@@ -27,30 +27,30 @@ Reyes::BoundNSplitCLMultipass::BoundNSplitCLMultipass(CL::Device& device,
     : _queue(queue)
     , _patch_index(patch_index)
 
-    , _pid_stack(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _depth_stack(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _min_stack(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _max_stack(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
+    , _pid_stack(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _depth_stack(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _min_stack(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _max_stack(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
 
-    , _split_ranges_cnt_buffer(device, sizeof(cl_int), CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY)
+    , _split_ranges_cnt_buffer(device, sizeof(cl_int), CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
       
-    , _out_pids_buffer(device, BATCH_SIZE * sizeof(cl_int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _out_mins_buffer(device, BATCH_SIZE * sizeof(cl_float2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _out_maxs_buffer(device, BATCH_SIZE * sizeof(cl_float2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _out_range_cnt_buffer(device, sizeof(cl_int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY)
+    , _out_pids_buffer(device, BATCH_SIZE * sizeof(cl_int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _out_mins_buffer(device, BATCH_SIZE * sizeof(cl_float2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _out_maxs_buffer(device, BATCH_SIZE * sizeof(cl_float2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _out_range_cnt_buffer(device, sizeof(cl_int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
 
-    , _bound_flags(device, BATCH_SIZE * sizeof(cl_uchar), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _draw_flags(device, BATCH_SIZE * sizeof(cl_int), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _split_flags(device, BATCH_SIZE * sizeof(cl_int), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
+    , _bound_flags(device, BATCH_SIZE * sizeof(cl_uchar), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _draw_flags(device, BATCH_SIZE * sizeof(cl_int), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _split_flags(device, BATCH_SIZE * sizeof(cl_int), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
 
-    , _pid_pad(device, BATCH_SIZE * sizeof(cl_int), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _depth_pad(device, BATCH_SIZE * sizeof(cl_uchar), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _min_pad(device, BATCH_SIZE * sizeof(cl_float2), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _max_pad(device, BATCH_SIZE * sizeof(cl_float2), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
+    , _pid_pad(device, BATCH_SIZE * sizeof(cl_int), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _depth_pad(device, BATCH_SIZE * sizeof(cl_uchar), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _min_pad(device, BATCH_SIZE * sizeof(cl_float2), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _max_pad(device, BATCH_SIZE * sizeof(cl_float2), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     
-    , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
 
-    , _prefix_sum(device, BATCH_SIZE)
+    , _prefix_sum(device, BATCH_SIZE, "bound&split")
 
     , _user_event(device, "bound&split")
 {
@@ -132,6 +132,8 @@ void Reyes::BoundNSplitCLMultipass::finish()
 
 Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
 {
+    statistics.update_max_patches(_stack_height);
+    
     _user_event.begin(CL::Event());
     CL::Event prefix_sum_ready, mapping_ready;
     
@@ -176,6 +178,7 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     
     //cout << split_count << "split, " << draw_count << "drawn" << endl;
 
+    statistics.update_max_patches(_stack_height);
     statistics.add_patches(draw_count);
     statistics.inc_pass_count(1);
     _user_event.end();

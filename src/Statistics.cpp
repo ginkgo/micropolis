@@ -94,14 +94,23 @@ void Statistics::add_dice_n_raster_time(uint64_t ns)
     _total_dice_n_raster += ns;
 }
 
-void Statistics::alloc_opencl_memory(long mem_size)
+void Statistics::alloc_opencl_memory(long mem_size, const string& use)
 {
     opencl_memory += mem_size;
+
+    if (opencl_memory_by_use.count(use) == 0) {
+        opencl_memory_by_use[use] = 0;
+    }
+
+    opencl_memory_by_use[use] += mem_size;
 }
 
-void Statistics::free_opencl_memory(long mem_size)
+void Statistics::free_opencl_memory(long mem_size, const string& use)
 {
     opencl_memory -= mem_size;
+
+    assert(opencl_memory_by_use.count(use) > 0);
+    opencl_memory_by_use[use] -= mem_size;
 }
 
 void Statistics::alloc_opengl_memory(long mem_size)
@@ -113,6 +122,13 @@ void Statistics::free_opengl_memory(long mem_size)
 {
     opengl_memory -= mem_size;
 }
+
+
+void Statistics::update_max_patches(size_t current_patches)
+{
+    max_patches = std::max<size_t>(max_patches, current_patches);
+}
+
 
 void Statistics::update()
 {
@@ -146,15 +162,16 @@ void Statistics::print()
         
         cout << endl
              << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl
-             // << ms_per_render_pass << " ms/render pass" << endl
-             // << ms_bound_n_split << " ms spent on bound & split" << endl
-             // << ms_dice_n_raster << " ms spent on dicing & rasterization" << endl
              << patches_per_frame  << " bounded patches" << endl
              << _pass_count << " render passes" << endl
-             // << with_commas(quad_count) << " polygons" << endl
-             // << with_commas((uint64_t)quads_per_second) << " polys/s" << endl
-             << memory_size(opencl_memory) << "allocated on OpenCL device" << endl
-             << memory_size(opengl_memory) << "allocated in OpenGL context" << endl;
+             << max_patches << " max patches" << endl
+             << memory_size(opencl_memory) << "allocated on OpenCL device" << endl;
+
+        for (auto item : opencl_memory_by_use) {
+            cout << "  " << item.first << ": " << memory_size(item.second) << endl;
+        }
+
+        cout << memory_size(opengl_memory) << "allocated in OpenGL context" << endl;
     } else {
         cout  << ms_per_frame << " ms/frame, (" << frames_per_second  << " fps)" << endl;
     }
@@ -166,7 +183,12 @@ void Statistics::dump_stats()
     std::ofstream fs(config.statistics_file().c_str());
 
     fs << "opencl_mem = " << opencl_memory << ";" << endl;
+    for (auto item : opencl_memory_by_use) {
+        fs << "opencl_mem@" << item.first << " = " << item.second << ";" << endl;
+    }
+    
     fs << "opengl_mem = " << opengl_memory << ";" << endl;
+    fs << "max_patches = " << max_patches << ";" << endl;
     fs << "patches_per_frame = " << patches_per_frame << ";" << endl;
     fs << "pass_count = " << _pass_count << ";" << endl;
     

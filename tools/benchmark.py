@@ -11,8 +11,7 @@ from numpy import linspace
 from optparse import OptionParser
 from glob import glob
 
-import matplotlib.pyplot as plt
-
+from benchmark_plot import *
 from trace_summary import *
 
 def intspace(start, stop, steps):
@@ -93,6 +92,14 @@ class Benchmark:
 
         return summaries
 
+    def clear_options(self, removed_options):
+        for option in self.coptions:
+            if option[0] in removed_options:
+                self.coptions.remove(option)
+        for option in self.aoptions:
+            if option[0] in removed_options:
+                self.aoptions.remove(option)
+
     
     
         
@@ -109,14 +116,6 @@ def parse_args():
 
     return options, args[0], args[1]
 
-def scatter_and_fit(x,y):
-    coefficients = np.polyfit(np.log(x+1),y,2)
-    polynomial = np.poly1d(coefficients)
-
-    fy = polynomial(np.log(x+1))
-
-    plt.plot(x,fy,'k--')
-    plt.plot(x,y,'b.')
 
 if __name__=='__main__':
 
@@ -125,67 +124,53 @@ if __name__=='__main__':
     benchmark_file = '/tmp/benchmark.trace'
     stat_file = '/tmp/benchmark.statistics'
     
-    benchmark = Benchmark(binary_name, benchmark_file, stat_file, timeout=200, repeat=10)
+    benchmark = Benchmark(binary_name, benchmark_file, stat_file, timeout=200, repeat=20)
 
     benchmark.add_option('dump_after', 5)
     benchmark.add_option('verbosity_level', 0)
     benchmark.add_option('trace_file', benchmark_file)
     benchmark.add_option('statistics_file', stat_file)
     
-    #benchmark.add_alternative_options('input_file', glob('mscene/*.mscene'))
-
-    # benchmark.add_alternative_options('bound_n_split_method', ['CPU', 'LOCAL', 'MULTIPASS'])
-    # benchmark.add_alternative_options('transfer_buffer_mode', ['PINNED', 'UNPINNED'])
-    # benchmark.add_alternative_options('do_event_polling', ['true', 'false'])
-
-    benchmark.add_option('bound_n_split_method', 'MULTIPASS')
     benchmark.add_option('window_size', '1024 768')
-    benchmark.add_option('bound_n_split_limit', '8')
+    benchmark.add_option('bound_n_split_limit', '16')
     benchmark.add_option('input_file', 'mscene/teapot.mscene')
     benchmark.add_option('dummy_render', 'true')
-    benchmark.add_int_range_options('reyes_patches_per_pass', 1, 8192*8, 100)
 
     duration_list = []
     memory_list = []
     batch_size_list = []
+    max_patches_list = []
     
     def datapoint_handler(config,summaries):
         duration_list.append(sum((s.duration_for_tasks(['bound&split']) for s in summaries))/len(summaries))
-        memory_list.append(sum((s.statistics['opencl_mem'] for s in summaries))/len(summaries))
-        batch_size_list.append(config['reyes_patches_per_pass'])
+        memory_list.append(sum((s.statistics['opencl_mem@bound&split'] for s in summaries))/len(summaries))
+        batch_size_list.append(config['reyes_patches_per_pass'] if 'reyes_patches_per_pass' in config else 2048)
+        max_patches_list.append(summaries[0].statistics['max_patches'])
     
     benchmark.datapoint_handler = datapoint_handler
+
+
+    benchmark.add_option('bound_n_split_method', 'BREADTHFIRST')
+    benchmark.add_option('reyes_patches_per_pass', 2048)
+
+    benchmark.perform()
+    max_parallel_patches = max_patches_list[0]
+    print('max %d patches in parallel' % max_parallel_patches)
+    
+    duration_list, memory_list, batch_size_list, max_patches_list = [],[],[],[]
+    benchmark.clear_options(['reyes_patches_per_pass', 'bound_n_split_limit'])
+    
+    benchmark.add_int_range_options('reyes_patches_per_pass', 1, 400, 100)
+    benchmark.add_option('bound_n_split_method', 'MULTIPASS')
     
     benchmark.perform()
 
-    duration_list = np.array(duration_list)
-    memory_list = np.array(memory_list)
-    batch_size_list = np.array(batch_size_list)
+    T = np.array(duration_list)
+    M = np.array(memory_list) / 1000000.0
+    p = np.array(batch_size_list)
+    max_p = max_parallel_patches
 
-    memory_list -= memory_list[0]
-
-    speedup = duration_list[0]*batch_size_list[0]/duration_list
-
-    plt.figure()
-    scatter_and_fit(memory_list / 1000000.0, speedup)
-    plt.xlabel('memory[MB]')
-    plt.ylabel('speedup')
-    plt.ylim(ymin=0)
-    plt.xlim(xmin=0)
-    plt.show()
-
-    plt.figure()
-    scatter_and_fit(batch_size_list, speedup)
-    plt.xlabel('batch size')
-    plt.ylabel('speedup')
-    plt.ylim(ymin=0)
-    plt.xlim(xmin=0)
-    plt.show()
-    
-    with open(outfile, 'w') as f:
-        for line in zip(duration_list, memory_list, batch_size_list, speedup):
-            f.write(';'.join((str(x) for x in line))+'\n')
-
-    
+    save_benchmark(outfile, T,M,p, max_p)
+    plot_benchmark(T,M,p, max_p)
     
     

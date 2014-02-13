@@ -314,7 +314,7 @@ size_t CL::Device::preferred_work_group_size_multiple() const
     if (is_GPU_device(_device)) {
         return 64;
     } else {
-        return 64;
+        return 4;
     }
 }
 

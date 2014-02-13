@@ -83,13 +83,9 @@ void Reyes::PatchIndex::load_patches(void* handle, const vector<BezierPatch>& pa
             }
         }
         
-        record.opencl_buffer.reset(new CL::Buffer(*_opencl_device,
-                                                  cp_data.size() * sizeof(vec4),
-                                                  CL_MEM_READ_ONLY));
-        CL::Event e = _opencl_queue->enq_write_buffer(*(record.opencl_buffer),
-                                                      (void*)cp_data.data(),
-                                                      cp_data.size() * sizeof(vec4),
-                                                      "Patch transfer", CL::Event());
+        record.opencl_buffer.reset(new CL::Buffer(*_opencl_device, cp_data.size() * sizeof(vec4), CL_MEM_READ_ONLY, "patch-data"));
+        CL::Event e = _opencl_queue->enq_write_buffer(*(record.opencl_buffer), (void*)cp_data.data(),
+                                                      cp_data.size() * sizeof(vec4), "Patch transfer", CL::Event());
         _opencl_queue->wait_for_events(e);
     }
         

@@ -34,17 +34,17 @@ Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
 
     , _in_buffers_size(0)
     , _in_buffer_stride(0)
-    , _in_pids_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _in_mins_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _in_maxs_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _in_range_cnt_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY)
+    , _in_pids_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _in_mins_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _in_maxs_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _in_range_cnt_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
       
-    , _out_pids_buffer(device, BATCH_SIZE * sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _out_mins_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _out_maxs_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS)
-    , _out_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY)
+    , _out_pids_buffer(device, BATCH_SIZE * sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _out_mins_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _out_maxs_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
+    , _out_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
 
-    , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
     

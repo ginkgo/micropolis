@@ -190,6 +190,7 @@ void mainloop(GLFWwindow* window)
         // Dump trace
         if (keys.pressed(GLFW_KEY_F9)) {
             renderer->dump_trace();
+            statistics.dump_stats();
         }
 
         // Save scene

@@ -149,9 +149,9 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
 
 Reyes::BoundNSplitCLCPU::BatchRecord::BatchRecord(size_t batch_size, CL::Device& device, CL::CommandQueue& queue)
     : status(INACTIVE)
-    , patch_ids(device, batch_size * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
-    , patch_min(device, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
-    , patch_max(device, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY)
+    , patch_ids(device, batch_size * sizeof(int), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
+    , patch_min(device, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
+    , patch_max(device, batch_size * sizeof(vec2), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
     , transferred()
     , rasterizer_done()
 {

@@ -60,7 +60,7 @@ class Summary:
         return sum((time for name,time in self.times.items() if name in task_names))        
 
 def parse_stats(statfile):
-    int_pattern = re.compile(r'(\w+)\s*=\s*(\d+);')
+    int_pattern = re.compile(r'([a-zA-Z0-9\-@_&]+)\s*=\s*(\d+);')
 
     stats = {}
     

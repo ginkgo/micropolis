@@ -22,13 +22,16 @@ namespace CL
         
         cl_mem _buffer;
 
-        Buffer(Device& device, cl_mem_flags flags) : _device(&device), _flags(flags), _size(0), _buffer(0) {};
+        string _use;
+        bool _shared;
+
+        Buffer(Device& device, cl_mem_flags flags, const string& use="unkown") : _device(&device), _flags(flags), _size(0), _buffer(0), _use(use), _shared(false) {};
         
     public:
         
         
-        Buffer(Device& device, size_t size, cl_mem_flags flags);
-        Buffer(Device& device, GLuint GL_buffer);
+        Buffer(Device& device, size_t size, cl_mem_flags flags, const string& use="unknown");
+        Buffer(Device& device, GLuint GL_buffer, const string& use="unknown");
         virtual ~Buffer();
 
         Buffer(Buffer&& other);
@@ -61,7 +64,7 @@ namespace CL
 
         public:
 
-        TransferBuffer(Device& device, size_t size, cl_mem_flags flags);
+        TransferBuffer(Device& device, size_t size, cl_mem_flags flags, const string& use="unknown");
         virtual ~TransferBuffer();
 
         TransferBuffer(TransferBuffer&&);
