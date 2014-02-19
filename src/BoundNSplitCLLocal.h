@@ -41,6 +41,8 @@ namespace Reyes
         CL::Buffer _out_maxs_buffer;
         CL::TransferBuffer _out_range_cnt_buffer;
 
+        CL::TransferBuffer _processed_count_buffer;
+
         CL::Buffer _projection_buffer;
 
         CL::Event _ready;

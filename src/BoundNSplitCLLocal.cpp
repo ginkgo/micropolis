@@ -44,6 +44,8 @@ Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
     , _out_maxs_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , _out_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
 
+    , _processed_count_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE, "bound&split")
+
     , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
@@ -100,7 +102,9 @@ void Reyes::BoundNSplitCLLocal::init(void* patches_handle, const mat4& matrix, c
         _ready = _queue.enq_kernel(*_init_projection_buffer_kernel, 1,1, "initialize projection buffer", _ready);
     }
 
-    _init_count_buffers_kernel->set_args(_in_range_cnt_buffer, _out_range_cnt_buffer, (cl_int)patch_count);
+    _init_count_buffers_kernel->set_args(_in_range_cnt_buffer, _out_range_cnt_buffer,
+                                         _processed_count_buffer,
+                                         (cl_int)patch_count);
     _ready = _queue.enq_kernel(*_init_count_buffers_kernel, WORK_GROUP_CNT, WORK_GROUP_CNT,
                                "initialize counter buffers", _ready);
     
@@ -127,6 +131,24 @@ void Reyes::BoundNSplitCLLocal::finish()
 {
     _queue.wait_for_events(_ready);
     _ready = CL::Event();
+
+    if (config.debug_work_group_balance()) {
+        
+        CL::Event ready = _queue.enq_read_buffer(_processed_count_buffer,
+                                                 _processed_count_buffer.void_ptr(),
+                                                 _processed_count_buffer.get_size(),
+                                                 "read processed counts", CL::Event());
+        _queue.flush();
+        _queue.wait_for_events(ready);
+
+        cl_int* processed = _processed_count_buffer.host_ptr<cl_int>();
+
+        statistics.set_bound_n_split_balance(processed, WORK_GROUP_CNT);
+        // for (int i = 0; i < WORK_GROUP_CNT; ++i) {
+        //     cout << processed[i] << " ";
+        // }
+        // cout << endl;
+    }
 }
 
 
@@ -140,6 +162,7 @@ Reyes::Batch Reyes::BoundNSplitCLLocal::do_bound_n_split(CL::Event& ready)
                                     (cl_int)_in_buffer_stride,
                                     _in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,
                                     _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _out_range_cnt_buffer,
+                                    _processed_count_buffer,
                                     _active_matrix, _projection_buffer,
                                     config.bound_n_split_limit());
     _ready = _queue.enq_kernel(*_bound_n_split_kernel,

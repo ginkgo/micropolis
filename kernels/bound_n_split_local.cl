@@ -26,6 +26,8 @@ void bound_n_split(const global float4* patch_buffer,
                    global float2* out_maxs,
                    volatile global int* out_range_cnt,
 
+                   volatile global int* processed_count,
+
                    matrix4 modelview,
                    constant const projection* proj,
                    float split_limit)
@@ -86,6 +88,8 @@ void bound_n_split(const global float4* patch_buffer,
                 stack_cnt = min(stack_height, BOUND_N_SPLIT_WORK_GROUP_SIZE);
                 stack_height -= stack_cnt;
             }
+            
+            processed_count[wid] += cnt + stack_cnt;
         }
     
         barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
@@ -254,12 +258,15 @@ kernel __attribute__((reqd_work_group_size(BOUND_N_SPLIT_WORK_GROUP_CNT,1,1)))
 void init_count_buffers(global int* in_range_cnt,
                         global int* out_range_cnt,
 
+                        volatile global int* processed_count,
+                        
                         int patch_count)
 {
     size_t lid = get_global_id(0);
     size_t ilid = BOUND_N_SPLIT_WORK_GROUP_CNT - lid - 1;
 
     in_range_cnt[lid] = (patch_count+ilid)/BOUND_N_SPLIT_WORK_GROUP_CNT;
+    processed_count[lid] = 0;
 }
                        
  

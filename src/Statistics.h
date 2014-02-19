@@ -34,6 +34,8 @@ class Statistics
     
     uint64_t _pass_count;
 
+    std::vector<int> _bound_n_split_balance;
+    
     public:
 
     float    frames_per_second;
@@ -73,6 +75,7 @@ class Statistics
     void free_opengl_memory(long mem_size);
 
     void update_max_patches(size_t current_patches);
+    void set_bound_n_split_balance(int* processed, size_t work_group_cnt);
     
     void update();
     void reset_timer();

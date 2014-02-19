@@ -130,6 +130,11 @@ void Statistics::update_max_patches(size_t current_patches)
     max_patches = std::max<size_t>(max_patches, current_patches);
 }
 
+void Statistics::set_bound_n_split_balance(int* processed, size_t work_group_cnt)
+{
+    _bound_n_split_balance.assign(processed, processed + work_group_cnt);
+}
+
 
 void Statistics::update()
 {
@@ -192,5 +197,11 @@ void Statistics::dump_stats()
     fs << "max_patches = " << max_patches << ";" << endl;
     fs << "patches_per_frame = " << patches_per_frame << ";" << endl;
     fs << "pass_count = " << _pass_count << ";" << endl;
+
+    fs << "bound_n_split_balance = ";
+    for (auto processed : _bound_n_split_balance) {
+        fs << processed << " ";
+    }
+    fs << ";";
     
 }
