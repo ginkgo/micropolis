@@ -33,6 +33,7 @@ Statistics::Statistics()
     , patches_per_frame(0)
     , opencl_memory(0)
     , opengl_memory(0)
+    , max_patches(0)
 {
     _last_fps_calculation = nanotime();
 }

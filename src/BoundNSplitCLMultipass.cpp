@@ -132,12 +132,14 @@ void Reyes::BoundNSplitCLMultipass::finish()
 
 Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
 {
-    statistics.update_max_patches(_stack_height);
     
     _user_event.begin(CL::Event());
     CL::Event prefix_sum_ready, mapping_ready;
     
     int batch_size = std::min((int)_stack_height, (int)BATCH_SIZE);
+    
+    //statistics.update_max_patches(_stack_height);
+    statistics.update_max_patches(batch_size);
     
     _stack_height -= batch_size;
     
@@ -178,7 +180,7 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     
     //cout << split_count << "split, " << draw_count << "drawn" << endl;
 
-    statistics.update_max_patches(_stack_height);
+    //statistics.update_max_patches(_stack_height);
     statistics.add_patches(draw_count);
     statistics.inc_pass_count(1);
     _user_event.end();
