@@ -197,6 +197,11 @@ void mainloop(GLFWwindow* window)
         if (keys.pressed(GLFW_KEY_F12)) {
             scene.save(config.input_file(), keys.is_down(GLFW_KEY_LEFT_SHIFT));
         }
+
+        // Make screenshot
+        if (keys.pressed(GLFW_KEY_PRINT_SCREEN)) {
+            make_screenshot();
+        }
         
 
         if (config.dump_mode() && frame_no >= config.dump_after()) {

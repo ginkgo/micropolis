@@ -53,6 +53,9 @@ string memory_size(size_t size);
  */
 bool file_exists(const string &filename);
 
+
+void make_screenshot();
+
 /**
  * Read the content of a text file.
  * @param filename Name of the file.

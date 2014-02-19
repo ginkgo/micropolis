@@ -22,6 +22,10 @@
 
 #include <time.h>
 
+#include "IL/il.h"
+
+#include "GL/Image.h"
+
 uint64_t nanotime()
 {
 #ifdef linux
@@ -104,6 +108,59 @@ string read_file(const string &filename)
 
     return string(std::istreambuf_iterator<char>(ifile),
         std::istreambuf_iterator<char>());
+}
+
+
+
+void make_screenshot()
+{
+
+
+    if (!Image::devil_initialized) {
+        ilInit();
+        ilEnable(IL_ORIGIN_SET);
+        ilOriginFunc(IL_ORIGIN_LOWER_LEFT);
+        Image::devil_initialized = true;
+    }
+
+    const string ssfn_start = "./screenshot";
+    const string ssfn_end = ".png";
+
+    string filename;
+    for (int i = 1;;++i) {
+        std::stringstream filename_ss;
+        filename_ss << ssfn_start << i << ssfn_end;
+        filename = filename_ss.str();
+        
+        if (!file_exists(filename)) break;
+    }
+
+    struct {
+        GLint x;
+        GLint y;
+        GLint width;
+        GLint height;
+    } viewport;
+
+    glGetIntegerv(GL_VIEWPORT, (GLint*)&viewport);
+
+    unsigned char *pixel_data = new unsigned char[viewport.width * viewport.height * 3];
+    glReadPixels(viewport.x, viewport.y, viewport.width, viewport.height, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
+
+    ILuint il_image;
+    ilGenImages(1, &il_image);
+    ilBindImage(il_image);
+
+    ilTexImage(viewport.width, viewport.height, 0, 3, IL_RGB, IL_UNSIGNED_BYTE, pixel_data);
+    
+    if (ilSave(IL_PNG, filename.c_str())) {
+        cout << "Successfully saved screenshot in file \"" << filename << "\"." << endl;
+    } else {
+        cout << "Failed saving screenshot in file \"" << filename << "\"." << endl;
+    }
+
+    ilDeleteImages(1, &il_image);
+    delete[] pixel_data;
 }
 
 
