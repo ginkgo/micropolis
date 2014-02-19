@@ -3,7 +3,7 @@
 #include "Kernel.h"
 #include "CommandQueue.h"
 
-#define PREFIX_N 512
+#define PREFIX_N 128
 
 CL::PrefixSum::PrefixSum(CL::Device& device, size_t max_input_items, const string& use)
     : _device(device)
@@ -73,7 +73,9 @@ CL::Event CL::PrefixSum::do_accumulate(size_t batch_size, CL::CommandQueue& queu
 {
     _accumulate_kernel->set_args((cl_int)batch_size, reduced, accumulated);
 
-    return queue.enq_kernel(*_accumulate_kernel, ((batch_size-1)/64)*64, 64,
+    size_t s = std::min<size_t>(64, PREFIX_N);
+    
+    return queue.enq_kernel(*_accumulate_kernel, ((batch_size-1)/s)*s, s,
                             "accumulate", event);
 }
 
