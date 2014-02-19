@@ -40,9 +40,10 @@ class Image
 
     size_t _bpp; /**< Bytes per pixel. */
 
+public:
+    
     static bool devil_initialized; /**< Flag for DevIL initialization.*/
 
-    public:
 
     /**
      * Create uninitialized image object
