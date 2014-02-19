@@ -201,6 +201,10 @@
       If set to true, the patches are split but not diced and rasterized.
     </value>
 
+    <value name="displacement" type="bool" default="false">
+      Small hack to showcase displacement.
+    </value>
+    
   </values>
 
   <global name="config"/>

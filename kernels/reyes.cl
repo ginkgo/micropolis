@@ -25,6 +25,7 @@
 // VIEWPORT_MAX_PIXEL    - int2
 // VIEWPORT_SIZE_PIXEL   - int2
 // MAX_BLOCK_ASSIGNMENTS - int
+// DISPLACEMENT          - int(bool)
 
 #define BLOCKS_PER_LINE (PATCH_SIZE/8)
 #define BLOCKS_PER_PATCH (BLOCKS_PER_LINE*BLOCKS_PER_LINE)
@@ -70,6 +71,21 @@ __kernel void dice (const global float4* patch_buffer,
     float2 uv = (float2)(mix(rmin, rmax, (float2)(nu/(float)PATCH_SIZE, nv/(float)PATCH_SIZE)));
 
     float4 pos = mul_m44v4(modelview, eval_patch(patch_buffer, patch_id, uv));
+
+    if (DISPLACEMENT) {
+        pos.x += native_sin(pos.y*3*2) * 0.04f;
+        pos.y += native_sin(pos.x*3*2) * 0.04f;
+        pos.z += native_sin(pos.y*3*2) * native_sin(pos.x*3*2) * 0.04f;
+
+        pos.x += native_sin(pos.y*7*2) * 0.02f;
+        pos.y += native_sin(pos.x*7*2) * 0.02f;
+        pos.z += native_sin(pos.y*7*2) * native_sin(pos.x*7*2) * 0.02f;
+
+        pos.x += native_sin(pos.y*13*2) * 0.01f;
+        pos.y += native_sin(pos.x*13*2) * 0.01f;
+        pos.z += native_sin(pos.y*13*2) * native_sin(pos.x*13*2) * 0.01f;
+    }
+    
     float4 p = mul_m44v4(proj, pos);
 
     int2 coord = (int2)((int)(p.x/p.w * VIEWPORT_SIZE.x/2 + VIEWPORT_SIZE.x/2),

@@ -77,6 +77,7 @@ Reyes::RendererCL::RendererCL()
     _reyes_program.set_constant("CLEAR_COLOR", config.clear_color());
     _reyes_program.set_constant("CLEAR_DEPTH", 1.0f);
     _reyes_program.set_constant("PXLCOORD_SHIFT", config.subpixel_bits());
+    _reyes_program.set_constant("DISPLACEMENT", config.displacement());
                 
     _reyes_program.compile(_device, "reyes.cl");
 
