@@ -93,12 +93,19 @@ class Benchmark:
         return summaries
 
     def clear_options(self, removed_options):
+
+        # print (self.coptions)
+        
         for option in self.coptions:
             if option[0] in removed_options:
+                print('removing option %s' % option[0])
                 self.coptions.remove(option)
         for option in self.aoptions:
             if option[0] in removed_options:
+                print('removing option %s' % option[0])
                 self.aoptions.remove(option)
+
+        # print (self.coptions)
 
     
     
@@ -124,7 +131,7 @@ if __name__=='__main__':
     benchmark_file = '/tmp/benchmark.trace'
     stat_file = '/tmp/benchmark.statistics'
     
-    benchmark = Benchmark(binary_name, benchmark_file, stat_file, timeout=200, repeat=20)
+    benchmark = Benchmark(binary_name, benchmark_file, stat_file, timeout=None, repeat=20)
 
     benchmark.add_option('dump_after', 5)
     benchmark.add_option('verbosity_level', 0)
@@ -132,7 +139,7 @@ if __name__=='__main__':
     benchmark.add_option('statistics_file', stat_file)
     
     benchmark.add_option('window_size', '1024 768')
-    benchmark.add_option('bound_n_split_limit', '16')
+    benchmark.add_option('bound_n_split_limit', '8')
     benchmark.add_option('input_file', 'mscene/teapot.mscene')
     benchmark.add_option('dummy_render', 'true')
 
@@ -140,27 +147,32 @@ if __name__=='__main__':
     memory_list = []
     batch_size_list = []
     max_patches_list = []
+    pass_counts = []
     
     def datapoint_handler(config,summaries):
-        duration_list.append(sum((s.duration_for_tasks(['bound&split']) for s in summaries))/len(summaries))
+        durations = sorted([s.duration_for_tasks(['bound&split']) for s in summaries])
+        durations = durations[3:][:3] #remove outliers
+        
+        duration_list.append(np.average(durations))
         memory_list.append(sum((s.statistics['opencl_mem@bound&split'] for s in summaries))/len(summaries))
         batch_size_list.append(config['reyes_patches_per_pass'] if 'reyes_patches_per_pass' in config else 2048)
         max_patches_list.append(summaries[0].statistics['max_patches'])
+        pass_counts.append(summaries[0].statistics['pass_count'])
     
     benchmark.datapoint_handler = datapoint_handler
-
 
     benchmark.add_option('bound_n_split_method', 'BREADTHFIRST')
     benchmark.add_option('reyes_patches_per_pass', 2048)
 
     benchmark.perform()
     max_parallel_patches = max_patches_list[0]
-    print('max %d patches in parallel' % max_parallel_patches)
+    print('max %d patches in parallel (%d passes)' % (max_parallel_patches,pass_counts[0]))
     
-    duration_list, memory_list, batch_size_list, max_patches_list = [],[],[],[]
-    benchmark.clear_options(['reyes_patches_per_pass', 'bound_n_split_limit'])
+    duration_list, memory_list, batch_size_list, max_patches_list, pass_counts = [],[],[],[],[]
+    benchmark.clear_options(['reyes_patches_per_pass', 'bound_n_split_method'])
     
-    benchmark.add_int_range_options('reyes_patches_per_pass', 1, 400, 100)
+    benchmark.add_alternative_options('reyes_patches_per_pass',
+                                      [1]+list(intspace(64, max_parallel_patches*1.25, 50)))
     benchmark.add_option('bound_n_split_method', 'MULTIPASS')
     
     benchmark.perform()
@@ -170,7 +182,7 @@ if __name__=='__main__':
     p = np.array(batch_size_list)
     max_p = max_parallel_patches
 
-    save_benchmark(outfile, T,M,p, max_p)
-    plot_benchmark(T,M,p, max_p)
+    save_benchmark(outfile, T,M,p, max_p, pass_counts)
+    plot_benchmark(T,M,p, max_p, pass_counts)
     
     
