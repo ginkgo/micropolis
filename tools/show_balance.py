@@ -23,8 +23,22 @@ if __name__=='__main__':
 
     balance = parse_balance(filename, propname)
 
+    if len(balance) == 0:
+        print ('No worload-balance information available')
+        exit()
+
+    avg_load = np.average(balance)
+    max_load = np.max(balance)    
+    text = 'Possible speedup: %.1f percent' % float(100 - 100 * avg_load/max_load)
+    
     plt.bar(range(len(balance)), balance)
+    plt.plot([0, len(balance)], [avg_load]*2,'r-')
+    plt.text(len(balance)/2,avg_load, text,color='red')
     plt.xlim(0, len(balance)-1)
     plt.show()
+
+    print (text)
+
+    
 
     
