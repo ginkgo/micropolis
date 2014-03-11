@@ -40,6 +40,7 @@
       <element name="CPU"/>
       <element name="MULTIPASS"/>
       <element name="LOCAL"/>
+      <element name="BALANCED"/>
       <element name="PASSTHRU"/>
       <element name="BREADTHFIRST"/>
     </enum>
@@ -92,7 +93,7 @@
     </value>
     
     <value name="bound_n_split_method" type="BoundNSplitMethod" default="LOCAL">
-      Method used to implement Bound&amp;Split. Either CPU, MULTIPASS, LOCAL, PASSTHRU, BREADTHFIRST.
+      Method used to implement Bound&amp;Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
     </value>
     
     <value name="bound_sample_rate" type="int" default="3">

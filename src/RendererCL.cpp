@@ -2,6 +2,7 @@
 
 #include "RendererCL.h"
 
+#include "BoundNSplitCLBalanced.h"
 #include "BoundNSplitCLCPU.h"
 #include "BoundNSplitCLLocal.h"
 #include "BoundNSplitCLMultipass.h"
@@ -49,6 +50,9 @@ Reyes::RendererCL::RendererCL()
 {
     
     switch(config.bound_n_split_method()) {
+    case Config::BALANCED:
+        _bound_n_split.reset(new BoundNSplitCLBalanced(_device, _bound_n_split_queue, _patch_index));
+        break;
     case Config::CPU:
         _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
