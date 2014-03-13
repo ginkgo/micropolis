@@ -23,14 +23,12 @@ namespace Reyes
         shared_ptr<CL::Kernel> _bound_n_split_kernel;
         shared_ptr<CL::Kernel> _init_range_buffers_kernel;
         shared_ptr<CL::Kernel> _init_projection_buffer_kernel;
-        shared_ptr<CL::Kernel> _init_count_buffers_kernel;
 
         void* _active_handle;
         CL::Buffer* _active_patch_buffer;
         mat4 _active_matrix;
 
         size_t _in_buffers_size;
-        size_t _in_buffer_stride;
         CL::Buffer _in_pids_buffer;
         CL::Buffer _in_mins_buffer;
         CL::Buffer _in_maxs_buffer;

@@ -33,11 +33,10 @@ Reyes::BoundNSplitCLBalanced::BoundNSplitCLBalanced(CL::Device& device,
     , _active_patch_buffer(nullptr)
 
     , _in_buffers_size(0)
-    , _in_buffer_stride(0)
     , _in_pids_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , _in_mins_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , _in_maxs_buffer(device, 0 , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
-    , _in_range_cnt_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
+    , _in_range_cnt_buffer(device, sizeof(int), CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
       
     , _out_pids_buffer(device, BATCH_SIZE * sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , _out_mins_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
@@ -62,7 +61,6 @@ Reyes::BoundNSplitCLBalanced::BoundNSplitCLBalanced(CL::Device& device,
     _bound_n_split_kernel.reset(_bound_n_split_program.get_kernel("bound_n_split"));
     _init_range_buffers_kernel.reset(_bound_n_split_program.get_kernel("init_range_buffers"));
     _init_projection_buffer_kernel.reset(_bound_n_split_program.get_kernel("init_projection_buffer"));
-    _init_count_buffers_kernel.reset(_bound_n_split_program.get_kernel("init_count_buffers"));
 }
 
 
@@ -77,10 +75,7 @@ void Reyes::BoundNSplitCLBalanced::init(void* patches_handle, const mat4& matrix
     if (_in_buffers_size < patch_count) {
         _in_buffers_size = patch_count;
 
-        size_t item_count = round_up_by(_in_buffers_size, WORK_GROUP_CNT) + MAX_SPLIT_DEPTH * WORK_GROUP_SIZE * WORK_GROUP_CNT;
-
-        assert(item_count % WORK_GROUP_CNT == 0);        
-        _in_buffer_stride = item_count / WORK_GROUP_CNT;
+        size_t item_count = patch_count;
         
         _in_pids_buffer.resize(item_count * sizeof(int));
         _in_mins_buffer.resize(item_count * sizeof(vec2));
@@ -102,18 +97,14 @@ void Reyes::BoundNSplitCLBalanced::init(void* patches_handle, const mat4& matrix
         _ready = _queue.enq_kernel(*_init_projection_buffer_kernel, 1,1, "initialize projection buffer", _ready);
     }
 
-    _init_count_buffers_kernel->set_args(_in_range_cnt_buffer, _out_range_cnt_buffer,
-                                         _processed_count_buffer,
-                                         (cl_int)patch_count);
-    _ready = _queue.enq_kernel(*_init_count_buffers_kernel, WORK_GROUP_CNT, WORK_GROUP_CNT,
-                               "initialize counter buffers", _ready);
+    _ready = _queue.enq_fill_buffer(_in_range_cnt_buffer, (cl_int)patch_count, 1, "init buffer counter", _ready);
     
-    
-    _init_range_buffers_kernel->set_args(_in_pids_buffer, _in_mins_buffer, _in_maxs_buffer,
-                                         (cl_int)patch_count, (cl_int)_in_buffer_stride);
+    _init_range_buffers_kernel->set_args(_in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, (cl_int)patch_count);
     _ready = _queue.enq_kernel(*_init_range_buffers_kernel,
                                (int)round_up_by(patch_count, WORK_GROUP_SIZE), WORK_GROUP_SIZE,
                                "initialize range buffers", _ready);
+
+    _ready = _queue.enq_fill_buffer(_processed_count_buffer, (cl_int)0, WORK_GROUP_CNT, "clear processed count buffer", _ready);
     
     //_queue.flush();
     _done = false;
@@ -159,7 +150,6 @@ Reyes::Batch Reyes::BoundNSplitCLBalanced::do_bound_n_split(CL::Event& ready)
     _ready = _queue.enq_fill_buffer(_out_range_cnt_buffer, (cl_int)0, 1, "Clear out_range_cnt", _ready | ready);
     
     _bound_n_split_kernel->set_args(*_active_patch_buffer,
-                                    (cl_int)_in_buffer_stride,
                                     _in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,
                                     _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _out_range_cnt_buffer,
                                     _processed_count_buffer,
