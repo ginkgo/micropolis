@@ -242,8 +242,8 @@ void init_range_buffers(global int* pids,
     size_t items_per_work_group = round_up_div(patch_count, BOUND_N_SPLIT_WORK_GROUP_CNT);
     
     size_t gid = get_global_id(0);
-    size_t wid = gid / items_per_work_group;
-    size_t lid = gid % items_per_work_group;
+    size_t wid = gid % BOUND_N_SPLIT_WORK_GROUP_CNT;
+    size_t lid = gid / BOUND_N_SPLIT_WORK_GROUP_CNT;
     
     if (gid < patch_count) {
         size_t pos = lid + wid * buffer_stride;

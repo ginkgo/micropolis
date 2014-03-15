@@ -1,11 +1,11 @@
 // Size of the window in pixels.
-window_size = 640 480
+window_size = 1280 1024
 
 // Application window title.
 window_title = MICROPOLIS
 
 // Patch data input file.
-input_file = mscene/bigguy.mscene
+input_file = mscene/killeroo.mscene
 
 // Clear color for framebuffer.
 clear_color = 0.1 0.2 1 0
@@ -31,7 +31,7 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = BALANCED
+bound_n_split_method = LOCAL
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -41,7 +41,7 @@ max_split_depth = 15
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 16000
+reyes_patches_per_pass = 64000
 
 // Framebuffer tile size.
 framebuffer_tile_size = 8
@@ -56,7 +56,7 @@ dice_group_width = 8
 bns_pipeline_length = 8
 
 // Number of work groups for local bound n split operation.
-local_bns_work_groups = 64
+local_bns_work_groups = 32
 
 // Number of anti-aliasing samples. (0 means no AA)
 fsaa_samples = 0

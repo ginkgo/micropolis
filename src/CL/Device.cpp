@@ -302,7 +302,7 @@ size_t CL::Device::max_compute_units() const
     cl_int status = clGetDeviceInfo(_device, CL_DEVICE_MAX_COMPUTE_UNITS,
                                     sizeof(retval), &retval, nullptr);
     OPENCL_ASSERT(status);
-    
+
     return retval;
 }
 
