@@ -43,9 +43,9 @@ Reyes::BoundNSplitCLBalanced::BoundNSplitCLBalanced(CL::Device& device,
     , _out_maxs_buffer(device, BATCH_SIZE * sizeof(vec2) , CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , _out_range_cnt_buffer(device, sizeof(int) , CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
 
-    , _processed_count_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE, "bound&split")
+    , _processed_count_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, "bound&split")
 
-    , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
+    , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
     

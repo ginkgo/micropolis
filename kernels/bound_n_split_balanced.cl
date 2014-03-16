@@ -41,11 +41,13 @@ void bound_n_split(const global float4* patch_buffer,
     float2 rmin, rmax;
 
     // local stack
+    #define STACK_SIZE (BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH)
+    local int stack_start;
     local int stack_height;
-    local int pid_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
-    local uchar depth_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
-    local float2 min_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
-    local float2 max_stack[BOUND_N_SPLIT_WORK_GROUP_SIZE * MAX_SPLIT_DEPTH];
+    local int pid_stack[STACK_SIZE];
+    local uchar depth_stack[STACK_SIZE];
+    local float2 min_stack[STACK_SIZE];
+    local float2 max_stack[STACK_SIZE];
     
     // pad for prefix sum
     local int prefix_pad[BOUND_N_SPLIT_WORK_GROUP_SIZE];
@@ -57,6 +59,7 @@ void bound_n_split(const global float4* patch_buffer,
     local int stack_cnt;
 
     if (lid == 0) {
+        stack_start = 0;
         stack_height = 0;
         stack_cnt = 0;
         start = 0;
@@ -105,10 +108,14 @@ void bound_n_split(const global float4* patch_buffer,
             rmax   = in_maxs[pos];
             occupied = 1;
         } else if (lid < cnt + stack_cnt) {
-            rpid   = pid_stack[stack_height + lid - cnt];
-            rdepth = depth_stack[stack_height + lid - cnt];
-            rmin   = min_stack[stack_height + lid - cnt];
-            rmax   = max_stack[stack_height + lid - cnt];
+            size_t pos = (stack_start + stack_height + lid - cnt) % STACK_SIZE;
+            //size_t pos = stack_start + stack_height + lid - cnt;
+            //size_t pos = stack_height + lid - cnt;
+            
+            rpid   = pid_stack[pos];
+            rdepth = depth_stack[pos];
+            rmin   = min_stack[pos];
+            rmax   = max_stack[pos];
             occupied = 1;
         } else {
             occupied = 0;
@@ -140,8 +147,14 @@ void bound_n_split(const global float4* patch_buffer,
 
         if (bound_flags & 2) {
 
-            int pos0 = start + sum * 2;
+            int pos0 = stack_start + start + sum * 2;
             int pos1 = pos0 + 1;
+
+            pos0 %= STACK_SIZE;
+            pos1 %= STACK_SIZE;
+            
+            // int pos0 = start + sum * 2;
+            // int pos1 = pos0 + 1;
             
             depth_stack[pos0] = rdepth+1;
             pid_stack  [pos0] = rpid;
@@ -206,9 +219,7 @@ void init_range_buffers(global int* pids,
                         global float2* mins,
                         global float2* maxs,
                         int patch_count)
-{
-    size_t items_per_work_group = round_up_div(patch_count, BOUND_N_SPLIT_WORK_GROUP_CNT);
-    
+{    
     size_t lid = get_global_id(0);
     
     if (lid < patch_count) {

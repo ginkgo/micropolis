@@ -201,7 +201,7 @@ void CL::TransferBuffer::resize(size_t new_size)
         } else if (_flags & CL_MEM_HOST_READ_ONLY) {
             map_flags = CL_MAP_READ;
         } else {
-            assert(0);
+            map_flags = CL_MAP_WRITE;
         }
     
         CommandQueue queue(*_device, "map queue");

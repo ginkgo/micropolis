@@ -48,7 +48,7 @@ Reyes::BoundNSplitCLMultipass::BoundNSplitCLMultipass(CL::Device& device,
     , _min_pad(device, BATCH_SIZE * sizeof(cl_float2), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , _max_pad(device, BATCH_SIZE * sizeof(cl_float2), CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     
-    , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
+    , _projection_buffer(device, sizeof(cl_projection)*2, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
 
     , _prefix_sum(device, BATCH_SIZE, "bound&split")
 
