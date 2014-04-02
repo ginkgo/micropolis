@@ -18,7 +18,9 @@ def load_benchmark(filename):
         else:
             return t
 
-def scatter_and_fit(x,p,T,max_p):
+def scatter_and_fit(x,p,T,max_p, figure):
+
+            
     i = np.searchsorted(p>=max_p,True)
 
     coeffs = np.polyfit(p,p*T,2)
@@ -34,37 +36,38 @@ def scatter_and_fit(x,p,T,max_p):
     fy = T1/(xT1/p+xTinf+xxx*p)
     speedup = T1/T
 
-    plt.plot(x,fy,'k--')
-    plt.plot(x[:i],speedup[:i],'b.')
-    plt.plot(x[i:],speedup[i:],'r.')
+    figure.plot(x,fy,'k--')
+    figure.plot(x[:i],speedup[:i],'b.')
+    figure.plot(x[i:],speedup[i:],'r.')
 
-    plt.ylim(ymin=0, ymax=np.max(speedup)*1.1)
-    plt.xlim(xmin=0,xmax=x[-1])
+    figure.set_ylim(ymin=0, ymax=np.max(speedup)*1.1)
+    figure.set_xlim(xmin=x[0],xmax=x[-1])
 
 def plot_benchmark(T,M,p, max_p,I):
 
     dpi = 72 * 1.5
-    w = 1280
-    h = 720
+    w = 800
+    h = 600
     
     # if I:
     #     print (I)
     #     plt.plot(p,1/np.array(I))
     #     plt.show()
     
-    plt.figure(figsize=(w/dpi,h/dpi))
-    scatter_and_fit(p,p,T, 10000000000000)
-    plt.xlabel('batch size')
-    plt.ylabel('speedup')
+    fig = plt.figure(figsize=(w/dpi,h/dpi))
+    figure = fig.add_subplot(111)
+    
+    scatter_and_fit(p,p,T, 10000000000000, figure)
+    figure.set_xlabel('batch size')
+    figure.set_ylabel('speedup')
+
+    ax2=figure.twiny()
+    ax2.set_xlim(xmin=M[0],xmax=M[-1])
+    ax2.set_xlabel('memory[MB]')
+    
     plt.tight_layout()
     plt.show()
     
-    plt.figure(figsize=(w/dpi,h/dpi))
-    scatter_and_fit(M,p,T, 1000000000000)
-    plt.xlabel('memory[MB]')
-    plt.ylabel('speedup')
-    plt.tight_layout()
-    plt.show()
 
 
 if __name__=='__main__':
