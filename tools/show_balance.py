@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from sys import argv
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -18,9 +20,13 @@ def parse_balance(filename, propname):
     return []
     
 if __name__=='__main__':
-    filename = 'reyes.statistics'
+    filename = argv[1]
     propname = 'bound_n_split_balance'
 
+    filetitle = filename
+    if len(argv) > 2:
+        filetitle = argv[2]
+    
     balance = parse_balance(filename, propname)
 
     if len(balance) == 0:
@@ -35,6 +41,9 @@ if __name__=='__main__':
     plt.plot([0, len(balance)], [avg_load]*2,'r-')
     plt.text(len(balance)/2,avg_load, text,color='red')
     plt.xlim(0, len(balance)-1)
+    plt.title(filetitle)
+    plt.xlabel('processor ID')
+    plt.ylabel('processed patches')
     plt.show()
 
     print (text)
