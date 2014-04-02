@@ -18,7 +18,7 @@ struct cl_projection
 
 
 #define BATCH_SIZE config.reyes_patches_per_pass()
-#define WORK_GROUP_CNT std::min(_queue.device().max_compute_units(), config.local_bns_work_groups())
+#define WORK_GROUP_CNT (_queue.device().max_compute_units())
 #define WORK_GROUP_SIZE (_queue.device().preferred_work_group_size_multiple())
 #define MAX_SPLIT_DEPTH config.max_split_depth()
 #define MAX_BNS_ITERATIONS 200
