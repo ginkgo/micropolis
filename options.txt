@@ -1,5 +1,5 @@
 // Size of the window in pixels.
-window_size = 1280 1024
+window_size = 1024 768
 
 // Application window title.
 window_title = MICROPOLIS
@@ -11,10 +11,10 @@ input_file = mscene/killeroo.mscene
 clear_color = 0.1 0.2 1 0
 
 // Size used for bounding and dicing.
-reyes_patch_size = 8
+reyes_patch_size = 16
 
 // Maximum size for patches before they can be sent to the dicing stage.
-bound_n_split_limit = 8
+bound_n_split_limit = 16
 
 // The number of pixels a surface can be outside of the viewport without being culled.
 cull_ribbon = 32
@@ -31,7 +31,7 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = BALANCED
+bound_n_split_method = BREADTHFIRST
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -41,7 +41,7 @@ max_split_depth = 15
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 64000
+reyes_patches_per_pass = 30000
 
 // Framebuffer tile size.
 framebuffer_tile_size = 8

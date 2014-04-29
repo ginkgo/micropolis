@@ -28,9 +28,9 @@ if __name__=='__main__':
     benchmark.add_option('trace_file', benchmark_file)
     benchmark.add_option('statistics_file', stat_file)
     
-    benchmark.add_option('window_size', '1024 768')
+    benchmark.add_option('window_size', '1280 1024')
     benchmark.add_option('bound_n_split_limit', '8')
-    benchmark.add_option('input_file', 'mscene/teapot.mscene')
+    benchmark.add_option('input_file', 'mscene/hair.mscene')
     benchmark.add_option('dummy_render', 'true')
 
     duration_list = []
@@ -52,7 +52,7 @@ if __name__=='__main__':
     benchmark.datapoint_handler = datapoint_handler
 
     benchmark.add_option('bound_n_split_method', 'BREADTHFIRST')
-    benchmark.add_option('reyes_patches_per_pass', 2048)
+    benchmark.add_option('reyes_patches_per_pass', 4096)
 
     benchmark.perform()
     max_parallel_patches = max_patches_list[0]
@@ -62,7 +62,7 @@ if __name__=='__main__':
     benchmark.clear_options(['reyes_patches_per_pass', 'bound_n_split_method'])
     
     benchmark.add_alternative_options('reyes_patches_per_pass',
-                                      [1]+list(intspace(64, max_parallel_patches*1.25, 50)))
+                                      [64]+list(intspace(64, max_parallel_patches*1.25, 20)))
     benchmark.add_option('bound_n_split_method', 'MULTIPASS')
     
     benchmark.perform()

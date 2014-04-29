@@ -31,9 +31,9 @@ if __name__=='__main__':
     benchmark.add_option('window_size', '1280 1024')
     benchmark.add_option('bound_n_split_limit', '8')
     benchmark.add_option('dummy_render', 'true')
-    benchmark.add_option('reyes_patches_per_pass', 4096)
+    benchmark.add_option('reyes_patches_per_pass', 10000)
 
-    benchmark.add_alternative_options('bound_n_split_method', ['BREADTHFIRST', 'MULTIPASS', 'LOCAL', 'BALANCED'])
+    benchmark.add_alternative_options('bound_n_split_method', ['BREADTHFIRST', 'MULTIPASS', 'LOCAL'])
     benchmark.add_alternative_options('input_file', ['mscene/teapot.mscene', 
 						     'mscene/bigguy.mscene', 
 						     'mscene/killeroo.mscene', 
