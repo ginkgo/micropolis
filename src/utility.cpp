@@ -219,7 +219,7 @@ GLvoid APIENTRY opengl_debug_callback(GLenum source,
                                       GLenum severity,
                                       GLsizei length,
                                       const GLchar* message,
-                                      GLvoid* userParam)
+                                      const GLvoid* userParam)
 {
     // A small hack to avoid getting the same error message again and again.
     static int call_count = 0;
@@ -303,7 +303,7 @@ void set_GL_error_callbacks()
                                  GL_TRUE);
 
         // Set callback function
-        glDebugMessageCallbackARB(opengl_debug_callback, NULL);
+        glDebugMessageCallbackARB(opengl_debug_callback, nullptr);
     }
 }
 
