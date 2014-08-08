@@ -10,3 +10,4 @@ AMDOpenCLDebugAPIUsage.log
 __pycache__
 debug/
 release/
+benchmarks/

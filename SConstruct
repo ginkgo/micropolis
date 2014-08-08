@@ -38,7 +38,7 @@ def setup_env(toolchain, optimization_flags, defines, config):
 
     return env
 
-release_env = setup_env(used_toolchain, optimization_flags=['-O3', '-msse4'], defines=['linux', 'NDEBUG'], config='release')
+release_env = setup_env(used_toolchain, optimization_flags=['-O2', '-msse4'], defines=['linux', 'NDEBUG'], config='release')
 debug_env = setup_env(used_toolchain, optimization_flags=['-O0', '-ggdb'], defines=['linux', 'DEBUG_OPENCL'], config='debug')
 
 

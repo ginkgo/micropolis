@@ -5,7 +5,7 @@ window_size = 1024 768
 window_title = MICROPOLIS
 
 // Patch data input file.
-input_file = mscene/killeroo.mscene
+input_file = mscene/teapot.mscene
 
 // Clear color for framebuffer.
 clear_color = 0.1 0.2 1 0
@@ -31,7 +31,7 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = BREADTHFIRST
+bound_n_split_method = MULTIPASS
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -110,11 +110,11 @@ verbosity_level = 1
 // If set to true, the patches are split but not diced and rasterized.
 dummy_render = false
 
-debug_work_group_balance = true
+debug_work_group_balance = false
 
 // Small hack to showcase displacement.
 displacement = false
 
 
 
-#hash:-3892696711624909060
+#hash:8778633369229791661
