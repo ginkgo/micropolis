@@ -2,8 +2,10 @@
 
 #include "common.h"
 #include <CL/opencl.h>
+#include <set>
 
 #include "Event.h"
+
 
 namespace CL
 {
@@ -16,6 +18,7 @@ namespace CL
 
         bool _share_gl;
 
+        std::set<string> _supported_extensions;
         
     public:
 
@@ -68,6 +71,14 @@ namespace CL
 
         size_t max_compute_units() const;
         size_t preferred_work_group_size_multiple() const;
+
+        bool check_extension(const string& extension_name) const;
+
+
+    private:
+
+
+        void query_extensions();
 
         
     };

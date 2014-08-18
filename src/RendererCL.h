@@ -79,7 +79,10 @@ namespace Reyes
                                   const Projection* projection,
                                   const vec4& color);
 
-        virtual void dump_trace() { _device.dump_trace(); }
+        virtual void dump_trace()
+        {
+            _device.dump_trace();
+        }
 
     private:
 

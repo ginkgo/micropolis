@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include <signal.h>
+#include <sstream>
 
 #ifdef linux
 #define GLFW_EXPOSE_NATIVE_X11
@@ -67,6 +68,8 @@ CL::Device::Device(int platform_index, int device_index)
         cout << endl;
         cout << "Device is" << (share_gl() ? " " : " NOT ") << "shared." << endl << endl;
     }
+
+    query_extensions();
 
 }
 
@@ -244,8 +247,17 @@ void CL::Device::release_events()
                 submit = idx.user_begin;
                 start = idx.user_begin;
                 end = idx.user_end;
-                
             } else {
+                
+                // Wait for event to complete
+                cl_int eventstatus;
+                do {
+                    cl_int status = clGetEventInfo(idx.event, CL_EVENT_COMMAND_EXECUTION_STATUS,
+                                                   sizeof(cl_int), &eventstatus, NULL);
+                    OPENCL_ASSERT(status);		
+                } while (eventstatus != CL_COMPLETE);
+
+                // Query timing values
                 status = clGetEventProfilingInfo(idx.event, CL_PROFILING_COMMAND_QUEUED, sizeof(queued), &queued, NULL);
                 OPENCL_ASSERT(status);
             
@@ -317,6 +329,35 @@ size_t CL::Device::preferred_work_group_size_multiple() const
         return 4;
     }
 }
+
+
+
+bool CL::Device::check_extension(const string& extension_name) const
+{
+    return _supported_extensions.count(extension_name) > 0;
+}
+
+
+
+
+void CL::Device::query_extensions()
+{
+    const size_t N = 2000;
+    
+    char buf[N];
+    cl_int status;
+
+    status = clGetDeviceInfo(_device, CL_DEVICE_EXTENSIONS, sizeof(char) * N, buf, NULL);
+
+    OPENCL_ASSERT(status);
+
+    std::istringstream ss(buf);
+
+    for(std::string extension; getline(ss, extension, ' ');) {
+        _supported_extensions.insert(extension);
+    }
+}
+
 
 
 namespace
