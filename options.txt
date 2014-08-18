@@ -21,7 +21,7 @@ cull_ribbon = 32
 
 // Defines which renderer implementation to use.
 // Either OPENCL or GLTESS.
-renderer_type = OPENCL_OLD
+renderer_type = OPENCL
 
 // Defines how micropolygons are shaded.
 // Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
@@ -31,7 +31,7 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = MULTIPASS
+bound_n_split_method = LOCAL
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
