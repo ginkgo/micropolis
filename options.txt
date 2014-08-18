@@ -21,7 +21,7 @@ cull_ribbon = 32
 
 // Defines which renderer implementation to use.
 // Either OPENCL or GLTESS.
-renderer_type = OPENCL
+renderer_type = OPENCL_OLD
 
 // Defines how micropolygons are shaded.
 // Either SMOOTH or FLAT. Only affects GLTESS renderer atm.
@@ -117,4 +117,4 @@ displacement = false
 
 
 
-#hash:7909439236448023076
+#hash:-2489483719503431260

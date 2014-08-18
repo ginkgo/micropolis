@@ -89,6 +89,9 @@ void mainloop(GLFWwindow* window)
     case Config::OPENCL:
         renderer.reset(new Reyes::RendererCL());
         break;
+    case Config::OPENCL_OLD:
+        renderer.reset(new Reyes::RendererOldCL());
+        break;
     case Config::GLTESS:
         renderer.reset(new Reyes::RendererGLHWTess());
         break;

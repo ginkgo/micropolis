@@ -28,6 +28,7 @@
     
     <enum name="RendererType">
       <element name="OPENCL"/>
+      <element name="OPENCL_OLD"/>
       <element name="GLTESS"/>
     </enum>
 
