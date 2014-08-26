@@ -18,6 +18,7 @@
 
 #include "common.h"
 
+#include "CL/HistogramPyramid.h"
 #include "CL/OpenCL.h"
 #include "CL/PrefixSum.h"
 #include "Config.h"
@@ -29,11 +30,12 @@
 
 #include <boost/format.hpp>
 #include <algorithm>
-#include <GL/glx.h>
+#include <random>
 
 void mainloop(GLFWwindow* window);
 bool test_GL_prefix_sum(const int N, bool print);
 bool test_CL_prefix_sum(const int N, bool print);
+bool test_CL_histogram_pyramid(const int N, bool print);
 bool handle_arguments(int& argc, char** argv);
 GLFWwindow* init_opengl(ivec2 window_size);
 void get_framebuffer_info();
@@ -115,8 +117,24 @@ void mainloop(GLFWwindow* window)
     //             128, 200, 512, 800, 1000,
     //             1024, 2048, 4096, 5000,
     //             128*128, 128*128*128, 1024*1024*128, 50000}) {
-    //     if (test_CL_prefix_sum(N, false)) cout << format("Prefix sum on %1% items succeeded") % N << endl;
-    //     else                              cout << format("Prefix sum on %1% items failed") % N << endl;
+    //     if (test_CL_prefix_sum(N, false)) {
+    //         cout << format("Prefix sum on %1% items succeeded") % N << endl;
+    //     } else {
+    //         cout << format("Prefix sum on %1% items failed") % N << endl;
+    //     }
+    // }    
+    // return;
+    
+    // for (auto N : {1,2, 20, 50,
+    //             100, 128, 200, 512, 800, 1000,
+    //             1024, 2048, 4096, 5000,
+    //              128*128, 128*128*128, 50000
+    //             }) {
+    //     if (test_CL_histogram_pyramid(N, false)) {
+    //         cout << format("Prefix sum on %1% items succeeded") % N << endl;
+    //     } else {
+    //         cout << format("Prefix sum on %1% items failed") % N << endl;
+    //     }
     // }    
     // return;
 
@@ -374,6 +392,92 @@ bool test_CL_prefix_sum(const int N, bool print)
 }
 
 
+bool test_CL_histogram_pyramid(const int N, bool print)
+{
+    std::random_device rd;
+    std::default_random_engine reng(rd());
+    std::uniform_int_distribution<int> dist(0, 50000);
+    
+    bool retval = true;
+
+    CL::Device device(config.opencl_device_id().x, config.opencl_device_id().y);
+    CL::CommandQueue queue(device, "prefix sum test");
+    
+    CL::HistogramPyramid histogram_pyramid(device);
+
+    const int P = histogram_pyramid.pyramid_size(N);
+    
+    CL::Buffer buffer(device, P * sizeof(int), CL_MEM_READ_WRITE);
+    
+    vector<int> i_vec(N);
+    vector<int> pyramid(P);
+
+    size_t top_level = histogram_pyramid.get_top_level(N);
+
+    vector<size_t> offsets, sizes;
+    histogram_pyramid.get_offsets(N, offsets);
+    histogram_pyramid.get_sizes(N, sizes);
+    
+    histogram_pyramid.get_offsets(N, offsets);
+    
+    if (print) cout << "INPUT: "; 
+    for (size_t i = 0; i < (size_t)N; ++i) {
+        i_vec[i] = dist(reng);
+        
+        if (print) cout << i_vec[i] << " ";
+    }
+    if (print) cout << endl;
+
+    int total;
+
+    CL::Event event;
+
+    event = queue.enq_write_buffer(buffer, i_vec.data(), i_vec.size() * sizeof(int), "fill input buffer", CL::Event());
+    event = histogram_pyramid.apply(N, N, queue, buffer, event);
+    event = queue.enq_read_buffer(buffer, pyramid.data(), pyramid.size() * sizeof(int), "read pyramid", event);
+    
+    queue.wait_for_events(event);
+
+    if (print) {
+        cout << "OUTPUT:" << endl;
+        for (size_t level = 0; level <= top_level; ++level) {
+            cout << offsets[level] << ": ";
+            for (size_t i = 0; i < sizes[level]; ++i) {
+                cout << pyramid[offsets[level]+i] << " ";
+            }
+            cout << endl;
+        }
+        cout << endl << endl;
+    }
+
+    
+    for (size_t i = 0; i < i_vec.size(); ++i) {
+        if (i_vec[i] != pyramid[i]) {
+            retval = false;
+        }
+    }
+    
+    for (size_t level = 0; level < top_level; ++level) {
+        size_t offset = offsets[level];
+        size_t offset2 = offsets[level+1];
+        size_t size = sizes[level];
+
+        for (size_t i = 1; i < size; i+=2) {
+            if (pyramid[offset2 + i/2] != pyramid[offset + i] + pyramid[offset + i - 1]) {
+                cout << "Mismatch at level " << level << ", element " << i << endl;
+                retval = false;
+            }
+        }
+
+        if ((size%2) == 1 && pyramid[offset2 + size/2] != pyramid[offset + size - 1]) {
+            retval = false;
+        }
+    }
+    
+    return retval;
+}
+
+
 bool handle_arguments(int& argc, char** argv)
 {
     bool needs_resave;
@@ -503,9 +607,6 @@ void get_framebuffer_info()
     } else {
         cout << "Object name NOT a framebuffer" << endl;
     }
-
-    GLXDrawable  drawable = glXGetCurrentDrawable();
-    cout << "Current GLXDrawable: " << drawable << endl;
 
     cout << endl;
     cout << "--------------------------------------------------------------------------------" << endl;
