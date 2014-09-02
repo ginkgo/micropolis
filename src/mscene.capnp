@@ -49,6 +49,7 @@ struct Mesh {
 
     enum Type {
         bezier @0;
+        gregory @1;
     }
 }
     
