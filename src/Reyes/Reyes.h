@@ -24,7 +24,6 @@
 #include "RendererCL.h"
 #include "RendererOldCL.h"
 #include "Projection.h"
-#include "Scene.h"
 #include "RendererGLWire.h"
 
 #endif

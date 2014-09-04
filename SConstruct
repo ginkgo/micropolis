@@ -14,7 +14,7 @@ def setup_env(toolchain, optimization_flags, defines, config):
                      '-Wno-unused-variable',
                      '-Wno-unknown-pragmas']
 
-    env['CPPPATH'] = ['#/external', '#/%s/generated' % config, '#src']
+    env['CPPPATH'] = ['#/external', '#/%s/generated' % config, '#src', '#src/base']
 
     if toolchain=='GCC':
         env['LINK'] = 'g++'

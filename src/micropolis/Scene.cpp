@@ -21,7 +21,7 @@
 #include "Scene.h"
 
 #include "Projection.h"
-#include "Renderer.h"
+#include "Reyes/Renderer.h"
 #include "Patch.h"
 
 #include "Config.h"

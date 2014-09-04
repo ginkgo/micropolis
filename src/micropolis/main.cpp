@@ -24,9 +24,9 @@
 #include "Config.h"
 #include "GL/Buffer.h"
 #include "GL/PrefixSum.h"
-#include "Patch.h"
-#include "Reyes.h"
+#include "Reyes/Reyes.h"
 #include "Statistics.h"
+#include "Scene.h"
 
 #include <boost/format.hpp>
 #include <algorithm>
