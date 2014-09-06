@@ -1,0 +1,70 @@
+<!-- 
+     This file is part of Micropolis.
+  
+     Micropolis is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+
+     Micropolis is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with Micropolis.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<config name="Config">
+  <include>
+    #include "common.h"
+  </include>
+
+  <enums>
+
+  </enums>
+
+  <values>
+    
+    <!-- Window properties -->
+    <value name="window_size" type="ivec2" default="800 600">
+      Size of the window in pixels.
+    </value>
+    
+    <value name="window_title" type="string" default="MICROPOLIS">
+      Application window title.
+    </value>
+    
+    <value name="input_file" type="string" default="mscene/teapot.mscene">
+      Patch data input file.
+    </value>
+    
+    <!-- Debug properties -->      
+    <value name="dump_mode" type="bool" default="false">
+      Enables dump mode.
+      The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
+    </value>
+
+    <value name="dump_after" type="long long" default="10">
+      Controls after which frame the application dumps a trace and exits in trace dump mode.
+    </value>
+
+    <value name="dump_count" type="long long" default="3">
+      Number of frame dumps to perform per invocation.
+    </value>
+    
+    <value name="verbosity_level" type="int" default="1">
+      0...(Almost) no output
+      1...Regular performance information and warnings posted
+      2...Lots of information posted, can be detrimental to render performance
+    </value>
+
+    <value name="statistics_file" type="string" default="reyes.statistics">
+      Target file for writing program stats to.
+    </value>
+    
+  </values>
+
+  <global name="config"/>
+
+</config>

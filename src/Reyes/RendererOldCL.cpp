@@ -9,6 +9,8 @@
 #include "BoundNSplitCLBreadthFirst.h"
 #include "CL/OpenCL.h"
 #include "Config.h"
+#include "CLConfig.h"
+#include "ReyesConfig.h"
 #include "Framebuffer.h"
 #include "PatchIndex.h"
 #include "Projection.h"
@@ -18,28 +20,28 @@
 #define _bound_n_split_queue _rasterization_queue
 
 Reyes::RendererOldCL::RendererOldCL()
-    : _device(config.opencl_device_id().x, config.opencl_device_id().y)
+    : _device(cl_config.opencl_device_id().x, cl_config.opencl_device_id().y)
       
     // , _framebuffer_queue(_device, "framebuffer")
     // , _bound_n_split_queue(_device, "bound & split")
     , _rasterization_queue(_device, "rasterization")
 
-    , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
+    , _framebuffer(_device, config.window_size(), reyes_config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
       
-    , _max_block_count(square(config.reyes_patch_size()/8) * config.reyes_patches_per_pass())
+    , _max_block_count(square(reyes_config.reyes_patch_size()/8) * reyes_config.reyes_patches_per_pass())
     , _pos_grid(_device, 
-                config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(vec4),
+                reyes_config.reyes_patches_per_pass() * square(reyes_config.reyes_patch_size()+1) * sizeof(vec4),
                 CL_MEM_READ_WRITE, "grid-data")
     , _pxlpos_grid(_device, 
-                   config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(ivec2),
+                   reyes_config.reyes_patches_per_pass() * square(reyes_config.reyes_patch_size()+1) * sizeof(ivec2),
                    CL_MEM_READ_WRITE, "grid-data")
     , _color_grid(_device, 
-                  config.reyes_patches_per_pass() * square(config.reyes_patch_size()) * sizeof(vec4),
+                  reyes_config.reyes_patches_per_pass() * square(reyes_config.reyes_patch_size()) * sizeof(vec4),
                   CL_MEM_READ_WRITE, "grid-data")
     , _depth_grid(_device, 
-                  config.reyes_patches_per_pass() * square(config.reyes_patch_size()+1) * sizeof(float),
+                  reyes_config.reyes_patches_per_pass() * square(reyes_config.reyes_patch_size()+1) * sizeof(float),
                   CL_MEM_READ_WRITE, "grid-data")
     , _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE, "block-index")
     , _tile_locks(_device,
@@ -49,39 +51,39 @@ Reyes::RendererOldCL::RendererOldCL()
     , _frame_event(_device, "frame")
 {
     
-    switch(config.bound_n_split_method()) {
-    case Config::BALANCED:
+    switch(reyes_config.bound_n_split_method()) {
+    case ReyesConfig::BALANCED:
         _bound_n_split.reset(new BoundNSplitCLBalanced(_device, _bound_n_split_queue, _patch_index));
         break;
-    case Config::CPU:
+    case ReyesConfig::CPU:
         _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
-    case Config::LOCAL:
+    case ReyesConfig::LOCAL:
         _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
         break;
-    case Config::BREADTHFIRST:
+    case ReyesConfig::BREADTHFIRST:
         _bound_n_split.reset(new BoundNSplitCLBreadthFirst(_device, _bound_n_split_queue, _patch_index));
         break;
     default:
         cerr << "Configured bound&split method not supported. Falling back to multipass" << endl;
-    case Config::MULTIPASS:
+    case ReyesConfig::MULTIPASS:
         _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
         break;
     }
     
     _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
     _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
-    _reyes_program.set_constant("PATCH_SIZE", (int)config.reyes_patch_size());
+    _reyes_program.set_constant("PATCH_SIZE", (int)reyes_config.reyes_patch_size());
     _reyes_program.set_constant("VIEWPORT_MIN_PIXEL", ivec2(0,0));
     _reyes_program.set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
     _reyes_program.set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
     _reyes_program.set_constant("MAX_BLOCK_COUNT", _max_block_count);
     _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
-    _reyes_program.set_constant("BACKFACE_CULLING", config.backface_culling());
-    _reyes_program.set_constant("CLEAR_COLOR", config.clear_color());
+    _reyes_program.set_constant("BACKFACE_CULLING", reyes_config.backface_culling());
+    _reyes_program.set_constant("CLEAR_COLOR", reyes_config.clear_color());
     _reyes_program.set_constant("CLEAR_DEPTH", 1.0f);
-    _reyes_program.set_constant("PXLCOORD_SHIFT", config.subpixel_bits());
-    _reyes_program.set_constant("DISPLACEMENT", config.displacement());
+    _reyes_program.set_constant("PXLCOORD_SHIFT", reyes_config.subpixel_bits());
+    _reyes_program.set_constant("DISPLACEMENT", reyes_config.displacement());
                 
     _reyes_program.compile(_device, "reyes_old.cl");
 
@@ -174,7 +176,7 @@ CL::Event Reyes::RendererOldCL::send_batch(Reyes::Batch& batch,
                                         const CL::Event& ready)
 {
     // We can't handle more patches on the fly atm
-    int patch_count = std::min<int>(config.reyes_patches_per_pass(), batch.patch_count);
+    int patch_count = std::min<int>(reyes_config.reyes_patches_per_pass(), batch.patch_count);
     
     if (patch_count == 0) {
         return _last_batch;
@@ -182,8 +184,8 @@ CL::Event Reyes::RendererOldCL::send_batch(Reyes::Batch& batch,
 
     CL::Event e;
     
-    const int patch_size  = config.reyes_patch_size();
-    const int group_width = config.dice_group_width();
+    const int patch_size  = reyes_config.reyes_patch_size();
+    const int group_width = reyes_config.dice_group_width();
 
     // DICE
     _dice_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,

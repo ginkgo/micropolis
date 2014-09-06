@@ -17,7 +17,7 @@
 
 
 #include "Projection.h"
-#include "Config.h"
+#include "ReyesConfig.h"
 
 
 Reyes::Projection::Projection(float fovy, float hither, ivec2 viewport):
@@ -93,10 +93,10 @@ void Reyes::Projection::bound(const BBox& bbox, vec2& size, bool& cull) const
     }
 
 
-    if (min.x > _viewport.x-1 + config.cull_ribbon() || 
-	max.x < -config.cull_ribbon() ||
-	min.y > _viewport.y-1 + config.cull_ribbon()|| 
-	max.y < -config.cull_ribbon() ){
+    if (min.x > _viewport.x-1 + reyes_config.cull_ribbon() || 
+	max.x < -reyes_config.cull_ribbon() ||
+	min.y > _viewport.y-1 + reyes_config.cull_ribbon()|| 
+	max.y < -reyes_config.cull_ribbon() ){
         cull = true;
         return;
     }

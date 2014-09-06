@@ -22,6 +22,9 @@
 #include "CL/OpenCL.h"
 #include "CL/PrefixSum.h"
 #include "Config.h"
+#include "CLConfig.h"
+#include "GLConfig.h"
+#include "ReyesConfig.h"
 #include "GL/Buffer.h"
 #include "GL/PrefixSum.h"
 #include "Reyes/Reyes.h"
@@ -87,14 +90,14 @@ void mainloop(GLFWwindow* window)
     Reyes::RendererGLWire wire_renderer;
     shared_ptr<Reyes::Renderer> renderer;
     
-    switch (config.renderer_type()) {
-    case Config::OPENCL:
+    switch (reyes_config.renderer_type()) {
+    case ReyesConfig::OPENCL:
         renderer.reset(new Reyes::RendererCL());
         break;
-    case Config::OPENCL_OLD:
+    case ReyesConfig::OPENCL_OLD:
         renderer.reset(new Reyes::RendererOldCL());
         break;
-    case Config::GLTESS:
+    case ReyesConfig::GLTESS:
         renderer.reset(new Reyes::RendererGLHWTess());
         break;
     default:
@@ -140,7 +143,7 @@ void mainloop(GLFWwindow* window)
 
     long long frame_no = 0;
 
-    string trace_file = config.trace_file();
+    string trace_file = cl_config.trace_file();
     string statistics_file = config.statistics_file();
     
     while (running) {
@@ -189,11 +192,11 @@ void mainloop(GLFWwindow* window)
         }
 
         if (glfwGetKey(window, GLFW_KEY_PAGE_UP)) {
-            config.set_bound_n_split_limit(config.bound_n_split_limit() * pow(0.75, time_diff));
+            reyes_config.set_bound_n_split_limit(reyes_config.bound_n_split_limit() * pow(0.75, time_diff));
         }
 
         if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN)) {
-            config.set_bound_n_split_limit(config.bound_n_split_limit() * pow(0.75,-time_diff));
+            reyes_config.set_bound_n_split_limit(reyes_config.bound_n_split_limit() * pow(0.75,-time_diff));
         }
         
         scene.active_cam().transform = scene.active_cam().transform
@@ -228,7 +231,7 @@ void mainloop(GLFWwindow* window)
         if (config.dump_mode() && frame_no >= config.dump_after()) {
             int dump_id = frame_no - config.dump_after();
             
-            config.set_trace_file(trace_file + lexical_cast<string>(dump_id));
+            cl_config.set_trace_file(trace_file + lexical_cast<string>(dump_id));
             config.set_statistics_file(statistics_file + lexical_cast<string>(dump_id));
                 
             renderer->dump_trace();
@@ -336,7 +339,7 @@ bool test_CL_prefix_sum(const int N, bool print)
 {
     bool retval = true;
 
-    CL::Device device(config.opencl_device_id().x, config.opencl_device_id().y);
+    CL::Device device(cl_config.opencl_device_id().x, cl_config.opencl_device_id().y);
     CL::CommandQueue queue(device, "prefix sum test");
     
     CL::PrefixSum prefix_sum(device, N);
@@ -400,7 +403,7 @@ bool test_CL_histogram_pyramid(const int N, bool print)
     
     bool retval = true;
 
-    CL::Device device(config.opencl_device_id().x, config.opencl_device_id().y);
+    CL::Device device(cl_config.opencl_device_id().x, cl_config.opencl_device_id().y);
     CL::CommandQueue queue(device, "prefix sum test");
     
     CL::HistogramPyramid histogram_pyramid(device);
@@ -482,8 +485,10 @@ bool handle_arguments(int& argc, char** argv)
 {
     bool needs_resave;
 
-    if (!Config::load_file("options.txt", config, needs_resave)) {
-        cout << "Failed to load options.txt" << endl;
+    // Config
+    
+    if (!Config::load_file("micropolis.options", config, needs_resave)) {
+        cout << "Failed to load micropolis.options" << endl;
         return false;
     }
 
@@ -493,13 +498,76 @@ bool handle_arguments(int& argc, char** argv)
         }
 
 
-        if (!Config::save_file("options.txt", config)) {
-            cout << "Failed to save options.txt" << endl;
+        if (!Config::save_file("micropolis.options", config)) {
+            cout << "Failed to save micropolis.options" << endl;
             return false;
         }
     }
 
-    return config.parse_args(argc, argv);    
+    // CLConfig
+    
+    if (!CLConfig::load_file("cl.options", cl_config, needs_resave)) {
+        cout << "Failed to load cl.options" << endl;
+        return false;
+    }
+
+    if (needs_resave) {
+        if (config.verbosity_level() > 0) {
+            cout << "Config file out of date. Resaving." << endl;
+        }
+
+
+        if (!CLConfig::save_file("cl.options", cl_config)) {
+            cout << "Failed to save micropolis.options" << endl;
+            return false;
+        }
+    }
+    
+    // GLConfig
+    
+    if (!GLConfig::load_file("gl.options", gl_config, needs_resave)) {
+        cout << "Failed to load gl.options" << endl;
+        return false;
+    }
+
+    if (needs_resave) {
+        if (config.verbosity_level() > 0) {
+            cout << "Config file out of date. Resaving." << endl;
+        }
+
+
+        if (!GLConfig::save_file("gl.options", gl_config)) {
+            cout << "Failed to save micropolis.options" << endl;
+            return false;
+        }
+    }
+    
+    // ReyesConfig
+
+    if (!ReyesConfig::load_file("reyes.options", reyes_config, needs_resave)) {
+        cout << "Failed to load reyes.options" << endl;
+        return false;
+    }
+
+    if (needs_resave) {
+        if (config.verbosity_level() > 0) {
+            cout << "Config file out of date. Resaving." << endl;
+        }
+
+
+        if (!ReyesConfig::save_file("reyes.options", reyes_config)) {
+            cout << "Failed to save micropolis.options" << endl;
+            return false;
+        }
+    }
+
+
+    config.parse_args(argc, argv); 
+    cl_config.parse_args(argc, argv); 
+    gl_config.parse_args(argc, argv); 
+    reyes_config.parse_args(argc, argv);
+
+    return true;
 }
 
 
@@ -516,7 +584,7 @@ GLFWwindow* init_opengl(ivec2 size)
     int version = FLEXT_MAJOR_VERSION * 10 + FLEXT_MINOR_VERSION;
 
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    glfwWindowHint(GLFW_SAMPLES, config.fsaa_samples());
+    glfwWindowHint(GLFW_SAMPLES, gl_config.fsaa_samples());
     glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 

@@ -18,7 +18,7 @@
 
 #include "Texture.h"
 #include "Image.h"
-#include "Config.h"
+#include "GLConfig.h"
 
 #include "Statistics.h"
 
@@ -103,7 +103,7 @@ void GL::Texture::setup(const void* data, GLenum type, int samples)
     if (samples == 0) {
         if (FLEXT_EXT_texture_filter_anisotropic) {
             glTexParameterf(_target, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                            config.max_anisotropy());
+                            gl_config.max_anisotropy());
         }
      
         glTexParameteri(_target, GL_TEXTURE_MAG_FILTER, _mag_filter);

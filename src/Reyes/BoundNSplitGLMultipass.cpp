@@ -3,13 +3,14 @@
 
 #include "PatchIndex.h"
 #include "Config.h"
+#include "ReyesConfig.h"
 #include "Statistics.h"
 
 
 using namespace Reyes;
 
-#define BATCH_SIZE config.reyes_patches_per_pass()
-#define MAX_SPLIT config.max_split_depth()
+#define BATCH_SIZE reyes_config.reyes_patches_per_pass()
+#define MAX_SPLIT reyes_config.max_split_depth()
 
 Reyes::BoundNSplitGLMultipass::BoundNSplitGLMultipass(shared_ptr<PatchIndex>& patch_index)
     : _patch_index(patch_index)
@@ -99,7 +100,7 @@ void Reyes::BoundNSplitGLMultipass::init(void* patches_handle, const mat4& matri
     _bound_n_split.set_uniform("far", projection->far());
     _bound_n_split.set_uniform("proj_f", projection->f());
     _bound_n_split.set_uniform("screen_size", projection->viewport());
-    _bound_n_split.set_uniform("cull_ribbon", (float)config.cull_ribbon());
+    _bound_n_split.set_uniform("cull_ribbon", (float)reyes_config.cull_ribbon());
     _bound_n_split.unbind();
 
 }
@@ -165,7 +166,7 @@ void Reyes::BoundNSplitGLMultipass::do_bound_n_split(GL::IndirectVBO& vbo)
 {
     glBeginQuery(GL_TIME_ELAPSED, _bound_n_split_timer);
     
-    size_t batch_size = std::min(_stack_height, config.reyes_patches_per_pass());
+    size_t batch_size = std::min(_stack_height, reyes_config.reyes_patches_per_pass());
     size_t batch_offset = _stack_height - batch_size;
 
     GL::Tex& patches_texture = _patch_index->get_patch_texture(_active_handle);
@@ -188,8 +189,8 @@ void Reyes::BoundNSplitGLMultipass::do_bound_n_split(GL::IndirectVBO& vbo)
     _bound_n_split.set_uniform("screen_matrix", _screen_matrix);
     // _bound_n_split.set_uniform("screen_min", _screen_min);
     // _bound_n_split.set_uniform("screen_max", _screen_max);
-    _bound_n_split.set_uniform("max_split_depth", (GLuint)config.max_split_depth());
-    _bound_n_split.set_uniform("split_limit", config.bound_n_split_limit());
+    _bound_n_split.set_uniform("max_split_depth", (GLuint)reyes_config.max_split_depth());
+    _bound_n_split.set_uniform("split_limit", reyes_config.bound_n_split_limit());
     _bound_n_split.set_uniform("patches", patches_texture);
     
     _bound_n_split.set_buffer("stack_min", _stack_min);

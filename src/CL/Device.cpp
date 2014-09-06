@@ -1,6 +1,7 @@
 #include "Device.h"
 
 #include "Config.h"
+#include "CLConfig.h"
 #include "Exception.h"
 
 #include <CL/cl_gl.h>
@@ -46,7 +47,7 @@ CL::Device::Device(int platform_index, int device_index)
 
     get_opencl_device(platform_index, device_index, platform, _device);
 
-    if (!config.disable_buffer_sharing() && is_GPU_device(_device)) {
+    if (!cl_config.disable_buffer_sharing() && is_GPU_device(_device)) {
         try {
             _context = create_context_with_GL(platform, _device);
             _share_gl = true;
@@ -235,7 +236,7 @@ void CL::Device::release_events()
     if (_dump_trace) {
         _dump_trace = false;
         
-        std::ofstream fs(config.trace_file().c_str());
+        std::ofstream fs(cl_config.trace_file().c_str());
 
         for (auto i : _events) {
             const EventIndex& idx = i.second;

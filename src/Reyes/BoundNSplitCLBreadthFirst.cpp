@@ -1,7 +1,7 @@
 #include "BoundNSplitCLBreadthFirst.h"
 
 #include "CL/PrefixSum.h"
-#include "Config.h"
+#include "ReyesConfig.h"
 #include "PatchIndex.h"
 #include "Statistics.h"
 
@@ -17,7 +17,7 @@ struct cl_projection
 };
 
 
-#define BATCH_SIZE config.reyes_patches_per_pass()
+#define BATCH_SIZE reyes_config.reyes_patches_per_pass()
 
 
 
@@ -94,9 +94,9 @@ Reyes::BoundNSplitCLBreadthFirst::BoundNSplitCLBreadthFirst(CL::Device& device,
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
 
-    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", config.bound_sample_rate());
-    _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
-    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
+    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
+    _bound_n_split_program.set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
+    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
 
     _bound_n_split_program.compile(device, "bound_n_split_breadthfirst.cl");
 
@@ -178,7 +178,7 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
     _bound_kernel->set_args(*_active_patch_buffer, _patch_count,
                             _read_buffers->pids, _read_buffers->depths, _read_buffers->mins, _read_buffers->maxs,
                             _flag_buffers.bound_flags, _flag_buffers.split_flags, _flag_buffers.draw_flags,
-                            _active_matrix, _projection_buffer, config.bound_n_split_limit());
+                            _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
     _ready = _queue.enq_kernel(*_bound_kernel, round_up_by(_patch_count, 64), 64, "bound patches", ready | _ready);
 
     prefix_sum_ready = _prefix_sum.apply(_patch_count, _queue,
@@ -215,6 +215,6 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
     // Swap ping-pong buffers
     std::swap(_read_buffers, _write_buffers);
     
-    return {config.dummy_render() ? 0 : (size_t)draw_count,
+    return {reyes_config.dummy_render() ? 0 : (size_t)draw_count,
             *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }

@@ -1,0 +1,30 @@
+// Size of the window in pixels.
+window_size = 1024 768
+
+// Application window title.
+window_title = MICROPOLIS
+
+// Patch data input file.
+input_file = mscene/teapot.mscene
+
+// Enables dump mode.
+// The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
+dump_mode = false
+
+// Controls after which frame the application dumps a trace and exits in trace dump mode.
+dump_after = 10
+
+// Number of frame dumps to perform per invocation.
+dump_count = 3
+
+// 0...(Almost) no output
+// 1...Regular performance information and warnings posted
+// 2...Lots of information posted, can be detrimental to render performance
+verbosity_level = 0
+
+// Target file for writing program stats to.
+statistics_file = reyes.statistics
+
+
+
+#hash:-5502798915031482702

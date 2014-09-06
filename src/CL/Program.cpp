@@ -5,6 +5,7 @@
 #include "Kernel.h"
 
 #include "Config.h"
+#include "CLConfig.h"
 
 #include <fstream>
 #include <iomanip>
@@ -70,12 +71,12 @@ void CL::Program::compile(Device& device,  const string& filename)
 	_device = device.get_device();
 
     *_source_buffer << endl
-                    << "# 1 \"" << config.kernel_dir() << "/" << filename << "\"" << endl
-                    << read_file(config.kernel_dir() + "/" + filename);
+                    << "# 1 \"" << cl_config.kernel_dir() << "/" << filename << "\"" << endl
+                    << read_file(cl_config.kernel_dir() + "/" + filename);
     
     string file_content = _source_buffer->str();
 
-    if (config.dump_kernel_files()) {
+    if (cl_config.dump_kernel_files()) {
         std::ofstream fs(("/tmp/"+filename).c_str());
         fs << file_content << endl;
     }
@@ -109,7 +110,7 @@ namespace {
         cl_device_id dev = device.get_device();
 
         string flags = "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable";
-        flags += " -I"+config.kernel_dir();
+        flags += " -I"+cl_config.kernel_dir();
 
 #ifdef DEBUG_OPENCL
         flags += " -g";

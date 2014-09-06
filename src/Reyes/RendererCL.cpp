@@ -9,6 +9,8 @@
 #include "BoundNSplitCLBreadthFirst.h"
 #include "CL/OpenCL.h"
 #include "Config.h"
+#include "CLConfig.h"
+#include "ReyesConfig.h"
 #include "Framebuffer.h"
 #include "PatchIndex.h"
 #include "Projection.h"
@@ -18,13 +20,13 @@
 #define _bound_n_split_queue _rasterization_queue
 
 Reyes::RendererCL::RendererCL()
-    : _device(config.opencl_device_id().x, config.opencl_device_id().y)
+    : _device(cl_config.opencl_device_id().x, cl_config.opencl_device_id().y)
       
     // , _framebuffer_queue(_device, "framebuffer")
     // , _bound_n_split_queue(_device, "bound & split")
     , _rasterization_queue(_device, "rasterization")
 
-    , _framebuffer(_device, config.window_size(), config.framebuffer_tile_size(), glfwGetCurrentContext())
+    , _framebuffer(_device, config.window_size(), reyes_config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
     
@@ -32,22 +34,22 @@ Reyes::RendererCL::RendererCL()
     , _frame_event(_device, "frame")
 {
     
-    switch(config.bound_n_split_method()) {
-    case Config::BALANCED:
+    switch(reyes_config.bound_n_split_method()) {
+    case ReyesConfig::BALANCED:
         _bound_n_split.reset(new BoundNSplitCLBalanced(_device, _bound_n_split_queue, _patch_index));
         break;
-    case Config::CPU:
+    case ReyesConfig::CPU:
         _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
-    case Config::LOCAL:
+    case ReyesConfig::LOCAL:
         _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
         break;
-    case Config::BREADTHFIRST:
+    case ReyesConfig::BREADTHFIRST:
         _bound_n_split.reset(new BoundNSplitCLBreadthFirst(_device, _bound_n_split_queue, _patch_index));
         break;
     default:
         cerr << "Configured bound&split method not supported. Falling back to multipass" << endl;
-    case Config::MULTIPASS:
+    case ReyesConfig::MULTIPASS:
         _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
         break;
     }
@@ -58,8 +60,8 @@ Reyes::RendererCL::RendererCL()
     _reyes_program.set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
     _reyes_program.set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
     _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
-    _reyes_program.set_constant("BACKFACE_CULLING", config.backface_culling());
-    _reyes_program.set_constant("CLEAR_COLOR", config.clear_color());
+    _reyes_program.set_constant("BACKFACE_CULLING", reyes_config.backface_culling());
+    _reyes_program.set_constant("CLEAR_COLOR", reyes_config.clear_color());
     _reyes_program.set_constant("CLEAR_DEPTH", 1.0f);
                 
     _reyes_program.compile(_device, "reyes.cl");
@@ -139,7 +141,7 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
                                         const CL::Event& ready)
 {
     // We can't handle more patches on the fly atm
-    int patch_count = std::min<int>(config.reyes_patches_per_pass(), batch.patch_count);
+    int patch_count = std::min<int>(reyes_config.reyes_patches_per_pass(), batch.patch_count);
     
     if (patch_count == 0) {
         return _last_batch;

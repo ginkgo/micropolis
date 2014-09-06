@@ -4,7 +4,7 @@
 #include "Device.h"
 #include "Exception.h"
 
-#include "Config.h"
+#include "CLConfig.h"
 #include "Statistics.h"
 
 #include <CL/cl_gl.h>
@@ -153,7 +153,7 @@ CL::TransferBuffer::TransferBuffer(Device& device, size_t size, cl_mem_flags fla
 CL::TransferBuffer::~TransferBuffer()
 {
 
-    if (config.transfer_buffer_mode() == Config::UNPINNED && _host_ptr != nullptr) {
+    if (cl_config.transfer_buffer_mode() == CLConfig::UNPINNED && _host_ptr != nullptr) {
         free(_host_ptr);
     }
 }
@@ -192,7 +192,7 @@ void CL::TransferBuffer::resize(size_t new_size)
 {
     Buffer::resize(new_size);
 
-    if (config.transfer_buffer_mode() == Config::PINNED) {
+    if (cl_config.transfer_buffer_mode() == CLConfig::PINNED) {
         
         cl_map_flags map_flags = 0;
 

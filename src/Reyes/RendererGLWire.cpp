@@ -22,26 +22,26 @@
 #include "BoundNSplitGLCPU.h"
 #include "BoundNSplitGLLocal.h"
 #include "BoundNSplitGLMultipass.h"
-#include "Config.h"
+#include "ReyesConfig.h"
 #include "Projection.h"
 #include "Statistics.h"
 
 
 Reyes::RendererGLWire::RendererGLWire()
     : _shader("wire")
-    , _vbo(4 * config.reyes_patches_per_pass())
+    , _vbo(4 * reyes_config.reyes_patches_per_pass())
     , _patch_index(new PatchIndex())
 {
-    switch(config.bound_n_split_method()) {
-    case Config::CPU:
+    switch(reyes_config.bound_n_split_method()) {
+    case ReyesConfig::CPU:
         _bound_n_split.reset(new BoundNSplitGLCPU(_patch_index));
         break;
     default:
         cerr << "Unsupported bound&split method. Falling back to multipass" << endl;
-    case Config::MULTIPASS:
+    case ReyesConfig::MULTIPASS:
         _bound_n_split.reset(new BoundNSplitGLMultipass(_patch_index));
         break;
-    case Config::LOCAL:
+    case ReyesConfig::LOCAL:
         _bound_n_split.reset(new BoundNSplitGLLocal(_patch_index));
         break;
     }
@@ -101,7 +101,7 @@ void Reyes::RendererGLWire::draw_patches(void* patches_handle,
 
         _bound_n_split->do_bound_n_split(_vbo);
 
-        if (!config.dummy_render()) {
+        if (!reyes_config.dummy_render()) {
             _shader.bind();
             _shader.set_uniform("flip", GL_FALSE);
             _vbo.draw(GL_PATCHES, _shader);

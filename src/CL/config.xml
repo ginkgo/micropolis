@@ -1,0 +1,65 @@
+<!-- 
+     This file is part of Micropolis.
+  
+     Micropolis is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+
+     Micropolis is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with Micropolis.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<config name="CLConfig">
+  <include>
+    #include "common.h"
+  </include>
+
+  <enums>
+    <enum name="TransferBufferMode">
+      <element name="UNPINNED"/>
+      <element name="PINNED"/>
+    </enum>
+  </enums>
+
+  <values>
+    <!-- OpenCL properties -->
+    <value name="kernel_dir" type="string" default="kernels">
+      Search directory for OpenCL kernels.
+    </value>
+
+    <value name="opencl_device_id" type="ivec2" default="0 0">
+      Pair of integers defining the platform and device id of the OpenCL device that shall be used.
+    </value>
+    
+    <value name="disable_buffer_sharing" type="bool" default="true">
+      Force slow path for OpenCL/OpenGL buffer sharing.
+    </value>
+
+    <value name="do_event_polling" type="bool" default="true">
+      Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
+    </value>
+    
+    <value name="transfer_buffer_mode" type="TransferBufferMode" default="PINNED">
+      Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
+      PINNED should be a lot faster.
+    </value>
+    
+    <value name="dump_kernel_files" type="bool" default="false">
+      Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
+    </value>
+
+    <value name="trace_file" type="string" default="reyes.trace">
+      Target file for writing OpenCL trace to.
+    </value>
+    
+  </values>
+
+  <global name="cl_config"/>
+
+</config>

@@ -2,7 +2,7 @@
 
 
 #include "PatchIndex.h"
-#include "Config.h"
+#include "ReyesConfig.h"
 #include "Statistics.h"
 
 
@@ -55,7 +55,7 @@ void Reyes::BoundNSplitGLCPU::do_bound_n_split(GL::IndirectVBO& vbo)
     BBox box;
     float vlen, hlen;
 
-    float s = config.bound_n_split_limit();
+    float s = reyes_config.bound_n_split_limit();
 
     PatchRange r0,r1;
     
@@ -88,7 +88,7 @@ void Reyes::BoundNSplitGLCPU::do_bound_n_split(GL::IndirectVBO& vbo)
                 break; 
             }
 
-        } else if (r.depth > config.max_split_depth()) {
+        } else if (r.depth > reyes_config.max_split_depth()) {
             // TODO: Add low-overhead warning mechanism for this
             // cout << "Warning: Split limit reached" << endl
         } else {

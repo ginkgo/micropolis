@@ -1,9 +1,3 @@
-// Size of the window in pixels.
-window_size = 1024 768
-
-// Application window title.
-window_title = MICROPOLIS
-
 // Patch data input file.
 input_file = mscene/teapot.mscene
 
@@ -58,55 +52,6 @@ bns_pipeline_length = 8
 // Number of work groups for local bound n split operation.
 local_bns_work_groups = 32
 
-// Number of anti-aliasing samples. (0 means no AA)
-fsaa_samples = 0
-
-// Search directory for GLSL shader files.
-shader_dir = shaders
-
-// Maximum anisotropy for texture filtering.
-max_anisotropy = 1
-
-// Search directory for OpenCL kernels.
-kernel_dir = kernels
-
-// Pair of integers defining the platform and device id of the OpenCL device that shall be used.
-opencl_device_id = 1 0
-
-// Force slow path for OpenCL/OpenGL buffer sharing.
-disable_buffer_sharing = false
-
-// Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-do_event_polling = true
-
-// Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
-// PINNED should be a lot faster.
-transfer_buffer_mode = PINNED
-
-// Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
-dump_kernel_files = false
-
-// Target file for writing OpenCL trace to.
-trace_file = reyes.trace
-
-// Target file for writing program stats to.
-statistics_file = reyes.statistics
-
-// Enables dump mode.
-// The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
-dump_mode = false
-
-// Controls after which frame the application dumps a trace and exits in trace dump mode.
-dump_after = 10
-
-// Number of frame dumps to perform per invocation.
-dump_count = 3
-
-// 0...(Almost) no output
-// 1...Regular performance information and warnings posted
-// 2...Lots of information posted, can be detrimental to render performance
-verbosity_level = 0
-
 // If set to true, the patches are split but not diced and rasterized.
 dummy_render = false
 
@@ -117,4 +62,4 @@ displacement = false
 
 
 
-#hash:-5095053189666154728
+#hash:3400977765964278577

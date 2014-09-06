@@ -2,7 +2,7 @@
 
 
 #include "PatchIndex.h"
-#include "Config.h"
+#include "ReyesConfig.h"
 #include "Statistics.h"
 
 
@@ -17,10 +17,10 @@ struct cl_projection
 };
 
 
-#define BATCH_SIZE config.reyes_patches_per_pass()
-#define WORK_GROUP_CNT config.local_bns_work_groups()
+#define BATCH_SIZE reyes_config.reyes_patches_per_pass()
+#define WORK_GROUP_CNT reyes_config.local_bns_work_groups()
 #define WORK_GROUP_SIZE (_queue.device().preferred_work_group_size_multiple())
-#define MAX_SPLIT_DEPTH config.max_split_depth()
+#define MAX_SPLIT_DEPTH reyes_config.max_split_depth()
 #define MAX_BNS_ITERATIONS 200
 
 Reyes::BoundNSplitCLBalanced::BoundNSplitCLBalanced(CL::Device& device,
@@ -49,12 +49,12 @@ Reyes::BoundNSplitCLBalanced::BoundNSplitCLBalanced(CL::Device& device,
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
     
-    _bound_n_split_program.set_constant("BATCH_SIZE", config.reyes_patches_per_pass());
+    _bound_n_split_program.set_constant("BATCH_SIZE", reyes_config.reyes_patches_per_pass());
     _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_CNT", WORK_GROUP_CNT);
     _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", WORK_GROUP_SIZE);
-    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", config.bound_sample_rate());
-    _bound_n_split_program.set_constant("CULL_RIBBON", config.cull_ribbon());
-    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", config.max_split_depth());
+    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
+    _bound_n_split_program.set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
+    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
     
     _bound_n_split_program.compile(device, "bound_n_split_balanced.cl");
     
@@ -123,7 +123,7 @@ void Reyes::BoundNSplitCLBalanced::finish()
     _queue.wait_for_events(_ready);
     _ready = CL::Event();
 
-    if (config.debug_work_group_balance()) {
+    if (reyes_config.debug_work_group_balance()) {
         
         CL::Event ready = _queue.enq_read_buffer(_processed_count_buffer,
                                                  _processed_count_buffer.void_ptr(),
@@ -154,7 +154,7 @@ Reyes::Batch Reyes::BoundNSplitCLBalanced::do_bound_n_split(CL::Event& ready)
                                     _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _out_range_cnt_buffer,
                                     _processed_count_buffer,
                                     _active_matrix, _projection_buffer,
-                                    config.bound_n_split_limit());
+                                    reyes_config.bound_n_split_limit());
     _ready = _queue.enq_kernel(*_bound_n_split_kernel,
                                ivec2(WORK_GROUP_SIZE,  WORK_GROUP_CNT), ivec2(WORK_GROUP_SIZE, 1),
                                "bound & split", _ready);
@@ -180,5 +180,5 @@ Reyes::Batch Reyes::BoundNSplitCLBalanced::do_bound_n_split(CL::Event& ready)
         statistics.add_patches(out_range_cnt);
     }
     
-    return {config.dummy_render() ? 0 : (size_t)out_range_cnt, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
+    return {reyes_config.dummy_render() ? 0 : (size_t)out_range_cnt, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
 }

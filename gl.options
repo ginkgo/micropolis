@@ -1,0 +1,12 @@
+// Number of anti-aliasing samples. (0 means no AA)
+fsaa_samples = 0
+
+// Search directory for GLSL shader files.
+shader_dir = shaders
+
+// Maximum anisotropy for texture filtering.
+max_anisotropy = 1
+
+
+
+#hash:2540308622834761539

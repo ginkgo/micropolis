@@ -20,7 +20,7 @@
 
 
 #include "CL/OpenCL.h"
-#include "Config.h"
+#include "ReyesConfig.h"
 
 
 namespace Reyes
@@ -62,7 +62,7 @@ namespace Reyes
 
     CL::Event Framebuffer::clear(CL::CommandQueue& queue, const CL::Event& e)
     {
-        vec4 clear_color = config.clear_color();
+        vec4 clear_color = reyes_config.clear_color();
         clear_color = vec4(powf(clear_color.x, 2.2), 
                            powf(clear_color.y, 2.2),
                            powf(clear_color.z, 2.2), 1000);

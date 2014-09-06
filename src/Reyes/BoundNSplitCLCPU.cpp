@@ -2,14 +2,14 @@
 
 
 #include "PatchIndex.h"
-#include "Config.h"
+#include "ReyesConfig.h"
 #include "Statistics.h"
 
 
 
 Reyes::BoundNSplitCLCPU::BoundNSplitCLCPU(CL::Device& device,
-                                                  CL::CommandQueue& queue,
-                                                  shared_ptr<PatchIndex>& patch_index)
+                                          CL::CommandQueue& queue,
+                                          shared_ptr<PatchIndex>& patch_index)
     : _queue(queue)
     , _patch_index(patch_index)
     , _active_handle(nullptr)
@@ -21,8 +21,8 @@ Reyes::BoundNSplitCLCPU::BoundNSplitCLCPU(CL::Device& device,
     _patch_index->enable_load_opencl_buffer(device, queue);
 
 
-    for (int i : irange(0, config.bns_pipeline_length())) {
-        _batch_records.emplace_back(config.reyes_patches_per_pass(), device, queue);
+    for (int i : irange(0, reyes_config.bns_pipeline_length())) {
+        _batch_records.emplace_back(reyes_config.reyes_patches_per_pass(), device, queue);
     }
 }
 
@@ -71,7 +71,7 @@ void Reyes::BoundNSplitCLCPU::finish()
 
 Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
 {
-    size_t ring_size = config.bns_pipeline_length(); // Size of batch buffer ring
+    size_t ring_size = reyes_config.bns_pipeline_length(); // Size of batch buffer ring
 
     if (_next_batch_record > 0)
         _batch_records[(_next_batch_record-1)%ring_size].accept(ready);
@@ -93,7 +93,7 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
     BBox box;
     float vlen, hlen;
 
-    float s = config.bound_n_split_limit();
+    float s = reyes_config.bound_n_split_limit();
 
     while (!_stack.empty()) {
 
@@ -121,11 +121,11 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
             ++patch_count;
             statistics.inc_patch_count();
             
-            if (patch_count >= config.reyes_patches_per_pass()) {
+            if (patch_count >= reyes_config.reyes_patches_per_pass()) {
                 break; // buffer full, end this batch
             }
 
-        } else if (r.depth > config.max_split_depth()) {
+        } else if (r.depth > reyes_config.max_split_depth()) {
             // TODO: Add low-overhead warning mechanism for this
             // cout << "Warning: Split limit reached" << endl
         } else {
@@ -143,7 +143,7 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
     statistics.stop_bound_n_split();
     _bound_n_split_event.end();
     
-    return {config.dummy_render() ? 0 : patch_count, *_active_patch_buffer, record.patch_ids, record.patch_min, record.patch_max, record.transferred};
+    return {reyes_config.dummy_render() ? 0 : patch_count, *_active_patch_buffer, record.patch_ids, record.patch_min, record.patch_max, record.transferred};
 }
 
 

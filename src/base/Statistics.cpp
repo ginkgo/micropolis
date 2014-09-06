@@ -20,6 +20,7 @@
 
 #include "utility.h"
 #include "Config.h"
+#include "ReyesConfig.h"
 
 #include <fstream>
     
@@ -163,7 +164,7 @@ void Statistics::print()
 {
     if (config.verbosity_level() > 0) {
 
-        uint64_t quad_count = square(config.reyes_patch_size()) * patches_per_frame;
+        uint64_t quad_count = square(reyes_config.reyes_patch_size()) * patches_per_frame;
         double quads_per_second = quad_count * frames_per_second;
         
         cout << endl

@@ -15,17 +15,12 @@
      along with Micropolis.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<config name="Config">
+<config name="ReyesConfig">
   <include>
     #include "common.h"
   </include>
 
   <enums>
-    <enum name="TransferBufferMode">
-      <element name="UNPINNED"/>
-      <element name="PINNED"/>
-    </enum>
-    
     <enum name="RendererType">
       <element name="OPENCL"/>
       <element name="OPENCL_OLD"/>
@@ -48,15 +43,6 @@
   </enums>
 
   <values>
-    
-    <!-- Window properties -->
-    <value name="window_size" type="ivec2" default="800 600">
-      Size of the window in pixels.
-    </value>
-    
-    <value name="window_title" type="string" default="MICROPOLIS">
-      Application window title.
-    </value>
     
     <!-- Reyes renderer properties -->
     <value name="input_file" type="string" default="mscene/teapot.mscene">
@@ -131,74 +117,6 @@
       Number of work groups for local bound n split operation.
     </value>
 
-
-    <!-- OpenGL properties -->
-    <value name="fsaa_samples" type="int" default="0">
-      Number of anti-aliasing samples. (0 means no AA)
-    </value>
-
-    <value name="shader_dir" type="string" default="shaders">
-      Search directory for GLSL shader files.
-    </value>
-
-    <value name="max_anisotropy" type="float" default="1.0">
-      Maximum anisotropy for texture filtering.
-    </value>
-    
-    <!-- OpenCL properties -->
-    <value name="kernel_dir" type="string" default="kernels">
-      Search directory for OpenCL kernels.
-    </value>
-
-    <value name="opencl_device_id" type="ivec2" default="0 0">
-      Pair of integers defining the platform and device id of the OpenCL device that shall be used.
-    </value>
-    
-    <value name="disable_buffer_sharing" type="bool" default="true">
-      Force slow path for OpenCL/OpenGL buffer sharing.
-    </value>
-
-    <value name="do_event_polling" type="bool" default="true">
-      Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
-    </value>
-    
-    <value name="transfer_buffer_mode" type="TransferBufferMode" default="PINNED">
-      Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
-      PINNED should be a lot faster.
-    </value>
-    
-    <value name="dump_kernel_files" type="bool" default="false">
-      Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
-    </value>
-    
-    <value name="trace_file" type="string" default="reyes.trace">
-      Target file for writing OpenCL trace to.
-    </value>
-
-    <value name="statistics_file" type="string" default="reyes.statistics">
-      Target file for writing program stats to.
-    </value>
-
-    <!-- Debug properties -->      
-    <value name="dump_mode" type="bool" default="false">
-      Enables dump mode.
-      The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
-    </value>
-
-    <value name="dump_after" type="long long" default="10">
-      Controls after which frame the application dumps a trace and exits in trace dump mode.
-    </value>
-
-    <value name="dump_count" type="long long" default="3">
-      Number of frame dumps to perform per invocation.
-    </value>
-    
-    <value name="verbosity_level" type="int" default="1">
-      0...(Almost) no output
-      1...Regular performance information and warnings posted
-      2...Lots of information posted, can be detrimental to render performance
-    </value>
-
     <value name="dummy_render" type="bool" default="false">
       If set to true, the patches are split but not diced and rasterized.
     </value>
@@ -213,6 +131,6 @@
     
   </values>
 
-  <global name="config"/>
+  <global name="reyes_config"/>
 
 </config>

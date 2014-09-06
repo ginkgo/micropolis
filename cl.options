@@ -1,0 +1,25 @@
+// Search directory for OpenCL kernels.
+kernel_dir = kernels
+
+// Pair of integers defining the platform and device id of the OpenCL device that shall be used.
+opencl_device_id = 1 0
+
+// Force slow path for OpenCL/OpenGL buffer sharing.
+disable_buffer_sharing = false
+
+// Controls how we wait for OpenCL events. Polling is slightly faster but uses more CPU cycles.
+do_event_polling = true
+
+// Allocation method of host/device transfer buffers. Either PINNED or UNPINNED.
+// PINNED should be a lot faster.
+transfer_buffer_mode = PINNED
+
+// Will dump the concatenated OpenCL kernel files into /tmp/ for debugging purposes.
+dump_kernel_files = false
+
+// Target file for writing OpenCL trace to.
+trace_file = reyes.trace
+
+
+
+#hash:-6601384710881557108

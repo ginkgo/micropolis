@@ -1,6 +1,7 @@
 #include "ShaderObject.h"
 
 #include "Config.h"
+#include "GLConfig.h"
 #include "glutils.h"
 
 #include <fstream>
@@ -48,7 +49,7 @@ bool GL::ShaderObject::load_shader_source(const string& shader,
                                           const string& material,
                                           const string& file_extension)
 {
-    string shaderfile   = config.shader_dir() +"/"+shader  +file_extension;
+    string shaderfile   = gl_config.shader_dir() +"/"+shader  +file_extension;
 
     return read_file(shaderfile);
 }
@@ -80,7 +81,7 @@ bool GL::ShaderObject::read_file(const string& filename)
         lineno++;
 
         if (boost::regex_match(line, match, include_pattern)) {
-            string includefile = config.shader_dir()+"/"+match.str(1);
+            string includefile = gl_config.shader_dir()+"/"+match.str(1);
 
             if (!read_file(includefile)) {
                 return false;
@@ -127,7 +128,7 @@ GLuint GL::ShaderObject::compile_shader_object(const string& shader,
     }
 
     if (config.verbosity_level() >= 2) {
-        cout << boost::format("\t %1%/%2%%3%") % config.shader_dir() % shader % file_extension << endl;
+        cout << boost::format("\t %1%/%2%%3%") % gl_config.shader_dir() % shader % file_extension << endl;
     }
     
     string source = ss.str();

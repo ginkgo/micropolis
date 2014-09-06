@@ -1,6 +1,6 @@
 #include "CommandQueue.h"
 
-#include "Config.h"
+#include "CLConfig.h"
 
 #include "Device.h"
 #include "Event.h"
@@ -110,7 +110,7 @@ void CL::CommandQueue::wait_for_events(const CL::Event& events)
 
     if (num_events == 0) return;
 
-    if (config.do_event_polling()) {
+    if (cl_config.do_event_polling()) {
         // Do polling
         clFlush(_queue);
         for (size_t i = 0; i < num_events; ++i) {

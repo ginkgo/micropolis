@@ -1,12 +1,12 @@
 #include "BoundNSplitGLLocal.h"
 
 #include "PatchIndex.h"
-#include "Config.h"
+#include "ReyesConfig.h"
 #include "Statistics.h"
 
 #include "utility.h"
 
-#define BATCH_SIZE config.reyes_patches_per_pass()
+#define BATCH_SIZE reyes_config.reyes_patches_per_pass()
 #define WORK_GROUP_CNT 32
 #define WORK_GROUP_SIZE 64
 #define MAX_SPLIT_DEPTH 8
