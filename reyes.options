@@ -1,3 +1,9 @@
+// Size of the window in pixels.
+window_size = 800 600
+
+// Application window title.
+window_title = MICROPOLIS
+
 // Patch data input file.
 input_file = mscene/teapot.mscene
 
@@ -62,4 +68,4 @@ displacement = false
 
 
 
-#hash:3400977765964278577
+#hash:-4793738699888423794

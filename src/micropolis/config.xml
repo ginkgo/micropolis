@@ -26,19 +26,6 @@
 
   <values>
     
-    <!-- Window properties -->
-    <value name="window_size" type="ivec2" default="800 600">
-      Size of the window in pixels.
-    </value>
-    
-    <value name="window_title" type="string" default="MICROPOLIS">
-      Application window title.
-    </value>
-    
-    <value name="input_file" type="string" default="mscene/teapot.mscene">
-      Patch data input file.
-    </value>
-    
     <!-- Debug properties -->      
     <value name="dump_mode" type="bool" default="false">
       Enables dump mode.

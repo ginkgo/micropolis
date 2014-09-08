@@ -25,6 +25,7 @@
 #include "Patch.h"
 
 #include "Config.h"
+#include "ReyesConfig.h"
 #include "Statistics.h"
 
 #include <fcntl.h>
@@ -100,7 +101,7 @@ Reyes::Scene::Scene (const string& filename) :
                        to_matrix(c.getTransform()),
                        shared_ptr<Projection>(new Projection(c.getFovy(),
                                                              c.getNear(),
-                                                             config.window_size()))};
+                                                             reyes_config.window_size()))};
         cameras.push_back(shared_ptr<Camera>(camera));
     }
 

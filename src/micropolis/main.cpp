@@ -51,12 +51,12 @@ int main(int argc, char** argv)
     }
 
     // Check if input file exists
-    if (!file_exists(config.input_file())) {
-        cerr << "Input file \"" << config.input_file() << "\" does not exist." << endl;
+    if (!file_exists(reyes_config.input_file())) {
+        cerr << "Input file \"" << reyes_config.input_file() << "\" does not exist." << endl;
         return 1;
     }
     
-    ivec2 size = config.window_size();
+    ivec2 size = reyes_config.window_size();
 
 	GLFWwindow* window = init_opengl(size);
     
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     cout << "MICROPOLIS - A micropolygon rasterizer" << " (c) Thomas Weber 2012" << endl;
     cout << endl;
 
-    glfwSetWindowTitle(window, config.window_title().c_str());
+    glfwSetWindowTitle(window, reyes_config.window_title().c_str());
 
     try {
 
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 void mainloop(GLFWwindow* window)
 {
 
-    Reyes::Scene scene(config.input_file());
+    Reyes::Scene scene(reyes_config.input_file());
     
     Reyes::RendererGLWire wire_renderer;
     shared_ptr<Reyes::Renderer> renderer;
@@ -219,7 +219,7 @@ void mainloop(GLFWwindow* window)
 
         // Save scene
         if (keys.pressed(GLFW_KEY_F12)) {
-            scene.save(config.input_file(), keys.is_down(GLFW_KEY_LEFT_SHIFT));
+            scene.save(reyes_config.input_file(), keys.is_down(GLFW_KEY_LEFT_SHIFT));
         }
 
         // Make screenshot

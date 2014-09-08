@@ -26,7 +26,7 @@ Reyes::RendererOldCL::RendererOldCL()
     // , _bound_n_split_queue(_device, "bound & split")
     , _rasterization_queue(_device, "rasterization")
 
-    , _framebuffer(_device, config.window_size(), reyes_config.framebuffer_tile_size(), glfwGetCurrentContext())
+    , _framebuffer(_device, reyes_config.window_size(), reyes_config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
       

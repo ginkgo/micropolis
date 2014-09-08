@@ -84,7 +84,7 @@ void Reyes::BoundNSplitGLMultipass::init(void* patches_handle, const mat4& matri
     mat4 proj;
     projection->calc_projection(proj);
 
-    vec2 hwin(config.window_size().x/2.0f, config.window_size().y/2.0f);
+    vec2 hwin(reyes_config.window_size().x/2.0f, reyes_config.window_size().y/2.0f);
     
     _mv = matrix;
 

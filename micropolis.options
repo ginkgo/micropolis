@@ -1,12 +1,3 @@
-// Size of the window in pixels.
-window_size = 1024 768
-
-// Application window title.
-window_title = MICROPOLIS
-
-// Patch data input file.
-input_file = mscene/teapot.mscene
-
 // Enables dump mode.
 // The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
 dump_mode = false
@@ -27,4 +18,4 @@ statistics_file = reyes.statistics
 
 
 
-#hash:-5502798915031482702
+#hash:-4825391095613091547
