@@ -2,11 +2,7 @@
 
 #include "RendererCL.h"
 
-#include "BoundNSplitCLBalanced.h"
 #include "BoundNSplitCLCPU.h"
-#include "BoundNSplitCLLocal.h"
-#include "BoundNSplitCLMultipass.h"
-#include "BoundNSplitCLBreadthFirst.h"
 #include "CL/OpenCL.h"
 #include "Config.h"
 #include "CLConfig.h"
@@ -29,42 +25,72 @@ Reyes::RendererCL::RendererCL()
     , _framebuffer(_device, reyes_config.window_size(), reyes_config.framebuffer_tile_size(), glfwGetCurrentContext())
 
     , _patch_index(new PatchIndex())
-    
+      
+    , _max_block_count(square(reyes_config.reyes_patch_size()/8) * reyes_config.reyes_patches_per_pass())
+    , _pos_grid(_device, 
+                reyes_config.reyes_patches_per_pass() * square(reyes_config.reyes_patch_size()+1) * sizeof(vec4),
+                CL_MEM_READ_WRITE, "grid-data")
+    , _pxlpos_grid(_device, 
+                   reyes_config.reyes_patches_per_pass() * square(reyes_config.reyes_patch_size()+1) * sizeof(ivec2),
+                   CL_MEM_READ_WRITE, "grid-data")
+    , _color_grid(_device, 
+                  reyes_config.reyes_patches_per_pass() * square(reyes_config.reyes_patch_size()) * sizeof(vec4),
+                  CL_MEM_READ_WRITE, "grid-data")
+    , _depth_grid(_device, 
+                  reyes_config.reyes_patches_per_pass() * square(reyes_config.reyes_patch_size()+1) * sizeof(float),
+                  CL_MEM_READ_WRITE, "grid-data")
+    , _block_index(_device, _max_block_count * sizeof(ivec4), CL_MEM_READ_WRITE, "block-index")
+    , _tile_locks(_device,
+                  _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE, "tile-locks")
+	, _depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_int), CL_MEM_READ_WRITE, "framebuffer")
     , _reyes_program()
     , _frame_event(_device, "frame")
 {
     
     switch(reyes_config.bound_n_split_method()) {
-    case ReyesConfig::BALANCED:
-        _bound_n_split.reset(new BoundNSplitCLBalanced(_device, _bound_n_split_queue, _patch_index));
-        break;
+    default:
+        cerr << "Configured bound&split method not supported. Falling back to multipass" << endl;
+    // case ReyesConfig::BALANCED:
+    //     _bound_n_split.reset(new BoundNSplitCLBalanced(_device, _bound_n_split_queue, _patch_index));
+    //     break;
     case ReyesConfig::CPU:
         _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
-    case ReyesConfig::LOCAL:
-        _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
-        break;
-    case ReyesConfig::BREADTHFIRST:
-        _bound_n_split.reset(new BoundNSplitCLBreadthFirst(_device, _bound_n_split_queue, _patch_index));
-        break;
-    default:
-        cerr << "Configured bound&split method not supported. Falling back to multipass" << endl;
-    case ReyesConfig::MULTIPASS:
-        _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
-        break;
+    // case ReyesConfig::LOCAL:
+    //     _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
+    //     break;
+    // case ReyesConfig::BREADTHFIRST:
+    //     _bound_n_split.reset(new BoundNSplitCLBreadthFirst(_device, _bound_n_split_queue, _patch_index));
+    //     break;
+    // case ReyesConfig::MULTIPASS:
+    //     _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
+    //     break;
     }
     
     _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
     _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
+    _reyes_program.set_constant("PATCH_SIZE", (int)reyes_config.reyes_patch_size());
     _reyes_program.set_constant("VIEWPORT_MIN_PIXEL", ivec2(0,0));
     _reyes_program.set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
     _reyes_program.set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
+    _reyes_program.set_constant("MAX_BLOCK_COUNT", _max_block_count);
     _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
     _reyes_program.set_constant("BACKFACE_CULLING", reyes_config.backface_culling());
     _reyes_program.set_constant("CLEAR_COLOR", reyes_config.clear_color());
     _reyes_program.set_constant("CLEAR_DEPTH", 1.0f);
+    _reyes_program.set_constant("PXLCOORD_SHIFT", reyes_config.subpixel_bits());
+    _reyes_program.set_constant("DISPLACEMENT", reyes_config.displacement());
                 
-    _reyes_program.compile(_device, "reyes.cl");
+    _reyes_program.compile(_device, "reyes_old.cl");
+
+    _dice_kernel.reset(_reyes_program.get_kernel("dice"));
+    _shade_kernel.reset(_reyes_program.get_kernel("shade"));
+    _sample_kernel.reset(_reyes_program.get_kernel("sample"));
+
+
+    _rasterization_queue.enq_fill_buffer<cl_int>(_tile_locks,
+                                                 1, _framebuffer.size().x/8 * _framebuffer.size().y/8,
+                                                 "tile lock init", CL::Event());
 }
 
 
@@ -80,6 +106,11 @@ void Reyes::RendererCL::prepare()
     
     CL::Event e = _framebuffer.acquire(_framebuffer_queue, CL::Event());
     e = _framebuffer.clear(_framebuffer_queue, e);
+
+    _framebuffer_cleared =
+        _framebuffer_queue.enq_fill_buffer<cl_int>(_depth_buffer,
+                                                   0x7fffffff, _framebuffer.size().x * _framebuffer.size().y,
+                                                   "clear depthbuffer", e);
 
     _framebuffer_queue.flush();
     statistics.start_render();
@@ -147,7 +178,31 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
         return _last_batch;
     }
 
-    CL::Event e = ready;
+    CL::Event e;
+    
+    const int patch_size  = reyes_config.reyes_patch_size();
+    const int group_width = reyes_config.dice_group_width();
+
+    // DICE
+    _dice_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
+                           _pos_grid, _pxlpos_grid, _depth_grid,
+                           matrix, proj);    
+    e = _rasterization_queue.enq_kernel(*_dice_kernel,
+                                        ivec3(patch_size + group_width, patch_size + group_width, patch_count),
+                                        ivec3(group_width, group_width, 1),
+                                        "dice", ready);
+
+    // SHADE
+    _shade_kernel->set_args(_pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
+    e = _rasterization_queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8,8,1),
+                                        "shade", e);
+
+    // SAMPLE
+    _sample_kernel->set_args(_block_index, _pxlpos_grid, _color_grid, _depth_grid,
+                             _tile_locks, _framebuffer.get_buffer(), _depth_buffer);
+    e = _rasterization_queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
+                                        "sample", _framebuffer_cleared | e);
+    _framebuffer_cleared = CL::Event();
 
     _rasterization_queue.flush();
 

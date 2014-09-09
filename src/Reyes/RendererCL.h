@@ -42,7 +42,21 @@ namespace Reyes
         shared_ptr<PatchIndex> _patch_index;
         shared_ptr<BoundNSplitCL> _bound_n_split;
         
+        size_t _max_block_count;
+
+        CL::Buffer _pos_grid;
+        CL::Buffer _pxlpos_grid;
+        CL::Buffer _color_grid;
+        CL::Buffer _depth_grid;
+        CL::Buffer _block_index;
+        CL::Buffer _tile_locks;
+        CL::Buffer _depth_buffer;
+        
         CL::Program _reyes_program;
+
+        scoped_ptr<CL::Kernel> _dice_kernel;
+        scoped_ptr<CL::Kernel> _shade_kernel;
+        scoped_ptr<CL::Kernel> _sample_kernel;
 
         CL::Event _last_batch;
         CL::Event _framebuffer_cleared;

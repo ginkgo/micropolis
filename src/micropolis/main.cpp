@@ -87,21 +87,18 @@ void mainloop(GLFWwindow* window)
 
     Reyes::Scene scene(reyes_config.input_file());
     
-    Reyes::RendererGLWire wire_renderer;
     shared_ptr<Reyes::Renderer> renderer;
     
     switch (reyes_config.renderer_type()) {
     case ReyesConfig::OPENCL:
         renderer.reset(new Reyes::RendererCL());
         break;
-    case ReyesConfig::OPENCL_OLD:
-        renderer.reset(new Reyes::RendererOldCL());
-        break;
-    case ReyesConfig::GLTESS:
-        renderer.reset(new Reyes::RendererGLHWTess());
-        break;
+    // case ReyesConfig::GLTESS:
+    //     renderer.reset(new Reyes::RendererGLHWTess());
+    //     break;
     default:
-        assert(0);
+        cout << "Unimplemented renderer" << endl;
+        return;
     }
 
     bool running = true;
@@ -241,7 +238,7 @@ void mainloop(GLFWwindow* window)
         // Render scene
         statistics.start_render();
         if (in_wire_mode) {
-            scene.draw(wire_renderer);
+            //scene.draw(wire_renderer);
         } else {
             scene.draw(*renderer);
         }
