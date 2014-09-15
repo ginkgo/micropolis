@@ -45,6 +45,7 @@ void eval_patch(const BezierPatch& patch, float t, float s, vec3& dst);
 void eval_patch_n(const BezierPatch& patch,
                   float t, float s, vec3& dst, vec3& normal);
 
+void eval_gregory_patch(const vec3* patchdata, float t, float s, vec3& dst);
 
 void vsplit_patch(const BezierPatch& patch, BezierPatch& o0, BezierPatch& o1);
 void hsplit_patch(const BezierPatch& patch, BezierPatch& o0, BezierPatch& o1);

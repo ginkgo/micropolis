@@ -116,36 +116,40 @@ Reyes::Scene::Scene (const string& filename) :
         lights.push_back(shared_ptr<DirectionalLight>(light));
     }
 
-    map<string, shared_ptr<BezierMesh> > meshmap;
+    map<string, shared_ptr<Mesh> > meshmap;
     for (auto m : scene.getMeshes()) {
-        assert(m.getType() == ::Mesh::Type::BEZIER);
-
-        BezierMesh* mesh = new BezierMesh{m.getName(), {}};
+        
+        Reyes::PatchType mesh_type = Reyes::BEZIER;
+        switch (m.getType()) {
+        case ::Mesh::Type::BEZIER:
+            mesh_type = Reyes::BEZIER;
+            break;
+        case ::Mesh::Type::GREGORY:
+            mesh_type = Reyes::GREGORY;
+            break;
+        }
+        
+        Mesh* mesh = new Mesh{m.getName(), {}, mesh_type};
 
         int i = 0;
         vec3 v;
-        BezierPatch patch;
         for (float f : m.getPositions()) {
             v[i%3] = f;
 
             if (i%3 == 2) {
-                patch.P[0][(i/3)%16] = v;
-            }
-
-            if (i%(3*16) == (3*16-1)) {
-                mesh->patches.push_back(patch);
+                mesh->patch_data.push_back(v);
             }
                 
             ++i;
         }
 
-        meshes.push_back(shared_ptr<BezierMesh>(mesh));
+        meshes.push_back(shared_ptr<Mesh>(mesh));
         meshmap[mesh->name] = meshes.back();
     }
 
     for (auto o : scene.getObjects()) {
 
-        shared_ptr<BezierMesh> mesh = meshmap[o.getMeshname()];
+        shared_ptr<Mesh> mesh = meshmap[o.getMeshname()];
         Object* object = new Object{o.getName(),
                                     to_matrix(o.getTransform()),
                                     vec4(to_vec3(o.getColor()),1),
@@ -169,7 +173,7 @@ void Reyes::Scene::draw(Renderer& renderer) const
 
         // Load patch data on demand
         if (!renderer.are_patches_loaded(object->mesh.get())) {
-            renderer.load_patches(object->mesh.get(), object->mesh->patches);
+            renderer.load_patches(object->mesh.get(), object->mesh->patch_data, object->mesh->type);
         }
 
         mat4 matrix(glm::inverse(active_cam().transform) * object->transform);
@@ -250,10 +254,18 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
         auto mesh = meshes[i];
 
         _meshes[i].setName(mesh->name);
-        _meshes[i].setType(::Mesh::Type::BEZIER);
+        
+        switch(mesh->type) {
+        case Reyes::BEZIER:
+            _meshes[i].setType(::Mesh::Type::BEZIER);
+            break;
+        case Reyes::GREGORY:
+            _meshes[i].setType(::Mesh::Type::GREGORY);
+            break;
+        }            
 
-        size_t fcount = mesh->patches.size() * 16 * 3;
-        float* meshdata = (float*)mesh->patches.data();
+        size_t fcount = mesh->patch_data.size() * 3;
+        float* meshdata = (float*)mesh->patch_data.data();
         
         ::capnp::List<float>::Builder _data = _meshes[i].initPositions(fcount);
 

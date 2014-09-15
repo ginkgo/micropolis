@@ -21,6 +21,8 @@ namespace CL
         Program();
         ~Program();
 
+        void define(const string& macro, const string& statement);
+        
         void set_constant(const string& name, int value);
         void set_constant(const string& name, size_t value);
         void set_constant(const string& name, float value);

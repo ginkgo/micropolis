@@ -31,6 +31,12 @@ CL::Program::~Program()
     }
 }
 
+void CL::Program::define(const string& macro, const string& statement)
+{
+    assert(_source_buffer);
+    *_source_buffer << "#define " << macro << " " << statement << endl;
+}
+
 void CL::Program::set_constant(const string& name, int value)
 {
     assert(_source_buffer);

@@ -182,6 +182,34 @@ void eval_patch_n(const BezierPatch& patch,
 }
 
 
+
+void eval_gregory_patch(const vec3* patchdata, float u, float v, vec3& dst)
+{
+    #pragma warning untested code
+    const vec3 *p  = patchdata +  0;
+    const vec3 *ep = patchdata +  4;
+    const vec3 *em = patchdata +  8;
+    const vec3 *fp = patchdata + 12;
+    const vec3 *fm = patchdata + 16;
+
+    vec3 F0 = (  u  *fp[0] +   v  *fm[0])/(u+v);
+    vec3 F1 = ((1-u)*fm[1] +   v  *fp[1])/(1-u+v);
+    vec3 F2 = ((1-u)*fm[2] + (1-v)*fp[2])/(2-u-v);
+    vec3 F3 = (  u  *fm[3] + (1-v)*fp[3])/(1+u-v);
+
+    vec3 P[4];
+
+    eval_spline( p[0],em[0],ep[3], p[3], u, P[0]);
+    eval_spline(ep[0], F0  , F3  ,em[3], u, P[1]);
+    eval_spline(em[1], F1  , F2  ,ep[2], u, P[2]);
+    eval_spline( p[1],ep[1],em[2], p[2], u, P[3]);
+
+    eval_spline(P[0],P[1],P[2],P[3], v, dst);
+}
+
+
+
+
 void vsplit_patch(const BezierPatch& patch,
                   BezierPatch& o0, BezierPatch& o1)
 {

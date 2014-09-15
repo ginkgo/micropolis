@@ -53,8 +53,11 @@ namespace Reyes
         CL::Buffer _depth_buffer;
         
         CL::Program _reyes_program;
+        CL::Program _dice_bezier_program;
+        CL::Program _dice_gregory_program;
 
-        scoped_ptr<CL::Kernel> _dice_kernel;
+        scoped_ptr<CL::Kernel> _dice_bezier_kernel;
+        scoped_ptr<CL::Kernel> _dice_gregory_kernel;
         scoped_ptr<CL::Kernel> _shade_kernel;
         scoped_ptr<CL::Kernel> _sample_kernel;
 
@@ -72,7 +75,7 @@ namespace Reyes
         virtual void finish();
         
         virtual bool are_patches_loaded(void* patches_handle);
-        virtual void load_patches(void* patches_handle, const vector<BezierPatch>& patch_data);
+        virtual void load_patches(void* patches_handle, const vector<vec3>& patch_data, PatchType type);
         
         virtual void draw_patches(void* patches_handle,
                                   const mat4& matrix,
@@ -87,8 +90,7 @@ namespace Reyes
     private:
 
         void set_projection(const Projection& projection);
-        void draw_patch(const BezierPatch& patch);
-        CL::Event send_batch(Reyes::Batch& batch, const mat4& matrix, const mat4& proj, const vec4& color, const CL::Event& ready);
+        CL::Event send_batch(Reyes::Batch& batch, const mat4& matrix, const mat4& proj, const vec4& color, PatchType patch_type, const CL::Event& ready);
 
     };
 }

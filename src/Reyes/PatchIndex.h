@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Patch.h"
+#include "PatchType.h"
 #include "GL/Texture.h"
 #include "CL/OpenCL.h"
 
@@ -14,7 +14,9 @@ namespace Reyes
         struct PatchData
         {
             size_t patch_count;
-            vector<BezierPatch> patches;
+            vector<vec3> patch_data;
+            PatchType type;
+            
             shared_ptr<GL::TextureBuffer> patch_texture;
             shared_ptr<CL::Buffer> opencl_buffer;
         };
@@ -40,14 +42,15 @@ namespace Reyes
         void enable_retain_vector();
 
         bool are_patches_loaded(void* handle);
-        void load_patches(void* handle, const vector<BezierPatch>& patch_data);
+        void load_patches(void* handle, const vector<vec3>& patch_data, PatchType patch_type);
         void delete_patches(void* handle);
         
-        const vector<BezierPatch>& get_patch_vector(void* handle);
+        const vector<vec3>& get_patch_vector(void* handle);
         GL::TextureBuffer& get_patch_texture(void* handle);
         CL::Buffer* get_opencl_buffer(void* handle);
         
         size_t get_patch_count(void* handle);
+        PatchType get_patch_type(void* handle);
 
         
     };

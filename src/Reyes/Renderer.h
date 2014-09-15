@@ -18,7 +18,8 @@
 
 #pragma once
 
-#include "Patch.h"
+#include "common.h"
+#include "PatchType.h"
 
 namespace Reyes
 {
@@ -26,14 +27,14 @@ namespace Reyes
     class Projection;
 
     struct Renderer
-    {
+    {   
         virtual ~Renderer() {};
 
         virtual void prepare() = 0;
         virtual void finish() = 0;
 
         virtual bool are_patches_loaded(void* patches_handle) = 0;
-        virtual void load_patches(void* patches_handle, const vector<BezierPatch>& patch_data) = 0;
+        virtual void load_patches(void* patches_handle, const vector<vec3>& patch_data, PatchType type) = 0;
 
         virtual void draw_patches(void* patches_handle,
                                   const mat4& matrix,

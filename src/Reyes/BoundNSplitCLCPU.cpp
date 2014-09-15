@@ -14,6 +14,7 @@ Reyes::BoundNSplitCLCPU::BoundNSplitCLCPU(CL::Device& device,
     , _patch_index(patch_index)
     , _active_handle(nullptr)
     , _active_patch_buffer(nullptr)
+    , _patch_type(Reyes::BEZIER)
     , _bound_n_split_event(device, "CPU bound & split")
     , _next_batch_record(0)
 {
@@ -34,10 +35,11 @@ void Reyes::BoundNSplitCLCPU::init(void* patches_handle, const mat4& matrix, con
     _active_handle = patches_handle;
     _active_patch_buffer = _patch_index->get_opencl_buffer(patches_handle);
     
-    const vector<BezierPatch>& patches = _patch_index->get_patch_vector(_active_handle);
+    size_t patch_count = _patch_index->get_patch_count(_active_handle);
+    PatchType patch_type = _patch_index->get_patch_type(_active_handle);
     
-    _stack.resize(patches.size());
-    for (size_t i = 0; i < patches.size(); ++i) {
+    _stack.resize(patch_count);
+    for (size_t i = 0; i < patch_count; ++i) {
         _stack[i] = PatchRange{Bound(0,0,1,1), 0, i};
     }
 
@@ -48,6 +50,7 @@ void Reyes::BoundNSplitCLCPU::init(void* patches_handle, const mat4& matrix, con
     
     _mvp = proj * matrix;
     _mv = matrix;
+    _patch_type = patch_type;
 
     statistics.stop_bound_n_split();
 }
@@ -83,7 +86,8 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
     _bound_n_split_event.begin(waited_for);
     statistics.start_bound_n_split();
     
-    const vector<BezierPatch>& patches = _patch_index->get_patch_vector(_active_handle);
+    const vector<vec3>& patches = _patch_index->get_patch_vector(_active_handle);
+    PatchType type = _patch_index->get_patch_type(_active_handle);
     
     size_t patch_count = 0;
     int*  pids = record.patch_ids.host_ptr<int>();
@@ -100,8 +104,15 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
         PatchRange r = _stack.back();
         _stack.pop_back();
 
-
-        bound_patch_range(r, patches[r.patch_id], _mv, _mvp, box, vlen, hlen);
+        switch (type) {
+        case BEZIER:
+            bound_patch_range(r, *((BezierPatch*)&patches[16*r.patch_id]), _mv, _mvp, box, vlen, hlen);
+            break;
+        case GREGORY:
+            bound_gregory_patch_range(r, &patches[20*r.patch_id], _mv, _mvp, box, vlen, hlen);
+            break;
+         
+        }
 
         vec2 size;
         bool cull;
@@ -143,7 +154,8 @@ Reyes::Batch Reyes::BoundNSplitCLCPU::do_bound_n_split(CL::Event& ready)
     statistics.stop_bound_n_split();
     _bound_n_split_event.end();
     
-    return {reyes_config.dummy_render() ? 0 : patch_count, *_active_patch_buffer, record.patch_ids, record.patch_min, record.patch_max, record.transferred};
+    return {reyes_config.dummy_render() ? 0 : patch_count, _patch_type,
+            *_active_patch_buffer, record.patch_ids, record.patch_min, record.patch_max, record.transferred};
 }
 
 
@@ -235,8 +247,8 @@ void Reyes::BoundNSplitCLCPU::hsplit_range(const PatchRange& r, vector<PatchRang
 
 
 void Reyes::BoundNSplitCLCPU::bound_patch_range (const PatchRange& r, const BezierPatch& p,
-                                                     const mat4& mv, const mat4& mvp,
-                                                     BBox& box, float& vlen, float& hlen)
+                                                 const mat4& mv, const mat4& mvp,
+                                                 BBox& box, float& vlen, float& hlen)
 {
     const size_t RES = 3;
         
@@ -252,6 +264,51 @@ void Reyes::BoundNSplitCLCPU::bound_patch_range (const PatchRange& r, const Bezi
             float u = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
 
             eval_patch(p, u, v, pos);
+
+            vec3 pt = vec3(mv * vec4(pos,1));
+                
+            box.add_point(pt);
+
+            // pp[iu][iv] = project(mvp * vec4(pos,1));
+            ps[iu][iv] = pt;
+        }
+    }
+
+    vlen = 0;
+    hlen = 0;
+
+    for (size_t i = 0; i < RES; ++i) {
+        float h = 0, v = 0;
+        for (size_t j = 0; j < RES-1; ++j) {
+            // v += glm::distance(pp[j][i], pp[j+1][i]);
+            // h += glm::distance(pp[i][j], pp[i][j+1]);
+            v += glm::distance(ps[j][i], ps[j+1][i]);
+            h += glm::distance(ps[i][j], ps[i][j+1]);
+        }
+        vlen = maximum(v, vlen);
+        hlen = maximum(h, hlen);
+    }
+}
+
+
+void Reyes::BoundNSplitCLCPU::bound_gregory_patch_range (const PatchRange& r, const vec3* p,
+                                                         const mat4& mv, const mat4& mvp,
+                                                         BBox& box, float& vlen, float& hlen)
+{
+    const size_t RES = 3;
+        
+    //vec2 pp[RES][RES];
+    vec3 ps[RES][RES];
+    vec3 pos;
+     
+    box.clear();
+        
+    for (size_t iu = 0; iu < RES; ++iu) {
+        for (size_t iv = 0; iv < RES; ++iv) {
+            float v = r.range.min.x + (r.range.max.x - r.range.min.x) * iu * (1.0f / (RES-1));
+            float u = r.range.min.y + (r.range.max.y - r.range.min.y) * iv * (1.0f / (RES-1));
+
+            eval_gregory_patch(p, u, v, pos);
 
             vec3 pt = vec3(mv * vec4(pos,1));
                 

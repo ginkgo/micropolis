@@ -49,7 +49,7 @@ Reyes::RendererCL::RendererCL()
     
     switch(reyes_config.bound_n_split_method()) {
     default:
-        cerr << "Configured bound&split method not supported. Falling back to multipass" << endl;
+        cerr << "Configured bound&split method not supported. Falling back to CPU" << endl;
     // case ReyesConfig::BALANCED:
     //     _bound_n_split.reset(new BoundNSplitCLBalanced(_device, _bound_n_split_queue, _patch_index));
     //     break;
@@ -66,27 +66,36 @@ Reyes::RendererCL::RendererCL()
     //     _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
     //     break;
     }
-    
-    _reyes_program.set_constant("TILE_SIZE", _framebuffer.get_tile_size());
-    _reyes_program.set_constant("GRID_SIZE", _framebuffer.get_grid_size());
-    _reyes_program.set_constant("PATCH_SIZE", (int)reyes_config.reyes_patch_size());
-    _reyes_program.set_constant("VIEWPORT_MIN_PIXEL", ivec2(0,0));
-    _reyes_program.set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
-    _reyes_program.set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
-    _reyes_program.set_constant("MAX_BLOCK_COUNT", _max_block_count);
-    _reyes_program.set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
-    _reyes_program.set_constant("BACKFACE_CULLING", reyes_config.backface_culling());
-    _reyes_program.set_constant("CLEAR_COLOR", reyes_config.clear_color());
-    _reyes_program.set_constant("CLEAR_DEPTH", 1.0f);
-    _reyes_program.set_constant("PXLCOORD_SHIFT", reyes_config.subpixel_bits());
-    _reyes_program.set_constant("DISPLACEMENT", reyes_config.displacement());
+
+    for (CL::Program* program : {&_reyes_program, &_dice_bezier_program, &_dice_gregory_program}) {
+        program->set_constant("TILE_SIZE", _framebuffer.get_tile_size());
+        program->set_constant("GRID_SIZE", _framebuffer.get_grid_size());
+        program->set_constant("PATCH_SIZE", (int)reyes_config.reyes_patch_size());
+        program->set_constant("VIEWPORT_MIN_PIXEL", ivec2(0,0));
+        program->set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
+        program->set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
+        program->set_constant("MAX_BLOCK_COUNT", _max_block_count);
+        program->set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
+        program->set_constant("BACKFACE_CULLING", reyes_config.backface_culling());
+        program->set_constant("CLEAR_COLOR", reyes_config.clear_color());
+        program->set_constant("CLEAR_DEPTH", 1.0f);
+        program->set_constant("PXLCOORD_SHIFT", reyes_config.subpixel_bits());
+        program->set_constant("DISPLACEMENT", reyes_config.displacement());
+    }
                 
     _reyes_program.compile(_device, "reyes_old.cl");
 
-    _dice_kernel.reset(_reyes_program.get_kernel("dice"));
     _shade_kernel.reset(_reyes_program.get_kernel("shade"));
-    _sample_kernel.reset(_reyes_program.get_kernel("sample"));
 
+    _sample_kernel.reset(_reyes_program.get_kernel("sample"));
+    
+    _dice_bezier_program.define("eval_patch", "eval_bezier_patch");
+    _dice_bezier_program.compile(_device, "dice.cl");
+    _dice_bezier_kernel.reset(_dice_bezier_program.get_kernel("dice"));
+
+    _dice_gregory_program.define("eval_patch", "eval_gregory_patch");
+    _dice_gregory_program.compile(_device, "dice.cl");
+    _dice_gregory_kernel.reset(_dice_gregory_program.get_kernel("dice"));
 
     _rasterization_queue.enq_fill_buffer<cl_int>(_tile_locks,
                                                  1, _framebuffer.size().x/8 * _framebuffer.size().y/8,
@@ -142,35 +151,38 @@ bool Reyes::RendererCL::are_patches_loaded(void* patches_handle)
 }
 
 
-void Reyes::RendererCL::load_patches(void* patches_handle, const vector<BezierPatch>& patch_data)
+void Reyes::RendererCL::load_patches(void* patches_handle, const vector<vec3>& patch_data, PatchType patch_type)
 {
-    _patch_index->load_patches(patches_handle, patch_data);
+    _patch_index->load_patches(patches_handle, patch_data, patch_type);
 }
 
 
 void Reyes::RendererCL::draw_patches(void* patches_handle,
-                                         const mat4& matrix,
-                                         const Projection* projection,
-                                         const vec4& color)
+                                     const mat4& matrix,
+                                     const Projection* projection,
+                                     const vec4& color)
 {
     mat4 proj;
     projection->calc_projection(proj);
 
     _bound_n_split->init(patches_handle, matrix, projection);
+
+    PatchType patch_type = _patch_index->get_patch_type(patches_handle);
     
     while (!_bound_n_split->done()) {
         
         Batch batch = _bound_n_split->do_bound_n_split(_last_batch);
 
-        _last_batch = send_batch(batch, matrix, proj, color, batch.transfer_done | _last_batch);
+        _last_batch = send_batch(batch, matrix, proj, color, patch_type, batch.transfer_done | _last_batch);
     }
 }
 
 
 CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
-                                        const mat4& matrix, const mat4& proj, const vec4& color,
+                                        const mat4& matrix, const mat4& proj, const vec4& color, PatchType patch_type,
                                         const CL::Event& ready)
 {
+    
     // We can't handle more patches on the fly atm
     int patch_count = std::min<int>(reyes_config.reyes_patches_per_pass(), batch.patch_count);
     
@@ -184,14 +196,30 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
     const int group_width = reyes_config.dice_group_width();
 
     // DICE
-    _dice_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
-                           _pos_grid, _pxlpos_grid, _depth_grid,
-                           matrix, proj);    
-    e = _rasterization_queue.enq_kernel(*_dice_kernel,
-                                        ivec3(patch_size + group_width, patch_size + group_width, patch_count),
-                                        ivec3(group_width, group_width, 1),
-                                        "dice", ready);
-
+    switch (patch_type) {
+    case BEZIER:
+        _dice_bezier_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
+                                      _pos_grid, _pxlpos_grid, _depth_grid,
+                                      matrix, proj);
+        
+        e = _rasterization_queue.enq_kernel(*_dice_bezier_kernel,
+                                            ivec3(patch_size + group_width, patch_size + group_width, patch_count),
+                                            ivec3(group_width, group_width, 1),
+                                            "dice", ready);
+        break;
+    case GREGORY:
+        _dice_gregory_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
+                                      _pos_grid, _pxlpos_grid, _depth_grid,
+                                      matrix, proj);
+        
+        e = _rasterization_queue.enq_kernel(*_dice_gregory_kernel,
+                                            ivec3(patch_size + group_width, patch_size + group_width, patch_count),
+                                            ivec3(group_width, group_width, 1),
+                                            "dice", ready);
+        break;
+    }
+    
+    
     // SHADE
     _shade_kernel->set_args(_pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
     e = _rasterization_queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8,8,1),

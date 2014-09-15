@@ -22,6 +22,7 @@
 #include "common.h"
 
 #include "Patch.h"
+#include "Reyes/PatchType.h"
 
 namespace Reyes
 {
@@ -37,10 +38,11 @@ namespace Reyes
     };
 
 
-    struct BezierMesh
+    struct Mesh
     {
         string name;
-        vector<BezierPatch> patches;
+        vector<vec3> patch_data;
+        Reyes::PatchType type;
     };
 
 
@@ -49,7 +51,7 @@ namespace Reyes
         string name;
         mat4 transform;
         vec4 color;
-        shared_ptr<BezierMesh> mesh;
+        shared_ptr<Mesh> mesh;
     };
 
 
@@ -66,7 +68,7 @@ namespace Reyes
         shared_vector<Camera> cameras;
         shared_vector<DirectionalLight> lights;
         shared_vector<Object> objects;
-        shared_vector<BezierMesh> meshes;
+        shared_vector<Mesh> meshes;
 
         size_t active_cam_id;
         

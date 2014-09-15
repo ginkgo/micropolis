@@ -54,18 +54,27 @@ bool Reyes::PatchIndex::are_patches_loaded(void* handle)
 }
 
 
-void Reyes::PatchIndex::load_patches(void* handle, const vector<BezierPatch>& patch_data)
+void Reyes::PatchIndex::load_patches(void* handle, const vector<vec3>& patch_data, Reyes::PatchType patch_type)
 {
     assert(handle != nullptr);
     
     PatchData& record = _index[handle];
 
-    record.patch_count = patch_data.size();
+    switch (patch_type) {
+    case BEZIER:
+        record.patch_count = patch_data.size() / 16;
+        break;
+    case GREGORY:
+        record.patch_count = patch_data.size() / 20;
+        break;
+    }
 
-    size_t data_size = patch_data.size() * sizeof(BezierPatch);
+    record.type = patch_type;
+
+    size_t data_size = patch_data.size() * sizeof(vec3);
     
     if (_retain_vector) {
-        record.patches = patch_data;
+        record.patch_data = patch_data;
     }
 
     if (_load_as_texture) {
@@ -77,10 +86,8 @@ void Reyes::PatchIndex::load_patches(void* handle, const vector<BezierPatch>& pa
         vector<vec4> cp_data;
         cp_data.reserve(record.patch_count * 16);
 
-        for (auto patch : patch_data) {
-            for (int i = 0; i < 16; ++i) {
-                cp_data.push_back(vec4(patch.P[0][i],1));
-            }
+        for (auto element : patch_data) {
+            cp_data.push_back(vec4(element,1));
         }
         
         record.opencl_buffer.reset(new CL::Buffer(*_opencl_device, cp_data.size() * sizeof(vec4), CL_MEM_READ_ONLY, "patch-data"));
@@ -101,11 +108,11 @@ void Reyes::PatchIndex::delete_patches(void* handle)
 }
 
 
-const vector<BezierPatch>& Reyes::PatchIndex::get_patch_vector(void* handle)
+const vector<vec3>& Reyes::PatchIndex::get_patch_vector(void* handle)
 {
     assert(_retain_vector);
         
-    return _index[handle].patches;
+    return _index[handle].patch_data;
 }
 
 
@@ -130,3 +137,10 @@ size_t Reyes::PatchIndex::get_patch_count(void* handle)
 {
     return _index[handle].patch_count;
 }
+
+
+Reyes::PatchType Reyes::PatchIndex::get_patch_type(void* handle)
+{
+    return _index[handle].type;
+}
+

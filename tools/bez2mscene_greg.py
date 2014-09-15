@@ -5,7 +5,7 @@ from mathutils import *
 from optparse import OptionParser
 
 import capnp
-mscene = capnp.load('src/mscene.capnp')
+mscene = capnp.load('src/micropolis/mscene.capnp')
 #import mscene_capnp as mscene
 
 import math
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     lights = scene.init_resizable_list('lights')
     objects = scene.init_resizable_list('objects')
     
-    add_camera(cameras, 'Camera', (25,25,3), (0,0,0), (0,0,1), 0.01, 1000.0, 60.0)
+    add_camera(cameras, 'Camera', (4,4,1), (0,0,0), (0,0,1), 0.01, 1000.0, 60.0)
     add_directional_light(lights, 'Light', Color((1,1,1)), 1.0, (0.1,1,0.1))
     add_bezier_mesh(meshes, 'Mesh', patchdata)
 

@@ -38,8 +38,8 @@ inline int prefix_sum(size_t lid, size_t size, int v, local int* pad)
     return pad[lid];
 }
 
-inline float4 eval_patch(const global float4* patch_buffer,
-                         size_t patch_id, float2 t)
+inline float4 eval_bezier_patch(const global float4* patch_buffer,
+                                size_t patch_id, float2 t)
 {
     float2 s = 1 - t;
     float4 p = (float4)(0,0,0,0);
@@ -67,6 +67,54 @@ inline float4 eval_patch(const global float4* patch_buffer,
     p += v * (3*t.y*s.y*s.y) * patch_buffer[patch_id * 16 +13];
     p += v * (3*t.y*t.y*s.y) * patch_buffer[patch_id * 16 +14];
     p += v * (1*t.y*t.y*t.y) * patch_buffer[patch_id * 16 +15];
+
+    return p;
+}
+
+
+inline float4 eval_gregory_patch(const global float4* patch_buffer,
+                                 size_t patch_id, float2 t)
+{
+    float2 s = 1 - t;
+    float4 p = (float4)(0,0,0,0);
+
+    size_t o = patch_id * 20;
+    const global float4* P = patch_buffer + o;
+    
+    float4 F0,F1,F2,F3;
+    {
+        float u = t.x;
+        float v = t.y;
+
+        F0 = (  u  *P[12]+  v  *P[16])/(  u+v);
+        F1 = ((1-u)*P[17]+  v  *P[13])/(1-u+v);
+        F2 = ((1-u)*P[14]+(1-v)*P[18])/(2-u-v);
+        F3 = (  u  *P[19]+(1-v)*P[15])/(1+u-v);
+    }
+    
+    float v = s.x*s.x*s.x;
+    p += v * (1*s.y*s.y*s.y) * P[ 0];
+    p += v * (3*t.y*s.y*s.y) * P[ 4];
+    p += v * (3*t.y*t.y*s.y) * P[ 9];
+    p += v * (1*t.y*t.y*t.y) * P[ 1];
+    
+    v = 3*s.x*s.x*t.x;
+    p += v * (1*s.y*s.y*s.y) * P[ 8];
+    p += v * (3*t.y*s.y*s.y) * F0;
+    p += v * (3*t.y*t.y*s.y) * F1;
+    p += v * (1*t.y*t.y*t.y) * P[ 5];
+    
+    v = 3*s.x*t.x*t.x;
+    p += v * (1*s.y*s.y*s.y) * P[ 7];
+    p += v * (3*t.y*s.y*s.y) * F3;
+    p += v * (3*t.y*t.y*s.y) * F2;
+    p += v * (1*t.y*t.y*t.y) * P[10];
+    
+    v = t.x*t.x*t.x;
+    p += v * (1*s.y*s.y*s.y) * P[ 3];
+    p += v * (3*t.y*s.y*s.y) * P[11];
+    p += v * (3*t.y*t.y*s.y) * P[ 6];
+    p += v * (1*t.y*t.y*t.y) * P[ 2];
 
     return p;
 }

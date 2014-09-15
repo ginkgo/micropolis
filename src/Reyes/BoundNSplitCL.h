@@ -8,6 +8,7 @@
 #include "GL/VBO.h"
 #include "Patch.h"
 #include "PatchRange.h"
+#include "PatchType.h"
 #include "Projection.h"
 
 namespace Reyes
@@ -17,6 +18,7 @@ namespace Reyes
     struct Batch
     {
         size_t patch_count;
+        PatchType patch_type;
         CL::Buffer& patch_buffer;
         CL::Buffer& patch_ids;
         CL::Buffer& patch_min;

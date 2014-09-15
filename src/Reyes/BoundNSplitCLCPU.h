@@ -26,6 +26,7 @@ namespace Reyes
         mat4 _mv;
         mat4 _mvp;
         const Projection* _projection;
+        PatchType _patch_type;
 
         
     public:
@@ -88,6 +89,9 @@ namespace Reyes
         static void bound_patch_range (const PatchRange& r, const BezierPatch& p,
                                        const mat4& mv, const mat4& mvp,
                                        BBox& box, float& vlen, float& hlen);
+        static void bound_gregory_patch_range (const PatchRange& r, const vec3* p,
+                                               const mat4& mv, const mat4& mvp,
+                                               BBox& box, float& vlen, float& hlen);
 
         
     };
