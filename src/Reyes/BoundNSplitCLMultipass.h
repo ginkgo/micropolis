@@ -20,9 +20,11 @@ namespace Reyes
         CL::CommandQueue& _queue;
         shared_ptr<PatchIndex> _patch_index;
         
-        CL::Program _bound_n_split_program;
+        CL::Program _bound_n_split_program_bezier;
+        CL::Program _bound_n_split_program_gregory;
 
-        shared_ptr<CL::Kernel> _bound_kernel;
+        shared_ptr<CL::Kernel> _bound_kernel_bezier;
+        shared_ptr<CL::Kernel> _bound_kernel_gregory;
         shared_ptr<CL::Kernel> _move_kernel;
         shared_ptr<CL::Kernel> _init_ranges_kernel;
         shared_ptr<CL::Kernel> _init_projection_buffer_kernel;
@@ -30,6 +32,7 @@ namespace Reyes
         void* _active_handle;
         CL::Buffer* _active_patch_buffer;
         mat4 _active_matrix;
+        PatchType _active_patch_type;
         int _stack_height;
         
         CL::Buffer _pid_stack;

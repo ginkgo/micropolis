@@ -3,13 +3,15 @@
 #include "RendererCL.h"
 
 #include "BoundNSplitCLCPU.h"
+#include "BoundNSplitCLLocal.h"
+#include "BoundNSplitCLMultipass.h"
 #include "CL/OpenCL.h"
-#include "Config.h"
 #include "CLConfig.h"
-#include "ReyesConfig.h"
+#include "Config.h"
 #include "Framebuffer.h"
 #include "PatchIndex.h"
 #include "Projection.h"
+#include "ReyesConfig.h"
 #include "Statistics.h"
 
 #define _framebuffer_queue _rasterization_queue
@@ -56,15 +58,15 @@ Reyes::RendererCL::RendererCL()
     case ReyesConfig::CPU:
         _bound_n_split.reset(new BoundNSplitCLCPU(_device, _bound_n_split_queue, _patch_index));
         break;
-    // case ReyesConfig::LOCAL:
-    //     _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
-    //     break;
+    case ReyesConfig::LOCAL:
+        _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
+        break;
     // case ReyesConfig::BREADTHFIRST:
     //     _bound_n_split.reset(new BoundNSplitCLBreadthFirst(_device, _bound_n_split_queue, _patch_index));
     //     break;
-    // case ReyesConfig::MULTIPASS:
-    //     _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
-    //     break;
+    case ReyesConfig::MULTIPASS:
+        _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
+        break;
     }
 
     for (CL::Program* program : {&_reyes_program, &_dice_bezier_program, &_dice_gregory_program}) {

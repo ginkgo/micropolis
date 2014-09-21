@@ -49,20 +49,29 @@ Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
     , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
+
+    for (auto program : {&_bound_n_split_program_bezier, &_bound_n_split_program_gregory}) {
+        program->set_constant("BATCH_SIZE", reyes_config.reyes_patches_per_pass());
+        program->set_constant("BOUND_N_SPLIT_WORK_GROUP_CNT", WORK_GROUP_CNT);
+        program->set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", WORK_GROUP_SIZE);
+        program->set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
+        program->set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
+        program->set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
+    }
+
+
+    _bound_n_split_program_bezier.define("eval_patch", "eval_bezier_patch");
+    _bound_n_split_program_bezier.compile(device, "bound_n_split_local.cl");
     
-    _bound_n_split_program.set_constant("BATCH_SIZE", reyes_config.reyes_patches_per_pass());
-    _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_CNT", WORK_GROUP_CNT);
-    _bound_n_split_program.set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", WORK_GROUP_SIZE);
-    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
-    _bound_n_split_program.set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
-    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
+    _bound_n_split_program_gregory.define("eval_patch", "eval_gregory_patch");
+    _bound_n_split_program_gregory.compile(device, "bound_n_split_local.cl");
     
-    _bound_n_split_program.compile(device, "bound_n_split_local.cl");
+    _bound_n_split_kernel_bezier.reset(_bound_n_split_program_bezier.get_kernel("bound_n_split"));
+    _bound_n_split_kernel_gregory.reset(_bound_n_split_program_gregory.get_kernel("bound_n_split"));
     
-    _bound_n_split_kernel.reset(_bound_n_split_program.get_kernel("bound_n_split"));
-    _init_range_buffers_kernel.reset(_bound_n_split_program.get_kernel("init_range_buffers"));
-    _init_projection_buffer_kernel.reset(_bound_n_split_program.get_kernel("init_projection_buffer"));
-    _init_count_buffers_kernel.reset(_bound_n_split_program.get_kernel("init_count_buffers"));
+    _init_range_buffers_kernel.reset(_bound_n_split_program_bezier.get_kernel("init_range_buffers"));
+    _init_projection_buffer_kernel.reset(_bound_n_split_program_bezier.get_kernel("init_projection_buffer"));
+    _init_count_buffers_kernel.reset(_bound_n_split_program_bezier.get_kernel("init_count_buffers"));
 }
 
 
@@ -71,6 +80,7 @@ void Reyes::BoundNSplitCLLocal::init(void* patches_handle, const mat4& matrix, c
     _active_handle = patches_handle;
     _active_patch_buffer = _patch_index->get_opencl_buffer(patches_handle);
     _active_matrix = matrix;
+    _active_patch_type = _patch_index->get_patch_type(patches_handle);
     
     size_t patch_count = _patch_index->get_patch_count(patches_handle);
 
@@ -89,7 +99,7 @@ void Reyes::BoundNSplitCLLocal::init(void* patches_handle, const mat4& matrix, c
     
     
     {
-        // TODO: Redo this only when projection has changed
+        // TODO: Resend this only when projection has changed
         mat4 proj;
         mat2 screen_matrix;
 
@@ -157,17 +167,33 @@ Reyes::Batch Reyes::BoundNSplitCLLocal::do_bound_n_split(CL::Event& ready)
     size_t patch_count = _patch_index->get_patch_count(_active_handle);
 
     _ready = _queue.enq_fill_buffer(_out_range_cnt_buffer, (cl_int)0, 1, "Clear out_range_cnt", _ready | ready);
-    
-    _bound_n_split_kernel->set_args(*_active_patch_buffer,
-                                    (cl_int)_in_buffer_stride,
-                                    _in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,
-                                    _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _out_range_cnt_buffer,
-                                    _processed_count_buffer,
-                                    _active_matrix, _projection_buffer,
-                                    reyes_config.bound_n_split_limit());
-    _ready = _queue.enq_kernel(*_bound_n_split_kernel,
-                               ivec2(WORK_GROUP_SIZE,  WORK_GROUP_CNT), ivec2(WORK_GROUP_SIZE, 1),
-                               "bound & split", _ready);
+
+    switch(_active_patch_type) {
+    case Reyes::BEZIER:
+        _bound_n_split_kernel_bezier->set_args(*_active_patch_buffer,
+                                               (cl_int)_in_buffer_stride,
+                                               _in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,
+                                               _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _out_range_cnt_buffer,
+                                               _processed_count_buffer,
+                                               _active_matrix, _projection_buffer,
+                                               reyes_config.bound_n_split_limit());
+        _ready = _queue.enq_kernel(*_bound_n_split_kernel_bezier,
+                                   ivec2(WORK_GROUP_SIZE,  WORK_GROUP_CNT), ivec2(WORK_GROUP_SIZE, 1),
+                                   "bound & split", _ready);
+        break;
+    case Reyes::GREGORY:
+        _bound_n_split_kernel_gregory->set_args(*_active_patch_buffer,
+                                                (cl_int)_in_buffer_stride,
+                                                _in_pids_buffer, _in_mins_buffer, _in_maxs_buffer, _in_range_cnt_buffer,
+                                                _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _out_range_cnt_buffer,
+                                                _processed_count_buffer,
+                                                _active_matrix, _projection_buffer,
+                                                reyes_config.bound_n_split_limit());
+        _ready = _queue.enq_kernel(*_bound_n_split_kernel_gregory,
+                                   ivec2(WORK_GROUP_SIZE,  WORK_GROUP_CNT), ivec2(WORK_GROUP_SIZE, 1),
+                                   "bound & split", _ready);
+        break;
+    }
 
     _ready = _queue.enq_read_buffer(_out_range_cnt_buffer, _out_range_cnt_buffer.void_ptr(), _out_range_cnt_buffer.get_size(),
                                     "read range count", _ready);
@@ -190,5 +216,8 @@ Reyes::Batch Reyes::BoundNSplitCLLocal::do_bound_n_split(CL::Event& ready)
         statistics.add_patches(out_range_cnt);
     }
     
-    return {reyes_config.dummy_render() ? 0 : (size_t)out_range_cnt, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
+    return {reyes_config.dummy_render() ? 0 : (size_t)out_range_cnt,
+            _active_patch_type, *_active_patch_buffer,
+            _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer,
+            _ready};
 }

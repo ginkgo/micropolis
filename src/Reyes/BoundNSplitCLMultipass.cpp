@@ -3,6 +3,7 @@
 #include "CL/PrefixSum.h"
 #include "ReyesConfig.h"
 #include "PatchIndex.h"
+#include "PatchType.h"
 #include "Statistics.h"
 
 
@@ -57,16 +58,25 @@ Reyes::BoundNSplitCLMultipass::BoundNSplitCLMultipass(CL::Device& device,
     _patch_index->enable_load_opencl_buffer(device, queue);
 
     
-    _bound_n_split_program.set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
-    _bound_n_split_program.set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
-    _bound_n_split_program.set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
+    _bound_n_split_program_bezier.set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
+    _bound_n_split_program_bezier.set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
+    _bound_n_split_program_bezier.set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
 
-    _bound_n_split_program.compile(device, "bound_n_split_multipass.cl");
+    _bound_n_split_program_bezier.define("eval_patch", "eval_bezier_patch");
+    _bound_n_split_program_bezier.compile(device, "bound_n_split_multipass.cl");
+    
+    _bound_n_split_program_gregory.set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
+    _bound_n_split_program_gregory.set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
+    _bound_n_split_program_gregory.set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
 
-    _bound_kernel.reset(_bound_n_split_program.get_kernel("bound_kernel"));
-    _move_kernel.reset(_bound_n_split_program.get_kernel("move"));
-    _init_ranges_kernel.reset(_bound_n_split_program.get_kernel("init_ranges"));
-    _init_projection_buffer_kernel.reset(_bound_n_split_program.get_kernel("init_projection_buffer"));
+    _bound_n_split_program_gregory.define("eval_patch", "eval_gregory_patch");
+    _bound_n_split_program_gregory.compile(device, "bound_n_split_multipass.cl");
+
+    _bound_kernel_bezier.reset(_bound_n_split_program_bezier.get_kernel("bound_kernel"));
+    _bound_kernel_gregory.reset(_bound_n_split_program_gregory.get_kernel("bound_kernel"));
+    _move_kernel.reset(_bound_n_split_program_bezier.get_kernel("move"));
+    _init_ranges_kernel.reset(_bound_n_split_program_bezier.get_kernel("init_ranges"));
+    _init_projection_buffer_kernel.reset(_bound_n_split_program_bezier.get_kernel("init_projection_buffer"));
 
     _ready = CL::Event();
 
@@ -81,7 +91,8 @@ void Reyes::BoundNSplitCLMultipass::init(void* patches_handle, const mat4& matri
     _active_handle = patches_handle;
     _active_patch_buffer = _patch_index->get_opencl_buffer(patches_handle);
     _active_matrix = matrix;
-
+    _active_patch_type = _patch_index->get_patch_type(patches_handle);
+    
     size_t patch_count = _patch_index->get_patch_count(patches_handle);
 
     size_t stack_size = patch_count + PROCESS_CNT * MAX_SPLIT_DEPTH;
@@ -138,18 +149,30 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     
     int batch_size = std::min((int)_stack_height, (int)BATCH_SIZE);
     
-    //statistics.update_max_patches(_stack_height);
     statistics.update_max_patches(batch_size);
     
     _stack_height -= batch_size;
-    
-    _bound_kernel->set_args(*_active_patch_buffer,
-                            batch_size, _stack_height,
-                            _pid_stack, _depth_stack, _min_stack, _max_stack,
-                            _bound_flags, _split_flags, _draw_flags,
-                            _pid_pad, _depth_pad, _min_pad, _max_pad,
-                            _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
-    _ready = _queue.enq_kernel(*_bound_kernel, round_up_by(batch_size, 64), 64, "bound patches", ready | _ready);
+
+    switch(_active_patch_type) {
+    case Reyes::BEZIER:
+        _bound_kernel_bezier->set_args(*_active_patch_buffer,
+                                       batch_size, _stack_height,
+                                       _pid_stack, _depth_stack, _min_stack, _max_stack,
+                                       _bound_flags, _split_flags, _draw_flags,
+                                       _pid_pad, _depth_pad, _min_pad, _max_pad,
+                                       _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
+        _ready = _queue.enq_kernel(*_bound_kernel_bezier, round_up_by(batch_size, 64), 64, "bound patches", ready | _ready);
+        break;
+    case Reyes::GREGORY:
+        _bound_kernel_gregory->set_args(*_active_patch_buffer, 
+                                        batch_size, _stack_height,
+                                        _pid_stack, _depth_stack, _min_stack, _max_stack,
+                                        _bound_flags, _split_flags, _draw_flags,
+                                        _pid_pad, _depth_pad, _min_pad, _max_pad,
+                                        _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
+        _ready = _queue.enq_kernel(*_bound_kernel_gregory, round_up_by(batch_size, 64), 64, "bound patches", ready | _ready);
+        break;
+    }
 
     prefix_sum_ready = _prefix_sum.apply(batch_size, _queue,
                                          _split_flags, _split_flags, _split_ranges_cnt_buffer,
@@ -178,12 +201,12 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     _queue.enq_unmap_buffer(_out_range_cnt_buffer, "buffer map", CL::Event());
     _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "buffer map", CL::Event());
     
-    //cout << split_count << "split, " << draw_count << "drawn" << endl;
-
-    //statistics.update_max_patches(_stack_height);
     statistics.add_patches(draw_count);
     statistics.inc_pass_count(1);
     _user_event.end();
     
-    return {reyes_config.dummy_render() ? 0 : (size_t)draw_count, *_active_patch_buffer, _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer, _ready};
+    return {reyes_config.dummy_render() ? 0 : (size_t)draw_count,
+            _active_patch_type, *_active_patch_buffer,
+            _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer,
+            _ready};
 }
