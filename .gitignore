@@ -6,6 +6,7 @@ generated/*
 .sconsign.dblite
 reyes.trace
 reyes.statistics
+statistics.dump
 AMDOpenCLDebugAPIUsage.log
 __pycache__
 debug/

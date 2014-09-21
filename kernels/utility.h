@@ -90,6 +90,12 @@ inline float4 eval_gregory_patch(const global float4* patch_buffer,
         F1 = ((1-u)*P[17]+  v  *P[13])/(1-u+v);
         F2 = ((1-u)*P[14]+(1-v)*P[18])/(2-u-v);
         F3 = (  u  *P[19]+(1-v)*P[15])/(1+u-v);
+
+        // Make sure no NaNs from division by zero propagate into final value
+        F0 = select(F0, (float4)(0), isnan(F0));
+        F1 = select(F1, (float4)(0), isnan(F1));
+        F2 = select(F2, (float4)(0), isnan(F2));
+        F3 = select(F3, (float4)(0), isnan(F3));
     }
     
     float v = s.x*s.x*s.x;

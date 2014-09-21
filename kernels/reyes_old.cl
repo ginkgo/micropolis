@@ -136,7 +136,6 @@ __kernel void shade(const global float4* pos_grid,
         atomic_max(&y_max, pmax.y);
     }
 
-
     barrier(CLK_LOCAL_MEM_FENCE);
 
     if (get_local_id(0) == 0 &&  get_local_id(1) == 0) {
@@ -165,13 +164,8 @@ __kernel void shade(const global float4* pos_grid,
     float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
 
     float4 ac = (float4)(0.005,0.005,0.005,1);
-    //float4 dc = (float4)(0.9f, 0.9f, 0.9f, 1);
     float4 dc = diffuse_color;
     float4 sc = (float4)(1, 1, 1, 1);
-
-    //float4 ac = chash(range_id) * 0.02;
-    //dc = 0.8 * dc + 0.2 * chash(range_id);
-    
     
     float3 h = normalize(l+v);
         
@@ -179,7 +173,8 @@ __kernel void shade(const global float4* pos_grid,
 
     float4 c = ac + max(dot(n,l),0.0f) * dc + pow(max(dot(n,h), 0.0f), sh) * sc;
 
-    // c *= (range_id % 4 + 1) / 4.0f;
+    // Uncomment to visualize individual ranges
+    //c *= (range_id % 4 + 1) / 4.0f;
     
     color_grid[calc_color_grid_pos(nu, nv, range_id)] = c;
 

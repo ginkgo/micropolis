@@ -5,7 +5,7 @@ window_size = 800 600
 window_title = MICROPOLIS
 
 // Patch data input file.
-input_file = mscene/teapot.mscene
+input_file = mscene/teapot_greg.mscene
 
 // Clear color for framebuffer.
 clear_color = 0.1 0.2 1 0

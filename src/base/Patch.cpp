@@ -185,6 +185,8 @@ void eval_patch_n(const BezierPatch& patch,
 
 void eval_gregory_patch(const vec3* patchdata, float u, float v, vec3& dst)
 {
+    std::swap(u,v);
+    
     #pragma warning untested code
     const vec3 *p  = patchdata +  0;
     const vec3 *ep = patchdata +  4;
