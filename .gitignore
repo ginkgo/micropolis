@@ -12,3 +12,6 @@ __pycache__
 debug/
 release/
 benchmarks/
+*.blend1
+*.blend2
+*.blend3

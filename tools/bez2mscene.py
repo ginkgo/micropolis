@@ -5,7 +5,7 @@ from mathutils import *
 from optparse import OptionParser
 
 import capnp
-mscene = capnp.load('src/mscene.capnp')
+mscene = capnp.load('src/micropolis/mscene.capnp')
 #import mscene_capnp as mscene
 
 import math
