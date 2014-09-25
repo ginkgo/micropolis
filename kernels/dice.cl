@@ -49,17 +49,21 @@ __kernel void dice (const global float4* patch_buffer,
     float4 pos = mul_m44v4(modelview, eval_patch(patch_buffer, patch_id, uv));
 
     if (DISPLACEMENT) {
-        pos.x += native_sin(pos.y*3*2) * 0.04f;
-        pos.y += native_sin(pos.x*3*2) * 0.04f;
-        pos.z += native_sin(pos.y*3*2) * native_sin(pos.x*3*2) * 0.04f;
-
-        pos.x += native_sin(pos.y*7*2) * 0.02f;
-        pos.y += native_sin(pos.x*7*2) * 0.02f;
-        pos.z += native_sin(pos.y*7*2) * native_sin(pos.x*7*2) * 0.02f;
-
-        pos.x += native_sin(pos.y*13*2) * 0.01f;
-        pos.y += native_sin(pos.x*13*2) * 0.01f;
-        pos.z += native_sin(pos.y*13*2) * native_sin(pos.x*13*2) * 0.01f;
+        const float f1=0.02f;
+        const float f2=0.01f;
+        const float f3=0.005f;
+        
+        pos.x += native_sin(pos.y*5*2) * f1;
+        pos.y += native_sin(pos.x*5*2) * f1;
+        pos.z += native_sin(pos.y*5*2) * native_sin(pos.x*3*2) * f1;
+        
+        pos.x += native_sin(pos.y*7*2) * f2;
+        pos.y += native_sin(pos.x*7*2) * f2;
+        pos.z += native_sin(pos.y*7*2) * native_sin(pos.x*3*2) * f2;
+        
+        pos.x += native_sin(pos.y*11*2) * f3;
+        pos.y += native_sin(pos.x*11*2) * f3;
+        pos.z += native_sin(pos.y*11*2) * native_sin(pos.x*3*2) * f3;
     }
     
     float4 p = mul_m44v4(proj, pos);

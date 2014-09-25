@@ -1,9 +1,6 @@
 
 TODO:
-
-* Implement PASSTHRU B&S method
-* Implement BREADTHFIRST B&S method
-* Debug deadlock/artifact problems in LOCAL B&S kernels
+* Fix tangent bug and cracks for triangles
 * Find clCreateUserEvent leak CodeXL is reporting
 * Implement task donation/stealing on top of Local B&S kernels
 * Rename reyes_patches_per_pass to grids_per_pass or something like that
@@ -13,11 +10,9 @@ TODO:
 * Clean up Projection class
   * Only update when necessary
 * Replace "CL/OpenCL.h" includes with direct includes to necessary classes.
-* Implement Gregory patches (+Blender export script for catmull-clark)
 * Write polygon size estimation shader
 * Implement dynamic-rate dicing
 * Switch readme to markdown/textile or something like that
-* Add SCons build dir and config-option
 * Query ideal work group size and use that for bound_n_split kernels
   * Also pick local stack size (vs. spill region) that way
 
@@ -56,6 +51,11 @@ TODO:
 
 DONE:
 
+* Implement Gregory patches (+Blender export script for catmull-clark)
+* Add SCons build dir and config-option
+* Implement PASSTHRU B&S method
+* Implement BREADTHFIRST B&S method
+* Debug deadlock/artifact problems in LOCAL B&S kernels
 * Split B&S header files
 * React more gracefully on missing input files and mistyped arguments
 * Add save-scene feature to save camera position (and perhaps other stuff)
