@@ -592,6 +592,8 @@ GLFWwindow* init_opengl(ivec2 size)
         cerr << "Failed to create OpenGL window." << endl;
 		return NULL;
 	}
+
+    glfwSetWindowPos(window, 500, 500);
 	
 	glfwMakeContextCurrent(window);
     glfwSwapInterval(0);
