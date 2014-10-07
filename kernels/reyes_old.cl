@@ -163,15 +163,15 @@ __kernel void shade(const global float4* pos_grid,
 
     float3 v = -normalize((pos[0]+pos[1]+pos[2]+pos[3]).xyz);
 
-    float4 ac = (float4)(0.005,0.005,0.005,1);
+    float4 ac = (float4)(0.015,0.015,0.015,1);
     float4 dc = diffuse_color;
-    float4 sc = (float4)(1, 1, 1, 1);
+    float4 sc = (float4)(0,0,0,0);
     
     float3 h = normalize(l+v);
         
     float sh = 60.0f;
 
-    float4 c = ac + max(dot(n,l),0.0f) * dc + pow(max(dot(n,h), 0.0f), sh) * sc;
+    float4 c = ac * dc + max(dot(n,l),0.0f) * dc + pow(max(dot(n,h), 0.0f), sh) * sc;
 
     // Uncomment to visualize individual ranges
     // c *= (range_id % 4 + 1) / 4.0f;
