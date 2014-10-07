@@ -93,8 +93,8 @@ kernel void move(int patch_count,
         pid_stack[pos0] = rpid;
         pid_stack[pos1] = rpid;
 
-        depth_stack[pos0] = rdepth;
-        depth_stack[pos1] = rdepth;
+        depth_stack[pos0] = rdepth+1;
+        depth_stack[pos1] = rdepth+1;
 
         float2 c = (rmin+rmax)*0.5f;
         

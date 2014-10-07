@@ -50,7 +50,9 @@ uchar bound(const global float4* patch_buffer,
     float3 bbox_min = (float3)( INFINITY, INFINITY, INFINITY);
     float3 bbox_max = (float3)(-INFINITY,-INFINITY,-INFINITY);
 
-    uchar mask = (rdepth >= MAX_SPLIT_DEPTH-1) ? 0 : 0xff;
+    if (rdepth >= MAX_SPLIT_DEPTH-1) {
+        return CULL;
+    }
     
     for (size_t u = 0; u < RES; ++u) {
         for (size_t v = 0; v < RES; ++v) {
@@ -70,7 +72,7 @@ uchar bound(const global float4* patch_buffer,
     if (outside_frustum(bbox_min, bbox_max, P)) {
         return CULL;
     } else if (bbox_min.z < 0 && bbox_max.z > 0) {
-        return (((rmax.x - rmin.x) < (rmax.y - rmin.y)) ? VSPLIT : HSPLIT) & mask;
+        return (((rmax.x - rmin.x) < (rmax.y - rmin.y)) ? VSPLIT : HSPLIT);
     } else {
 
         float hlen=0, vlen=0;
@@ -88,7 +90,7 @@ uchar bound(const global float4* patch_buffer,
         if (hlen <= split_limit && vlen <= split_limit) {
             return DRAW;
         } else {
-            return ((hlen > vlen) ? VSPLIT : HSPLIT) & mask;
+            return ((hlen > vlen) ? VSPLIT : HSPLIT);
         }
     }
 

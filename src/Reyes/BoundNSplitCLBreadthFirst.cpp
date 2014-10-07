@@ -37,6 +37,8 @@ void Reyes::BoundNSplitCLBreadthFirst::PatchBuffer::grow_to(size_t new_size)
     if (size >= new_size) return;
 
     size = new_size;
+
+    cerr << "Resizing to " << new_size << "patches" << endl;
     
     pids.resize(size * sizeof(cl_int));
     depths.resize(size * sizeof(cl_uchar));
@@ -61,7 +63,7 @@ void Reyes::BoundNSplitCLBreadthFirst::FlagBuffer::grow_to(size_t new_size)
     if (size >= new_size) return;
 
     size = new_size;
-
+    
     bound_flags.resize(size * sizeof(cl_uchar));
     draw_flags.resize(size * sizeof(cl_int));
     split_flags.resize(size * sizeof(cl_int));

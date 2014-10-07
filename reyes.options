@@ -31,17 +31,17 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = BREADTHFIRST
+bound_n_split_method = MULTIPASS
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
 
 // Maximum number of times a surface patch can be split.
-max_split_depth = 5
+max_split_depth = 25
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 100000
+reyes_patches_per_pass = 50000
 
 // Framebuffer tile size.
 framebuffer_tile_size = 8
@@ -68,4 +68,4 @@ displacement = false
 
 
 
-#hash:-5209818667860355141
+#hash:3241109503666484867
