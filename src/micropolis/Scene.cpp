@@ -106,7 +106,7 @@ Reyes::Scene::Scene (const string& filename) :
     }
 
     for (auto l : scene.getLights()) {
-        assert(l.getType() == ::LightSource::Type::DIRECTIONAL);
+        //assert(l.getType() == ::LightSource::Type::DIRECTIONAL);
             
         DirectionalLight* light =
             new DirectionalLight{l.getName(),
