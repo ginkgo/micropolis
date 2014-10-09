@@ -5,7 +5,7 @@ window_size = 800 600
 window_title = MICROPOLIS
 
 // Patch data input file.
-input_file = testscene/eyesplit.mscene
+input_file = testscene/pillars.mscene
 
 // Clear color for framebuffer.
 clear_color = 0.1 0.2 1 0
@@ -31,13 +31,13 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = MULTIPASS
+bound_n_split_method = LOCAL
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
 
 // Maximum number of times a surface patch can be split.
-max_split_depth = 25
+max_split_depth = 15
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
@@ -68,4 +68,4 @@ displacement = false
 
 
 
-#hash:3241109503666484867
+#hash:-3324361069539815615

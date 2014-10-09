@@ -149,7 +149,7 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     
     int batch_size = std::min((int)_stack_height, (int)BATCH_SIZE);
     
-    statistics.update_max_patches(batch_size);
+    statistics.update_max_patches(_stack_height);
     
     _stack_height -= batch_size;
 
@@ -198,6 +198,8 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
     int split_count = _split_ranges_cnt_buffer.host_ref<int>(); 
     _stack_height += split_count * 2;
 
+    statistics.add_bounds(batch_size);
+    
     _queue.enq_unmap_buffer(_out_range_cnt_buffer, "buffer map", CL::Event());
     _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "buffer map", CL::Event());
     

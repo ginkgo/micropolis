@@ -4,6 +4,7 @@
 import sys
 import signal
 import itertools
+import math
 
 from subprocess import call, DEVNULL, TimeoutExpired
 import numpy as np
@@ -45,6 +46,12 @@ class Benchmark:
         r = list(intspace(start, end, steps))
         self.aoptions.append((option, r))
 
+    def add_int_log_range_options(self, option, start, end, steps, base):
+        sp = math.log(start,base)
+        ep = math.log(end,base)
+
+        self.aoptions.append((option, [int(base**p) for p in linspace(sp,ep,steps)]))
+
         
     def create_datapoint(self, combination, summary):
         d = {}
@@ -61,8 +68,12 @@ class Benchmark:
             print('(%s):' % (', '.join((str(value) for option,value in combination))), end='')
             sys.stdout.flush()
             
-            summaries = self.perform_single_test(combination)
+            success, summaries = self.perform_single_test(combination)
 
+            if not success:
+                print(' FAILED')
+                continue
+                
             for summary in summaries:
                 print(' %.2fms' % summary.duration , end='')
 
@@ -79,31 +90,37 @@ class Benchmark:
         args = cargs + aargs
         
         try:
-            call([self.binary] + args, timeout=self.timeout, stdout=DEVNULL, stderr=DEVNULL)
+            ret = call([self.binary] + args, timeout=self.timeout, stdout=DEVNULL, stderr=DEVNULL)
+
+            if ret != 0:
+                return False, None
         except TimeoutExpired:
-            return []
+            return False, []
         except:
             print ()
             exit(1)
 
+            
         summaries = []
         for i in range(self.repeat):
-            summaries.append(parse_trace_file_and_create_summary(self.trace_file+str(i), self.stat_file+str(1)))
+            summaries.append(parse_trace_file_and_create_summary(self.trace_file+str(i), self.stat_file+str(i)))
 
-        return summaries
+        return True, summaries
 
     def clear_options(self, removed_options):
 
         # print (self.coptions)
-        
-        for option in self.coptions:
-            if option[0] in removed_options:
-                print('removing option %s' % option[0])
-                self.coptions.remove(option)
-        for option in self.aoptions:
-            if option[0] in removed_options:
-                print('removing option %s' % option[0])
-                self.aoptions.remove(option)
+
+        self.coptions = [(o,v) for o,v in self.coptions if o not in removed_options]
+        self.aoptions = [(o,v) for o,v in self.aoptions if o not in removed_options]
+        # for option in self.coptions:
+        #     if option[0] in removed_options:
+        #         print('removing option %s' % option[0])
+        #         self.coptions.remove(option)
+        # for option in self.aoptions:
+        #     if option[0] in removed_options:
+        #         print('removing option %s' % option[0])
+        #         self.aoptions.remove(option)
 
         # print (self.coptions)
 

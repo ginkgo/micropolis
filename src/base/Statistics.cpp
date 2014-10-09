@@ -35,6 +35,7 @@ Statistics::Statistics()
     , opencl_memory(0)
     , opengl_memory(0)
     , max_patches(0)
+    , bounds_per_frame(0)      
 {
     _last_fps_calculation = nanotime();
 }
@@ -46,6 +47,7 @@ void Statistics::start_render()
     _total_bound_n_split = 0;
     _total_dice_n_raster = 0;
     _pass_count = 0;
+    _bound_count = 0;
 }
 
 void Statistics::end_render()
@@ -56,6 +58,7 @@ void Statistics::end_render()
     ms_bound_n_split = _total_bound_n_split * 0.000001f;
     ms_dice_n_raster = _total_dice_n_raster * 0.000001f;
     patches_per_frame = _patches_per_frame;
+    bounds_per_frame = _bound_count;
 }
 
 void Statistics::inc_patch_count()
@@ -66,6 +69,11 @@ void Statistics::inc_patch_count()
 void Statistics::add_patches(size_t patches)
 {
     _patches_per_frame += patches;
+}
+
+void Statistics::add_bounds(size_t bounds)
+{
+    _bound_count += bounds;
 }
 
 void Statistics::inc_pass_count(uint64_t cnt)
@@ -197,6 +205,7 @@ void Statistics::dump_stats()
     fs << "opengl_mem = " << opengl_memory << ";" << endl;
     fs << "max_patches = " << max_patches << ";" << endl;
     fs << "patches_per_frame = " << patches_per_frame << ";" << endl;
+    fs << "processed_patches_per_frame = " << bounds_per_frame << ";" << endl;
     fs << "pass_count = " << _pass_count << ";" << endl;
 
     fs << "bound_n_split_balance = ";

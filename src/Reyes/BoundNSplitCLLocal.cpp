@@ -133,6 +133,23 @@ void Reyes::BoundNSplitCLLocal::init(void* patches_handle, const mat4& matrix, c
 
 bool Reyes::BoundNSplitCLLocal::done()
 {
+    if (_done) {
+
+        CL::Event ready = _queue.enq_read_buffer(_processed_count_buffer,
+                                                 _processed_count_buffer.void_ptr(),
+                                                 _processed_count_buffer.get_size(),
+                                                 "read processed counts", CL::Event());
+        _queue.flush();
+        _queue.wait_for_events(ready);
+
+        cl_int* processed = _processed_count_buffer.host_ptr<cl_int>();
+        statistics.set_bound_n_split_balance(processed, WORK_GROUP_CNT);
+
+        for (size_t i = 0; i < WORK_GROUP_CNT; ++i) {
+            statistics.add_bounds(processed[i]);
+        }
+    }
+    
     return _done;
 }
 
@@ -142,23 +159,26 @@ void Reyes::BoundNSplitCLLocal::finish()
     _queue.wait_for_events(_ready);
     _ready = CL::Event();
 
-    if (reyes_config.debug_work_group_balance()) {
+    // if (reyes_config.debug_work_group_balance()) {
         
-        CL::Event ready = _queue.enq_read_buffer(_processed_count_buffer,
-                                                 _processed_count_buffer.void_ptr(),
-                                                 _processed_count_buffer.get_size(),
-                                                 "read processed counts", CL::Event());
-        _queue.flush();
-        _queue.wait_for_events(ready);
+    //     CL::Event ready = _queue.enq_read_buffer(_processed_count_buffer,
+    //                                              _processed_count_buffer.void_ptr(),
+    //                                              _processed_count_buffer.get_size(),
+    //                                              "read processed counts", CL::Event());
+    //     _queue.flush();
+    //     _queue.wait_for_events(ready);
 
-        cl_int* processed = _processed_count_buffer.host_ptr<cl_int>();
+    //     cl_int* processed = _processed_count_buffer.host_ptr<cl_int>();
+    //     statistics.set_bound_n_split_balance(processed, WORK_GROUP_CNT);
 
-        statistics.set_bound_n_split_balance(processed, WORK_GROUP_CNT);
-        // for (int i = 0; i < WORK_GROUP_CNT; ++i) {
-        //     cout << processed[i] << " ";
-        // }
-        // cout << endl;
-    }
+    //     size_t total_processed = 0;
+
+    //     for (size_t i = 0; i < WORK_GROUP_CNT; ++i) {
+    //         total_processed += processed[i];
+    //     }
+
+    //     statistics.add_bounds(total_processed);
+    // }
 }
 
 
@@ -205,15 +225,17 @@ Reyes::Batch Reyes::BoundNSplitCLLocal::do_bound_n_split(CL::Event& ready)
     _ready = CL::Event();
     _active_handle = nullptr;
 
+    statistics.add_patches(out_range_cnt);
+    
     out_range_cnt = std::min((int)BATCH_SIZE, out_range_cnt);
-
+    
+    
     _iteration_count++;
     
     if (out_range_cnt <= 0 || _iteration_count > MAX_BNS_ITERATIONS) {
         _done = true;
     } else {
         statistics.inc_pass_count(1);
-        statistics.add_patches(out_range_cnt);
     }
     
     return {reyes_config.dummy_render() ? 0 : (size_t)out_range_cnt,

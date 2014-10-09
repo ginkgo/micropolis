@@ -27,6 +27,7 @@ class Statistics
     uint64_t _render_start_time;
     int _frames;
     int _patches_per_frame;
+    size_t   _bound_count;
 
     uint64_t _last_bound_n_split;
     uint64_t _total_bound_n_split;
@@ -47,6 +48,7 @@ class Statistics
     uint64_t opencl_memory;
     uint64_t opengl_memory;
     size_t   max_patches;
+    size_t   bounds_per_frame;
 
     map<string, uint64_t> opencl_memory_by_use;
     
@@ -65,6 +67,8 @@ class Statistics
 
     void inc_patch_count();
     void add_patches(size_t patches);
+    
+    void add_bounds(size_t bounds);
 
     void inc_pass_count(uint64_t cnt);
 

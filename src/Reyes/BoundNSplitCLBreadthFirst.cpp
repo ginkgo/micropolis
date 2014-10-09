@@ -173,8 +173,8 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
 
     statistics.update_max_patches(_patch_count);
     
-    _queue.wait_for_events(_ready);
-    _ready = CL::Event();
+    // _queue.wait_for_events(_ready);
+    // _ready = CL::Event();
 
     // Resize buffers on demand
     _write_buffers->grow_to(_patch_count*2);
@@ -232,6 +232,8 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
     int draw_count = _out_range_cnt_buffer.host_ref<int>();
     int split_count = _split_ranges_cnt_buffer.host_ref<int>(); 
     _patch_count = split_count * 2;
+
+    statistics.add_bounds(_patch_count);
 
     _queue.enq_unmap_buffer(_out_range_cnt_buffer, "buffer map", CL::Event());
     _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "buffer map", CL::Event());
