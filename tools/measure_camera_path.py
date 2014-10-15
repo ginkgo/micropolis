@@ -38,7 +38,7 @@ def latexify_filename(filename):
     
 if __name__=='__main__':
 
-    options, tablefile = parse_args()
+    options, memfile = parse_args()
     binary_name = './micropolis'
 
     benchmark_file = '/tmp/benchmark.trace'
@@ -57,11 +57,15 @@ if __name__=='__main__':
     benchmark.add_option('reyes_patches_per_pass', 20000)
     benchmark.add_option('max_split_depth', 23)
 
-    benchmark.add_option('input_file', 'testscene/zinkia.mscene')
+    benchmark.add_option('input_file', 'testscene/zinkia2.mscene')
     benchmark.add_alternative_options('bound_n_split_method', ['BREADTHFIRST'])
 
-    benchmark.add_option('camera_y_offset', -1)
-    benchmark.add_float_range_options('camera_z_offset', 0, 100, 30)
+    xoff = 0
+    yoff = -2.87
+    
+    benchmark.add_option('camera_x_offset', xoff)
+    benchmark.add_option('camera_y_offset', yoff)
+    benchmark.add_float_range_options('camera_z_offset', -0, -120, 501)
 
     measurements = []
     reduced = []
@@ -69,6 +73,8 @@ if __name__=='__main__':
 
     X = []
     Y = []
+    T = []
+    O = []
     def datapoint_handler(config, summaries):
         global frameid
         durations = sorted([s.duration for s in summaries])
@@ -96,13 +102,13 @@ if __name__=='__main__':
         
         X.append(frameid)
         Y.append(memusage/(1024**2))    
+        O.append((xoff,yoff,config['camera_z_offset']))
+        T.append(duration_ms)
         
         frameid += 1
         
             
     benchmark.datapoint_handler = datapoint_handler
-
-    benchmark.add_option('bound_n_split_method', 'BREADTHFIRST')
 
     benchmark.perform()
 
@@ -112,18 +118,6 @@ if __name__=='__main__':
     
     print (tabulate(measurements, headers=headers))
 
-    
-    dpi = 72 * 1.5
-    w = 800
-    h = 600
-
-    fig = plt.figure(figsize=(w/dpi,h/dpi))
-
-    figure1 = fig.add_subplot(111)
-    ax1 = plt.gca()
-    ax1.set_xlabel('frame number')
-    ax1.set_ylabel('memory usage [MiB]')
-
-    figure1.plot(X,Y,'-');    
-    
-    plt.show()
+    with open(memfile,'wb') as outfile:
+        pickle.dump((X,Y,T,O), outfile)
+        

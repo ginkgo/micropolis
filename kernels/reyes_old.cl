@@ -92,11 +92,15 @@ __kernel void shade(const global float4* pos_grid,
     volatile local int x_max;
     volatile local int y_max;
 
+    local int allnormal;
+    
     if (get_local_id(0) == 0 && get_local_id(1) == 0) {
         x_min = VIEWPORT_MAX.x;
         y_min = VIEWPORT_MAX.y;
         x_max = VIEWPORT_MIN.x;
         y_max = VIEWPORT_MIN.y;
+
+        allnormal = 1;
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -116,12 +120,17 @@ __kernel void shade(const global float4* pos_grid,
     int2 pmin = VIEWPORT_MAX;
     int2 pmax = VIEWPORT_MIN;
 
+    
     for     (int vi = 0; vi < 2; ++vi) {
         for (int ui = 0; ui < 2; ++ui) {
             int i = ui + vi * 2;
             pos[i] = pos_grid[calc_grid_pos(nu+ui, nv+vi, range_id)];
             int2 p  = pxlpos_grid[calc_grid_pos(nu+ui, nv+vi, range_id)];
 
+            if (pos[i].z == 0) {
+                allnormal = 0;
+            }
+            
             pmin = min(pmin, p);
             pmax = max(pmax, p);
 
@@ -144,6 +153,14 @@ __kernel void shade(const global float4* pos_grid,
         x_max = min(VIEWPORT_MAX.x, x_max);
         y_max = min(VIEWPORT_MAX.y, y_max);
 
+        if (!allnormal) {
+            // Set empty s.t. the block will be culled.
+            x_min = 1;
+            y_min = 1;
+            x_max = -1;
+            y_max = -1;
+        }
+        
         int i = calc_block_pos(get_group_id(0), get_group_id(1), get_group_id(2));
         block_index[i] = (int4)(x_min, y_min, x_max, y_max);
     }
