@@ -58,17 +58,21 @@ int main(int argc, char** argv)
     
     ivec2 size = reyes_config.window_size();
 
-	GLFWwindow* window = init_opengl(size);
     
-    if (window == NULL) {
+	GLFWwindow* window = nullptr;
+
+    window = init_opengl(size);
+    
+    if (window == nullptr) {
         return 1;
     }
+        
+    glfwSetWindowTitle(window, reyes_config.window_title().c_str());
     
     cout << endl;
     cout << "MICROPOLIS - A micropolygon rasterizer" << " (c) Thomas Weber 2012" << endl;
     cout << endl;
 
-    glfwSetWindowTitle(window, reyes_config.window_title().c_str());
 
     try {
 
@@ -584,6 +588,10 @@ GLFWwindow* init_opengl(ivec2 size)
 
     int version = FLEXT_MAJOR_VERSION * 10 + FLEXT_MINOR_VERSION;
 
+    if (reyes_config.dummy_render()) {
+        glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+    }
+    
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, gl_config.fsaa_samples());
     glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
