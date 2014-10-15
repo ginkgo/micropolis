@@ -25,6 +25,18 @@
   </enums>
 
   <values>
+
+    <value name="camera_x_offset" type="float" default="0">
+      Local offset of the camera along the X axis.
+    </value>
+
+    <value name="camera_y_offset" type="float" default="0">
+      Local offset of the camera along the Y axis.
+    </value>
+
+    <value name="camera_z_offset" type="float" default="0">
+      Local offset of the camera along the Z axis.
+    </value>
     
     <!-- Debug properties -->      
     <value name="dump_mode" type="bool" default="false">

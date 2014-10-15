@@ -113,6 +113,10 @@ void mainloop(GLFWwindow* window)
 
     Keyboard keys(window);
 
+    // Apply configured camera offset
+    scene.active_cam().transform = scene.active_cam().transform
+        * glm::translate<float>(config.camera_x_offset(), config.camera_y_offset(), config.camera_z_offset());
+    
     // for (auto N : {1,2, 20, 100,
     //             128, 200, 512, 800, 1000,
     //             1024, 2048, 4096, 5000,

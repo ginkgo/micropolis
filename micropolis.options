@@ -1,3 +1,12 @@
+// Local offset of the camera along the X axis.
+camera_x_offset = 0
+
+// Local offset of the camera along the Y axis.
+camera_y_offset = 0
+
+// Local offset of the camera along the Z axis.
+camera_z_offset = 0
+
 // Enables dump mode.
 // The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
 dump_mode = false
@@ -18,4 +27,4 @@ statistics_file = statistics.dump
 
 
 
-#hash:-6300018199660965656
+#hash:-217745854660895378
