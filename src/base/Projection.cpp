@@ -36,12 +36,12 @@ Reyes::Projection::Projection(float fovy, float hither, ivec2 viewport):
 
 void Reyes::Projection::calc_projection(mat4& proj) const
 {
-    proj = glm::perspective<float>(_fovy, _aspect, _near, 1000);
+    proj = glm::perspective<float>(_fovy, _aspect, _near, 10000);
 }
 
 void Reyes::Projection::calc_projection_with_aspect_correction(mat4& proj) const
 {
-    proj = glm::perspective<float>(_fovy, 1, _near, 1000);
+    proj = glm::perspective<float>(_fovy, 1, _near, 10000);
 }
 
 void Reyes::Projection::calc_screen_matrix(mat2& screen_matrix) const

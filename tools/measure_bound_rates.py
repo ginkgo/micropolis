@@ -35,12 +35,13 @@ def main():
     benchmark.add_option('max_split_depth', 23)
 
     
-    benchmark.add_alternative_options('input_file', ['mscene/teapot.mscene',
-                                                     'mscene/hair.mscene',
+    benchmark.add_alternative_options('input_file', [#'mscene/teapot.mscene',
                                                      'testscene/pillars.mscene',
+                                                     'testscene/columns.mscene',
+                                                     'testscene/zinkia.mscene',
+                                                     'mscene/hair.mscene',
                                                      #'testscene/depth_complexity.mscene',
-                                                     #'testscene/eyesplit.mscene',
-                                                     #'testscene/pillars.mscene',
+                                                     #'testscene/eye_split.mscene',
                                                      ])
     
     benchmark.add_alternative_options('bound_n_split_method', [ 'MULTIPASS'])
@@ -71,14 +72,8 @@ def main():
             
     benchmark.datapoint_handler = datapoint_handler
 
-    benchmark.add_option('bound_n_split_method', 'BREADTHFIRST')
-
     benchmark.perform()
 
-    benchmark.clear_options(['reyes_patches_per_pass', 'bound_n_split_method'])
-    benchmark.add_alternative_options('bound_n_split_method', ['BREADTHFIRST'])
-    benchmark.add_alternative_options('reyes_patches_per_pass', [100000])
-    benchmark.perform()
     
     print (tabulate(measurements, headers=['method', 'scene', 'batch size', 'time[ms]', 'mem usage[MiB]', 'max patches', 'bound patches', 'bound rate[M#/s]']))
 

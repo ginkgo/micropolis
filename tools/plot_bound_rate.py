@@ -9,22 +9,28 @@ import re
 import matplotlib.pyplot as plt
 
 def parse_args():
-    parser = OptionParser(usage='Usage: %prog <benchfile>')
+    parser = OptionParser(usage='Usage: %prog <benchfile> <outpdf>')
     options, args = parser.parse_args()
 
-    if len(args) != 1:
+    if len(args) != 2:
         parser.print_help()
         exit(1)
 
-    return options, args[0]
+    return options, args[0], args[1]
 
 def find_ranges(measurements):
-    ranges = defaultdict(list)
+    ranges = {}
+    scenes = []
 
     for m in measurements:
-        ranges[m[1]].append(m)
+        s = (m[0], m[1])
+        if s not in ranges:
+            ranges[s] = []
+            scenes.append(s)
+            
+        ranges[s].append(m)
         
-    return dict(ranges)
+    return [ranges[s] for s in scenes]
 
 def latexify_name(name):
     name = name.lower()
@@ -62,7 +68,7 @@ def plot_bound_rate(ms, figure):
 
 def main():
     
-    options, benchfile = parse_args()
+    options, benchfile, outpdf = parse_args()
 
     with open(benchfile, 'rb') as infile:
         measurements = pickle.load(infile)
@@ -92,7 +98,7 @@ def main():
     H=[]
     L=[]
     
-    for scene,ms in find_ranges(measurements).items():
+    for ms in find_ranges(measurements):
         bi,ba, mi,ma, h,l = plot_bound_rate(ms, figure1)
 
         H.append(h)
@@ -106,10 +112,12 @@ def main():
     ax2.set_xlim(xmin=bmin, xmax=bmax)
     ax2.set_xlabel('batch size')
 
-    figure1.legend(loc='upper left')
+    figure1.legend(loc='upper left', prop={'size':10})
     
     plt.tight_layout()
-    plt.show()
+    #plt.show()
+
+    plt.savefig(outpdf)
 
 if __name__ == '__main__':
     main()    

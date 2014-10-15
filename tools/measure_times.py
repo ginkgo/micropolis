@@ -3,7 +3,7 @@
 from benchmark import *
 
 def parse_args():
-    parser = OptionParser(usage='Usage: %prog <csvfile>')
+    parser = OptionParser(usage='Usage: %prog <tablefile>')
     options, args = parser.parse_args()
 
     if len(args) < 1:
@@ -15,10 +15,28 @@ def parse_args():
 
     return options, args[0]
 
+file_regex = re.compile(r'[\w/]+/(\w+)\.mscene')
+def extract_scenename(filename):
+    name = file_regex.match(filename).group(1).lower()
 
+    r = ''
+    for c in name.split('_'):
+        r += c[0].upper() + c[1:]
+        
+    return r
+    
+def latexify_filename(filename):
+    name = file_regex.match(filename).group(1).lower()
+    
+    r = ''
+    for c in name.split('_'):
+        r += c[0].upper() + c[1:]
+
+    return r'\textsc{%s}' % r
+    
 if __name__=='__main__':
 
-    options, csv_name = parse_args()
+    options, tablefile = parse_args()
     binary_name = './micropolis'
 
     benchmark_file = '/tmp/benchmark.trace'
@@ -31,7 +49,7 @@ if __name__=='__main__':
     benchmark.add_option('trace_file', benchmark_file)
     benchmark.add_option('statistics_file', stat_file)
     
-    benchmark.add_option('window_size', '1600 1200')
+    benchmark.add_option('window_size', '1280 720')
     benchmark.add_option('bound_n_split_limit', 8)
     benchmark.add_option('dummy_render', 'true')
     benchmark.add_option('reyes_patches_per_pass', 20000)
@@ -39,18 +57,21 @@ if __name__=='__main__':
 
     benchmark.add_alternative_options('input_file', ['mscene/teapot.mscene',
                                                      'testscene/tree.mscene',
-                                                     'testscene/depth_complexity.mscene',
-                                                     'testscene/eyesplit.mscene',
-                                                     'testscene/pillars.mscene',
+                                                     #'testscene/pillars.mscene',
+                                                     'testscene/zinkia.mscene',
+                                                     'testscene/columns.mscene',
                                                      'mscene/hair.mscene',
+                                                     #'testscene/depth_complexity.mscene',
+                                                     #'testscene/eye_split.mscene',
                                                      ])
-    benchmark.add_alternative_options('bound_n_split_method', [ 'BREADTHFIRST', 'MULTIPASS', 'LOCAL'])
+    benchmark.add_alternative_options('bound_n_split_method', [ 'BREADTHFIRST', 'MULTIPASS'])
 
 
     measurements = []
+    reduced = []
     def datapoint_handler(config, summaries):
         durations = sorted([s.duration for s in summaries])
-        #durations = durations[3:][:-3] 
+        durations = durations[1:][:-1] 
         duration_ms = np.average(durations)
         
         memusage = np.average([s.statistics['opencl_mem@bound&split'] for s in summaries])
@@ -59,9 +80,13 @@ if __name__=='__main__':
         
         processed_count = stats['processed_patches_per_frame']
         processing_rate = 1000*processed_count/duration_ms
+
+        method_lut = {'BREADTHFIRST':'\\textsc{Breadth}',
+                      'MULTIPASS':'\\textsc{Bounded}',
+                      'LOCAL':'\\textsc{Local}'}
         
         measurements.append((config['bound_n_split_method'],
-                             config['input_file'],
+                             extract_scenename(config['input_file']),
                              duration_ms,
                              memusage/(1024**2),
                              stats['max_patches'],
@@ -69,11 +94,30 @@ if __name__=='__main__':
                              processed_count,
                              processing_rate/1000000))
         
+        reduced.append((latexify_filename(config['input_file']),
+                        method_lut[config['bound_n_split_method']],
+                        duration_ms,
+                        memusage/(1024**2),
+                        stats['max_patches'],
+                        processed_count,
+                        processing_rate/1000000))
+        
             
     benchmark.datapoint_handler = datapoint_handler
 
     benchmark.add_option('bound_n_split_method', 'BREADTHFIRST')
 
     benchmark.perform()
+
+    headers = ['method', 'scene', 'time[ms]',
+               'mem usage[MiB]', 'max patches',
+               'output patches', 'bound patches', 'bound rate[M#/s]']
     
-    print (tabulate(measurements, headers=['method', 'scene', 'time[ms]', 'mem usage[MiB]', 'max patches', 'output patches', 'bound patches', 'bound rate[M#/s]']))
+    print (tabulate(measurements, headers=headers))
+
+    reduced_headers = ['scene', 'method', 'time[ms]',
+                       'used memory[MiB]', 'max patches',
+                       'processed patches', 'processing rate[M\\#/s]']
+        
+    with open(tablefile, 'w') as outfile:
+        outfile.write(tabulate(reduced, headers=reduced_headers, tablefmt='latex', floatfmt='.2f'))

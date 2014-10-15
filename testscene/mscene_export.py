@@ -9,17 +9,25 @@ from mathutils import *
 import capnp
 mscene = capnp.load('src/micropolis/mscene.capnp')
 
+
+
 def vsum(vs):
     s = Vector([0,0,0])
     for v in vs:
         s += v
     return s
 
+
+
 def face_center(f):
     return vsum((v.co for v in f.verts)) / len(f.verts)
 
+
+
 def edge_center(e):
     return (e.verts[0].co + e.verts[1].co)/2
+
+
 
 def edge_between(v1,v2):
     for e in v1.link_edges:
@@ -28,8 +36,12 @@ def edge_between(v1,v2):
     
     return None
 
-def other_face(e,f):
-    return [x for x in e.link_faces if x != f][0]
+
+
+# def other_face(e,f):
+#     return [x for x in e.link_faces if x != f][0]
+
+
 
 def rotate_next(w):
     v,e,f = w
@@ -48,9 +60,11 @@ def rotate_next(w):
     except:
         return None
 
+    
+
 def rotate_prev(w):
     v,e,f = w
-
+    
     if f == None: return None
 
     try:
@@ -67,24 +81,28 @@ def rotate_prev(w):
     except:
         return None
 
+
+
 def has_next(w):
     return w and rotate_next(w) != None
 
-def has_prev(w):
-    return w and rotate_prev(w) != None
 
 
-def rewind(w):
-    _,e,_ = w
+# def has_prev(w):
+#     return w and rotate_prev(w) != None
 
-    ww = w
-    w = rotate_prev(w)
+
+# def rewind(w):
+#     _,e,_ = w
+
+#     ww = w
+#     w = rotate_prev(w)
     
-    while w and has_prev(w) and w[0] != e:
-        ww = w
-        w = rotate_prev(w)
+#     while w and has_prev(w) and w[0] != e:
+#         ww = w
+#         w = rotate_prev(w)
 
-    return ww
+#     return ww
 
 
 def neighborhood(f,v,c):
@@ -115,6 +133,8 @@ def neighborhood(f,v,c):
     #if w and w[2]: F.append(w[2])
         
     return F,E,[i-vc for i in range(len(E))]
+
+
 
 def calc_r(f,v,c):
     w = (c, edge_between(v,c), f)
@@ -151,10 +171,9 @@ def set_quat(quat, q):
     quat.k = q.z
 
         
-        
 def make_patch(f):
     if len(f.verts) != 4: return []
-    
+
     p = []
     
     for v in f.verts:
@@ -205,16 +224,19 @@ def make_patch(f):
     
     for i in range(4):
         j = (i+1)%4
-        d = 4 # We always handle quads
+        d = 3 # We always handle quads
 
-        c0 = cos(2*pi/len(f.verts[i].link_edges))
-        c1 = cos(2*pi/len(f.verts[j].link_edges))
+        c0 = cos(2*pi/(len(f.verts[i].link_faces)+0))
+        c1 = cos(2*pi/(len(f.verts[j].link_faces)+0))
 
         r0 = calc_r(f,f.verts[j],f.verts[i])
         r1 = calc_r(f,f.verts[i],f.verts[j])
+
+        #r0,r1 = Vector(),Vector()
         
         fp[i] = 1/d*(c1*p[i] + (d-2*c0-c1)*ep[i] + 2*c0*em[j] + r0)
         fm[j] = 1/d*(c0*p[j] + (d-2*c1-c0)*em[j] + 2*c1*ep[i] + r1)
+
         #fm[i] = fp[i]
         
     return p + ep + em + fp + fm
@@ -235,7 +257,7 @@ def add_camera(cameras, c):
     set_transform(camera.transform, c.matrix_world)
     camera.near = c.data.clip_start
     camera.far = c.data.clip_end
-    camera.fovy = rad(c.data.angle)
+    camera.fovy = rad(c.data.angle_y)
 
 def add_light(lights, l):
     light = lights.add()
@@ -258,65 +280,72 @@ def add_object(objects, o):
     else:
         set_color(obj.color, Color([1,1,1]))
 
-def find_edges(v,f):
-    l = [j for j in f.loops if j.vert == v][0]
+# def find_edges(v,f):
+#     l = [j for j in f.loops if j.vert == v][0]
 
-    return l.link_loop_prev.edge, l.edge
+#     return l.link_loop_prev.edge, l.edge
 
-def edge_point_pos(e):
-    return vsum([v.co for v in e.verts])*1/4+vsum([face_center(g) for g in e.link_faces])*1/4
+# def edge_point_pos(e):
+#     return vsum([v.co for v in e.verts])*1/4+vsum([face_center(g) for g in e.link_faces])*1/4
 
-def local_subdivide(f):
-    bm = bmesh.new()
+# def local_subdivide(f):
+#     bm = bmesh.new()
 
-    c = bm.verts.new(face_center(f))
-    e = [bm.verts.new(edge_point_pos(e)) for e in f.edges]
+#     c = bm.verts.new(face_center(f))
+#     e = [bm.verts.new(edge_point_pos(e)) for e in f.edges]
     
-    ed = dict([(f.edges[i], e[i]) for i in range(3)])
-    v = []
+#     ed = dict([(f.edges[i], e[i]) for i in range(3)])
+#     v = []
 
-    for x in f.verts:
-        for ex in x.link_edges:
-            if ex not in ed:
-                ed[ex] = bm.verts.new(edge_point_pos(ex))
+#     for x in f.verts:
+#         for ex in x.link_edges:
+#             if ex not in ed:
+#                 ed[ex] = bm.verts.new(edge_point_pos(ex))
                 
-        n = len(x.link_edges)
+#         n = len(x.link_edges)
 
-        co = vsum([face_center(f) for f in x.link_faces])/(n*n) + 2*vsum([ed[e].co for e in x.link_edges])/(n*n) + (n-3)*x.co/n
-        #co = vsum([face_center(f) for f in x.link_faces])/(n*n) + vsum([ed[e].co for e in x.link_edges])/(n*n) + (n-2)*x.co/n
-        v.append(bm.verts.new(co))
+#         co = vsum([face_center(f) for f in x.link_faces])/(n*n) + 2*vsum([ed[e].co for e in x.link_edges])/(n*n) + (n-3)*x.co/n
+#         #co = vsum([face_center(f) for f in x.link_faces])/(n*n) + vsum([ed[e].co for e in x.link_edges])/(n*n) + (n-2)*x.co/n
+#         v.append(bm.verts.new(co))
 
-    faces = []
+#     faces = []
 
 
-    for i in range(3):
-        j = (i+2)%3
+#     for i in range(3):
+#         j = (i+2)%3
 
-        faces.append(bm.faces.new([v[i],e[i],c,e[j]]))
+#         faces.append(bm.faces.new([v[i],e[i],c,e[j]]))
 
-    fd = {f:c}
+#     fd = {f:c}
 
-    # for f in [other_face(e) for e in f.edges]:
-    #     f.append(bm.verts.new(face_center(f)))
-    #     fd[f] = f[-1]
+#     # for f in [other_face(e) for e in f.edges]:
+#     #     f.append(bm.verts.new(face_center(f)))
+#     #     fd[f] = f[-1]
         
 
-    for bv,x in zip(v,f.verts):
-        for g in x.link_faces:
-            if g == f:
-                continue
-            if g not in fd:
-                fd[g] = bm.verts.new(face_center(g))
+#     for bv,x in zip(v,f.verts):
+#         for g in x.link_faces:
+#             if g == f:
+#                 continue
+#             if g not in fd:
+#                 fd[g] = bm.verts.new(face_center(g))
 
-            bg = fd[g]
+#             bg = fd[g]
 
-            er,el = find_edges(x,g)
-            be1,be2 = ed[el],ed[er]
+#             er,el = find_edges(x,g)
+#             be1,be2 = ed[el],ed[er]
             
-            bm.faces.new([bv,be1,bg,be2])
+#             bm.faces.new([bv,be1,bg,be2])
     
-    return bm, faces
-        
+#     return bm, faces
+
+def is_border_face(f):
+    for v in f.verts:
+        if any([len(e.link_faces)!=2 for e in v.link_edges]):
+            return True
+
+    return False;
+
 def add_mesh(meshes, m):
     mesh = meshes.add()
 
@@ -331,11 +360,11 @@ def add_mesh(meshes, m):
     for f in bm.faces:
         fs = [f]
         
-        if any([len(e.link_faces)!=2 for e in f.edges]):
+        if is_border_face(f):
             continue
         if len(f.loops) != 4:
-            #continue # Throw away
-            _,fs = local_subdivide(f)
+            continue # Throw away
+            #_,fs = local_subdivide(f)
 
         for g in fs:
             P = make_patch(g)

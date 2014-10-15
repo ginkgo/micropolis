@@ -115,16 +115,21 @@ Reyes::RendererCL::~RendererCL()
 void Reyes::RendererCL::prepare()
 {
     _frame_event.begin(CL::Event());
+
+    if (!reyes_config.dummy_render()) {
+        CL::Event e = _framebuffer.acquire(_framebuffer_queue, CL::Event());
+        e = _framebuffer.clear(_framebuffer_queue, e);
+        
+        _framebuffer_cleared =
+            _framebuffer_queue.enq_fill_buffer<cl_int>(_depth_buffer,
+                                                       0x7fffffff, _framebuffer.size().x * _framebuffer.size().y,
+                                                       "clear depthbuffer", e);
+        
+        _framebuffer_queue.flush();
+    } else {
+        _framebuffer_cleared = CL::Event();
+    }
     
-    CL::Event e = _framebuffer.acquire(_framebuffer_queue, CL::Event());
-    e = _framebuffer.clear(_framebuffer_queue, e);
-
-    _framebuffer_cleared =
-        _framebuffer_queue.enq_fill_buffer<cl_int>(_depth_buffer,
-                                                   0x7fffffff, _framebuffer.size().x * _framebuffer.size().y,
-                                                   "clear depthbuffer", e);
-
-    _framebuffer_queue.flush();
     statistics.start_render();
 
 }
@@ -133,10 +138,12 @@ void Reyes::RendererCL::prepare()
 void Reyes::RendererCL::finish()
 {
     _bound_n_split->finish();
-    
-    _framebuffer.release(_framebuffer_queue, _last_batch);
-    _framebuffer.show();
 
+    if (!reyes_config.dummy_render()) {
+        _framebuffer.release(_framebuffer_queue, _last_batch);
+        _framebuffer.show();
+    }
+    
     _frame_event.end();
     _device.release_events();
     
@@ -176,7 +183,12 @@ void Reyes::RendererCL::draw_patches(void* patches_handle,
         
         Batch batch = _bound_n_split->do_bound_n_split(_last_batch);
 
-        _last_batch = send_batch(batch, matrix, proj, color, patch_type, batch.transfer_done | _last_batch);
+
+        if (!reyes_config.dummy_render()) {
+            _last_batch = send_batch(batch, matrix, proj, color, patch_type, batch.transfer_done | _last_batch);
+        } else {
+            _last_batch = batch.transfer_done;
+        }
     }
 }
 

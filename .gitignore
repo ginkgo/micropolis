@@ -1,3 +1,4 @@
+testscene/zinkia*
 screenshot*
 traces/*.pdf
 *.o
@@ -15,3 +16,4 @@ benchmarks/
 *.blend1
 *.blend2
 *.blend3
+measurements/

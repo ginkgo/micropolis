@@ -154,7 +154,7 @@ void mainloop(GLFWwindow* window)
         // Camera navigation
         vec3 translation((glfwGetKey(window, 'A') ? -1 : 0) + (glfwGetKey(window, 'D') ? 1 : 0), 0,
                          (glfwGetKey(window, 'W') ? -1 : 0) + (glfwGetKey(window, 'S') ? 1 : 0));
-        translation *= time_diff * 2;
+        translation *= time_diff * 8;
 
         glm::dvec2 cursor_pos;
         glfwGetCursorPos(window, &(cursor_pos.x), &(cursor_pos.y));

@@ -91,7 +91,11 @@ Reyes::Scene::Scene (const string& filename) :
 {
     int fd = open(filename.c_str(), O_RDONLY);
 
-    capnp::PackedFdMessageReader message(fd);
+    capnp::ReaderOptions reader_options;
+    reader_options.traversalLimitInWords = 256LL*1024LL*1024LL;
+    reader_options.nestingLimit =  64;
+    
+    capnp::PackedFdMessageReader message(fd, reader_options);
 
     ::Scene::Reader scene = message.getRoot<::Scene>();
 
@@ -159,6 +163,10 @@ Reyes::Scene::Scene (const string& filename) :
     }
 
     close(fd);
+
+    if (config.verbosity_level() > 0) {
+        cout << "Scene \"" << filename << "\" contains " << total_patch_count() << " patches." << endl;
+    }
 }
 
 Reyes::Scene::~Scene()
@@ -280,4 +288,25 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
 
     close(fd);
 
+}
+
+
+size_t Reyes::Scene::total_patch_count() const
+{
+    size_t count = 0;
+    
+    for (auto object : objects) {
+        auto mesh = object->mesh;
+
+        switch(mesh->type) {
+        case BEZIER:
+            count += mesh->patch_data.size() / 16;
+            break;
+        case GREGORY:
+            count += mesh->patch_data.size() / 20;
+            break;
+        }   
+    }
+    
+    return count;
 }

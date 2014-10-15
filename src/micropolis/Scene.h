@@ -83,6 +83,8 @@ namespace Reyes
         void draw(Renderer& renderer) const;
 
         void save(const string& filename, bool overwrite=false) const;
+
+        size_t total_patch_count() const;
         
     };
 }

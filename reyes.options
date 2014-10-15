@@ -1,14 +1,14 @@
 // Size of the window in pixels.
-window_size = 800 600
+window_size = 1280 720
 
 // Application window title.
 window_title = MICROPOLIS
 
 // Patch data input file.
-input_file = testscene/pillars.mscene
+input_file = testscene/zinkia2.mscene
 
 // Clear color for framebuffer.
-clear_color = 0.1 0.2 1 0
+clear_color = 0 0 1 0
 
 // Size used for bounding and dicing.
 reyes_patch_size = 8
@@ -31,17 +31,17 @@ shading_mode = FLAT
 backface_culling = true
 
 // Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = LOCAL
+bound_n_split_method = MULTIPASS
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
 
 // Maximum number of times a surface patch can be split.
-max_split_depth = 15
+max_split_depth = 23
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 50000
+reyes_patches_per_pass = 100000
 
 // Framebuffer tile size.
 framebuffer_tile_size = 8
@@ -68,4 +68,4 @@ displacement = false
 
 
 
-#hash:-3324361069539815615
+#hash:2508970275935060189

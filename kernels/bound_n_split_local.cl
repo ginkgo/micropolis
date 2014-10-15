@@ -16,7 +16,7 @@ kernel __attribute__((reqd_work_group_size(BOUND_N_SPLIT_WORK_GROUP_SIZE, 1, 1))
 void bound_n_split(const global float4* patch_buffer,
 
                    int in_buffer_stride,
-                   global int* in_pids,
+                   global uint* in_pids,
                    global float2* in_mins,
                    global float2* in_maxs,
                    volatile global int* in_range_cnt,
@@ -100,8 +100,12 @@ void bound_n_split(const global float4* patch_buffer,
 
         if (lid < cnt) {
             size_t pos = wid * in_buffer_stride + start + lid;
-            rpid   = in_pids[pos];
-            rdepth = 0;
+            // in_pids packs the depth into the 8 most significant bits
+
+            uint x = in_pids[pos];
+            
+            rpid   = x & 0xffffff;
+            rdepth = x >> 24;
             rmin   = in_mins[pos];
             rmax   = in_maxs[pos];
             occupied = 1;
@@ -200,13 +204,18 @@ void bound_n_split(const global float4* patch_buffer,
             int wi = 0;
             for (wi = 0; wi+BOUND_N_SPLIT_WORK_GROUP_SIZE < stack_height; wi += BOUND_N_SPLIT_WORK_GROUP_SIZE) {
                 size_t pos = lid + wi + offset + wid * in_buffer_stride;
-                in_pids[pos] = pid_stack[lid + wi];
+                // pack stack depth back into pid value
+                uint x = pid_stack[lid+wi] | (depth_stack[lid+wi]<<24);
+                in_pids[pos] = x;
                 in_mins[pos] = min_stack[lid + wi];
                 in_maxs[pos] = max_stack[lid + wi];
             }
             if (lid + wi < stack_height) {
                 size_t pos = lid + wi + offset + wid * in_buffer_stride;
-                in_pids[pos] = pid_stack[lid + wi];
+
+                // pack stack depth back into pid value
+                uint x = pid_stack[lid+wi] | (depth_stack[lid+wi]<<24);
+                in_pids[pos] = x;
                 in_mins[pos] = min_stack[lid + wi];
                 in_maxs[pos] = max_stack[lid + wi];
             }
@@ -215,7 +224,9 @@ void bound_n_split(const global float4* patch_buffer,
             if ((bound_flags & 1) != 0 && start + sum >= BATCH_SIZE) {
                 size_t pos = sum - max(0,(int)BATCH_SIZE - start) + stack_height + offset + wid * in_buffer_stride;
 
-                in_pids[pos] = rpid;
+                // pack stack depth back into pid value
+                uint x = rpid | (rdepth<<24);
+                in_pids[pos] = x;
                 in_mins[pos] = rmin;
                 in_maxs[pos] = rmax;                
             }
@@ -233,7 +244,7 @@ void bound_n_split(const global float4* patch_buffer,
                   
 
 kernel __attribute__((reqd_work_group_size(BOUND_N_SPLIT_WORK_GROUP_SIZE, 1,1)))
-void init_range_buffers(global int* pids,
+void init_range_buffers(global uint* pids,
                         global float2* mins,
                         global float2* maxs,
                         int patch_count,
