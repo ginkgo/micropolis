@@ -52,17 +52,17 @@ if __name__=='__main__':
     benchmark.add_option('window_size', '1280 720')
     benchmark.add_option('bound_n_split_limit', 8)
     benchmark.add_option('dummy_render', 'true')
-    benchmark.add_option('reyes_patches_per_pass', 20000)
+    benchmark.add_option('reyes_patches_per_pass', 30000)
     benchmark.add_option('max_split_depth', 23)
 
     benchmark.add_alternative_options('input_file', ['mscene/teapot.mscene',
-                                                     'testscene/tree.mscene',
+                                                     'mscene/hair.mscene',
+                                                     'testscene/columns.mscene',
+                                                     #'testscene/tree.mscene',
                                                      #'testscene/pillars.mscene',
                                                      'testscene/zinkia.mscene',
-                                                     'testscene/columns.mscene',
-                                                     'mscene/hair.mscene',
-                                                     #'testscene/depth_complexity.mscene',
-                                                     #'testscene/eye_split.mscene',
+                                                     'testscene/depth_complexity.mscene',
+                                                     'testscene/eye_split.mscene',
                                                      ])
     benchmark.add_alternative_options('bound_n_split_method', [ 'BREADTHFIRST', 'MULTIPASS'])
 

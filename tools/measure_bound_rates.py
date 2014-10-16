@@ -35,17 +35,18 @@ def main():
     benchmark.add_option('max_split_depth', 23)
 
     
-    benchmark.add_alternative_options('input_file', [#'mscene/teapot.mscene',
-                                                     'testscene/pillars.mscene',
-                                                     'testscene/columns.mscene',
-                                                     'testscene/zinkia.mscene',
+    benchmark.add_alternative_options('input_file', ['mscene/teapot.mscene',
                                                      'mscene/hair.mscene',
-                                                     #'testscene/depth_complexity.mscene',
-                                                     #'testscene/eye_split.mscene',
+                                                     'testscene/columns.mscene',
+                                                     #'testscene/tree.mscene',
+                                                     #'testscene/pillars.mscene',
+                                                     'testscene/zinkia.mscene',
+                                                     'testscene/depth_complexity.mscene',
+                                                     'testscene/eye_split.mscene',
                                                      ])
     
     benchmark.add_alternative_options('bound_n_split_method', [ 'MULTIPASS'])
-    benchmark.add_int_log_range_options('reyes_patches_per_pass', 5000, 500000, 10, 2)
+    benchmark.add_int_log_range_options('reyes_patches_per_pass', 5000, 500000, 100, 2)
 
     measurements = []
     def datapoint_handler(config, summaries):
