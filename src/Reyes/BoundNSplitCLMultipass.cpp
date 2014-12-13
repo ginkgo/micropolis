@@ -95,7 +95,7 @@ void Reyes::BoundNSplitCLMultipass::init(void* patches_handle, const mat4& matri
     
     size_t patch_count = _patch_index->get_patch_count(patches_handle);
 
-    size_t stack_size = patch_count + PROCESS_CNT * MAX_SPLIT_DEPTH;
+    size_t stack_size = patch_count + PROCESS_CNT * (MAX_SPLIT_DEPTH-1);
     
     _stack_height = patch_count;
 
@@ -144,13 +144,12 @@ void Reyes::BoundNSplitCLMultipass::finish()
 Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
 {
     
-    _user_event.begin(CL::Event());
+    //_user_event.begin(CL::Event());
     CL::Event prefix_sum_ready, mapping_ready;
-    
-    int batch_size = std::min((int)_stack_height, (int)BATCH_SIZE);
     
     statistics.update_max_patches(_stack_height);
     
+    int batch_size = std::min((int)_stack_height, (int)BATCH_SIZE);
     _stack_height -= batch_size;
 
     switch(_active_patch_type) {
@@ -181,6 +180,8 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
                                          _draw_flags, _draw_flags, _out_range_cnt_buffer,
                                          prefix_sum_ready);
 
+    mapping_ready = _queue.enq_map_buffer(_out_range_cnt_buffer, CL_MAP_READ, "buffer map", prefix_sum_ready);
+    mapping_ready = _queue.enq_map_buffer(_split_ranges_cnt_buffer, CL_MAP_READ, "buffer map", mapping_ready);
     
     _move_kernel->set_args(batch_size, _stack_height,
                            _pid_pad, _depth_pad, _min_pad, _max_pad,
@@ -189,23 +190,22 @@ Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
                            _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer);
     _ready = _queue.enq_kernel(*_move_kernel, round_up_by(batch_size, 64), 64, "split patches", _ready | prefix_sum_ready);
 
-    mapping_ready = _queue.enq_map_buffer(_out_range_cnt_buffer, CL_MAP_READ, "buffer map", prefix_sum_ready);
-    mapping_ready = _queue.enq_map_buffer(_split_ranges_cnt_buffer, CL_MAP_READ, "buffer map", mapping_ready);
 
+    statistics.add_bounds(batch_size);
+    
     _queue.wait_for_events(mapping_ready);
+    mapping_ready = CL::Event();
     
     int draw_count = _out_range_cnt_buffer.host_ref<int>();
     int split_count = _split_ranges_cnt_buffer.host_ref<int>(); 
     _stack_height += split_count * 2;
 
-    statistics.add_bounds(batch_size);
-    
     _queue.enq_unmap_buffer(_out_range_cnt_buffer, "buffer map", CL::Event());
     _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "buffer map", CL::Event());
     
     statistics.add_patches(draw_count);
     statistics.inc_pass_count(1);
-    _user_event.end();
+    //_user_event.end();
     
     return {(size_t)draw_count,
             _active_patch_type, *_active_patch_buffer,

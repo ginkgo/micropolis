@@ -173,10 +173,10 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
 
     statistics.update_max_patches(_patch_count);
     
-    // _queue.wait_for_events(_ready);
-    // _ready = CL::Event();
+    _queue.wait_for_events(_ready);
+    _ready = CL::Event();
 
-    // Resize buffers on demand
+    // Resize write buffers on demand
     _write_buffers->grow_to(_patch_count*2);
     _flag_buffers.grow_to(_patch_count);
     _prefix_sum.resize(_patch_count);
@@ -188,6 +188,9 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
         _out_pids_buffer.resize(_patch_count * sizeof(cl_int));
         _out_mins_buffer.resize(_patch_count * sizeof(cl_float2));
         _out_maxs_buffer.resize(_patch_count * sizeof(cl_float2));
+        
+        _queue.wait_for_events(_ready);
+        _ready = CL::Event();
     }
 
     switch(_active_patch_type) {
@@ -226,14 +229,15 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
                            _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer);
     _ready = _queue.enq_kernel(*_move_kernel, round_up_by(_patch_count, 64), 64, "split patches", _ready | prefix_sum_ready);
               
+    
     _queue.wait_for_events(mapping_ready);
     mapping_ready = CL::Event();
+
+    statistics.add_bounds(_patch_count);
     
     int draw_count = _out_range_cnt_buffer.host_ref<int>();
     int split_count = _split_ranges_cnt_buffer.host_ref<int>(); 
     _patch_count = split_count * 2;
-
-    statistics.add_bounds(_patch_count);
 
     _queue.enq_unmap_buffer(_out_range_cnt_buffer, "buffer map", CL::Event());
     _queue.enq_unmap_buffer(_split_ranges_cnt_buffer, "buffer map", CL::Event());
