@@ -53,6 +53,8 @@ uchar bound(const global float4* patch_buffer,
     if (rdepth >= MAX_SPLIT_DEPTH-1) {
         return CULL;
     }
+
+    float eps = P->near * 0.1;
     
     for (size_t u = 0; u < RES; ++u) {
         for (size_t v = 0; v < RES; ++v) {
@@ -71,7 +73,7 @@ uchar bound(const global float4* patch_buffer,
 
     if (outside_frustum(bbox_min, bbox_max, P)) {
         return CULL;
-    } else if (bbox_min.z < 0 && bbox_max.z > 0) {
+    } else if (bbox_min.z < eps && bbox_max.z > P->near) {
         return (((rmax.x - rmin.x) < (rmax.y - rmin.y)) ? VSPLIT : HSPLIT);
     } else {
 

@@ -44,7 +44,7 @@ kernel void bound_kernel(const global float4* patch_buffer,
     split_flags[lid] = (flags>>1)&1;
 
     pid_pad[lid] = rpid;
-    depth_pad[lid] = rdepth+1;
+    depth_pad[lid] = rdepth;
     min_pad[lid] = rmin;
     max_pad[lid] = rmax;
 
@@ -105,8 +105,8 @@ kernel void move(int batch_size,
         pid_stack[pos0] = rpid;
         pid_stack[pos1] = rpid;
 
-        depth_stack[pos0] = rdepth;
-        depth_stack[pos1] = rdepth;
+        depth_stack[pos0] = rdepth+1;
+        depth_stack[pos1] = rdepth+1;
 
         float2 c = (rmin+rmax)*0.5f;
         

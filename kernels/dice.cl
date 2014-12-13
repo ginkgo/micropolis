@@ -49,9 +49,9 @@ __kernel void dice (const global float4* patch_buffer,
     float4 pos = mul_m44v4(modelview, eval_patch(patch_buffer, patch_id, uv));
 
     if (DISPLACEMENT) {
-        const float f1=0.02f;
-        const float f2=0.01f;
-        const float f3=0.005f;
+        const float f1=0.04f;
+        const float f2=0.02f;
+        const float f3=0.01f;
         
         pos.x += native_sin(pos.y*5*2) * f1;
         pos.y += native_sin(pos.x*5*2) * f1;
