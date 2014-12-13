@@ -1,4 +1,4 @@
-#include "BoundNSplitCLBreadthFirst.h"
+#include "BoundNSplitCLBreadth.h"
 
 #include "CL/PrefixSum.h"
 #include "ReyesConfig.h"
@@ -22,7 +22,7 @@ struct cl_projection
 
 
 
-Reyes::BoundNSplitCLBreadthFirst::PatchBuffer::PatchBuffer(CL::Device& device)
+Reyes::BoundNSplitCLBreadth::PatchBuffer::PatchBuffer(CL::Device& device)
     : pids(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , depths(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , mins(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
@@ -32,7 +32,7 @@ Reyes::BoundNSplitCLBreadthFirst::PatchBuffer::PatchBuffer(CL::Device& device)
 }
 
 
-void Reyes::BoundNSplitCLBreadthFirst::PatchBuffer::grow_to(size_t new_size)
+void Reyes::BoundNSplitCLBreadth::PatchBuffer::grow_to(size_t new_size)
 {
     if (size >= new_size) return;
 
@@ -49,7 +49,7 @@ void Reyes::BoundNSplitCLBreadthFirst::PatchBuffer::grow_to(size_t new_size)
 
 
 
-Reyes::BoundNSplitCLBreadthFirst::FlagBuffer::FlagBuffer(CL::Device& device)
+Reyes::BoundNSplitCLBreadth::FlagBuffer::FlagBuffer(CL::Device& device)
     : bound_flags(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , draw_flags(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
     , split_flags(device, 0, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, "bound&split")
@@ -58,7 +58,7 @@ Reyes::BoundNSplitCLBreadthFirst::FlagBuffer::FlagBuffer(CL::Device& device)
 }
 
 
-void Reyes::BoundNSplitCLBreadthFirst::FlagBuffer::grow_to(size_t new_size)
+void Reyes::BoundNSplitCLBreadth::FlagBuffer::grow_to(size_t new_size)
 {
     if (size >= new_size) return;
 
@@ -72,9 +72,9 @@ void Reyes::BoundNSplitCLBreadthFirst::FlagBuffer::grow_to(size_t new_size)
 
 
 
-Reyes::BoundNSplitCLBreadthFirst::BoundNSplitCLBreadthFirst(CL::Device& device,
-                                                            CL::CommandQueue& queue,
-                                                            shared_ptr<PatchIndex>& patch_index)
+Reyes::BoundNSplitCLBreadth::BoundNSplitCLBreadth(CL::Device& device,
+                                                  CL::CommandQueue& queue,
+                                                  shared_ptr<PatchIndex>& patch_index)
     : _queue(queue)
     , _patch_index(patch_index)
 
@@ -123,7 +123,7 @@ Reyes::BoundNSplitCLBreadthFirst::BoundNSplitCLBreadthFirst(CL::Device& device,
 }
 
 
-void Reyes::BoundNSplitCLBreadthFirst::init(void* patches_handle, const mat4& matrix, const Projection* projection)
+void Reyes::BoundNSplitCLBreadth::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
     _active_handle = patches_handle;
     _active_patch_buffer = _patch_index->get_opencl_buffer(patches_handle);
@@ -154,20 +154,20 @@ void Reyes::BoundNSplitCLBreadthFirst::init(void* patches_handle, const mat4& ma
 }
 
 
-bool Reyes::BoundNSplitCLBreadthFirst::done()
+bool Reyes::BoundNSplitCLBreadth::done()
 {   
     return _patch_count <= 0;
 }
 
 
-void Reyes::BoundNSplitCLBreadthFirst::finish()
+void Reyes::BoundNSplitCLBreadth::finish()
 {
     _queue.wait_for_events(_ready);
     _ready = CL::Event();    
 }
 
 
-Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready)
+Reyes::Batch Reyes::BoundNSplitCLBreadth::do_bound_n_split(CL::Event& ready)
 {
     CL::Event prefix_sum_ready, mapping_ready;
 
@@ -203,9 +203,9 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
         break;
     case Reyes::GREGORY:
         _bound_kernel_gregory->set_args(*_active_patch_buffer, _patch_count,
-                                       _read_buffers->pids, _read_buffers->depths, _read_buffers->mins, _read_buffers->maxs,
-                                       _flag_buffers.bound_flags, _flag_buffers.split_flags, _flag_buffers.draw_flags,
-                                       _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
+                                        _read_buffers->pids, _read_buffers->depths, _read_buffers->mins, _read_buffers->maxs,
+                                        _flag_buffers.bound_flags, _flag_buffers.split_flags, _flag_buffers.draw_flags,
+                                        _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
         _ready = _queue.enq_kernel(*_bound_kernel_gregory, round_up_by(_patch_count, 64), 64, "bound patches", ready | _ready);
         break;
     }
@@ -213,11 +213,11 @@ Reyes::Batch Reyes::BoundNSplitCLBreadthFirst::do_bound_n_split(CL::Event& ready
 
     
     prefix_sum_ready = _prefix_sum.apply(_patch_count, _queue,
-                                        _flag_buffers.split_flags, _flag_buffers.split_flags, _split_ranges_cnt_buffer,
-                                        _ready);
+                                         _flag_buffers.split_flags, _flag_buffers.split_flags, _split_ranges_cnt_buffer,
+                                         _ready);
     prefix_sum_ready = _prefix_sum.apply(_patch_count, _queue,
-                                        _flag_buffers.draw_flags, _flag_buffers.draw_flags, _out_range_cnt_buffer,
-                                        prefix_sum_ready);
+                                         _flag_buffers.draw_flags, _flag_buffers.draw_flags, _out_range_cnt_buffer,
+                                         prefix_sum_ready);
 
     mapping_ready = _queue.enq_map_buffer(_out_range_cnt_buffer, CL_MAP_READ, "buffer map", prefix_sum_ready);
     mapping_ready = _queue.enq_map_buffer(_split_ranges_cnt_buffer, CL_MAP_READ, "buffer map", mapping_ready);

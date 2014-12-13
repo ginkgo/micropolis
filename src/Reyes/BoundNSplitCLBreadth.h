@@ -14,7 +14,7 @@ namespace Reyes
     class PatchIndex;    
 
 
-    class BoundNSplitCLBreadthFirst : public BoundNSplitCL
+    class BoundNSplitCLBreadth : public BoundNSplitCL
     {
         struct PatchBuffer
         {
@@ -85,8 +85,8 @@ namespace Reyes
     public:
 
         
-        BoundNSplitCLBreadthFirst(CL::Device& device, CL::CommandQueue& queue,
-                                  shared_ptr<PatchIndex>& patch_index);
+        BoundNSplitCLBreadth(CL::Device& device, CL::CommandQueue& queue,
+                             shared_ptr<PatchIndex>& patch_index);
         
 
         virtual void init(void* patches_handle,

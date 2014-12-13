@@ -1,4 +1,4 @@
-#include "BoundNSplitCLMultipass.h"
+#include "BoundNSplitCLBounded.h"
 
 #include "CL/PrefixSum.h"
 #include "ReyesConfig.h"
@@ -22,9 +22,9 @@ struct cl_projection
 #define PROCESS_CNT BATCH_SIZE
 #define MAX_SPLIT_DEPTH reyes_config.max_split_depth()
 
-Reyes::BoundNSplitCLMultipass::BoundNSplitCLMultipass(CL::Device& device,
-                                                      CL::CommandQueue& queue,
-                                                      shared_ptr<PatchIndex>& patch_index)
+Reyes::BoundNSplitCLBounded::BoundNSplitCLBounded(CL::Device& device,
+                                                  CL::CommandQueue& queue,
+                                                  shared_ptr<PatchIndex>& patch_index)
     : _queue(queue)
     , _patch_index(patch_index)
 
@@ -86,7 +86,7 @@ Reyes::BoundNSplitCLMultipass::BoundNSplitCLMultipass(CL::Device& device,
 }
 
 
-void Reyes::BoundNSplitCLMultipass::init(void* patches_handle, const mat4& matrix, const Projection* projection)
+void Reyes::BoundNSplitCLBounded::init(void* patches_handle, const mat4& matrix, const Projection* projection)
 {
     _active_handle = patches_handle;
     _active_patch_buffer = _patch_index->get_opencl_buffer(patches_handle);
@@ -126,7 +126,7 @@ void Reyes::BoundNSplitCLMultipass::init(void* patches_handle, const mat4& matri
 }
 
 
-bool Reyes::BoundNSplitCLMultipass::done()
+bool Reyes::BoundNSplitCLBounded::done()
 {   
 
 
@@ -134,14 +134,14 @@ bool Reyes::BoundNSplitCLMultipass::done()
 }
 
 
-void Reyes::BoundNSplitCLMultipass::finish()
+void Reyes::BoundNSplitCLBounded::finish()
 {
     _queue.wait_for_events(_ready);
     _ready = CL::Event();    
 }
 
 
-Reyes::Batch Reyes::BoundNSplitCLMultipass::do_bound_n_split(CL::Event& ready)
+Reyes::Batch Reyes::BoundNSplitCLBounded::do_bound_n_split(CL::Event& ready)
 {
     
     //_user_event.begin(CL::Event());

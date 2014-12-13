@@ -14,7 +14,7 @@ namespace Reyes
     class PatchIndex;    
 
 
-    class BoundNSplitCLMultipass : public BoundNSplitCL
+    class BoundNSplitCLBounded : public BoundNSplitCL
     {
 
         CL::CommandQueue& _queue;
@@ -67,8 +67,8 @@ namespace Reyes
     public:
 
         
-        BoundNSplitCLMultipass(CL::Device& device, CL::CommandQueue& queue,
-                               shared_ptr<PatchIndex>& patch_index);
+        BoundNSplitCLBounded(CL::Device& device, CL::CommandQueue& queue,
+                             shared_ptr<PatchIndex>& patch_index);
         
 
         virtual void init(void* patches_handle,

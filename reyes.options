@@ -30,8 +30,8 @@ shading_mode = FLAT
 // Controls backface-culling.
 backface_culling = true
 
-// Method used to implement Bound&Split. Either CPU, MULTIPASS, LOCAL, BALANCED, PASSTHRU, BREADTHFIRST.
-bound_n_split_method = MULTIPASS
+// Method used to implement Bound&Split. Either CPU, BOUNDED, LOCAL, or BREADTH
+bound_n_split_method = BOUNDED
 
 // Number of samples per side for doing calculating patch range bound.
 bound_sample_rate = 3
@@ -71,4 +71,4 @@ pass_color_mode = false
 
 
 
-#hash:-6377531714051264024
+#hash:359867968645853476

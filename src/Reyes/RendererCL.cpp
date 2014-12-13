@@ -3,9 +3,9 @@
 #include "RendererCL.h"
 
 #include "BoundNSplitCLCPU.h"
-#include "BoundNSplitCLBreadthFirst.h"
+#include "BoundNSplitCLBreadth.h"
 #include "BoundNSplitCLLocal.h"
-#include "BoundNSplitCLMultipass.h"
+#include "BoundNSplitCLBounded.h"
 #include "CL/OpenCL.h"
 #include "CLConfig.h"
 #include "Config.h"
@@ -62,11 +62,11 @@ Reyes::RendererCL::RendererCL()
     case ReyesConfig::LOCAL:
         _bound_n_split.reset(new BoundNSplitCLLocal(_device, _bound_n_split_queue, _patch_index));
         break;
-    case ReyesConfig::BREADTHFIRST:
-        _bound_n_split.reset(new BoundNSplitCLBreadthFirst(_device, _bound_n_split_queue, _patch_index));
+    case ReyesConfig::BREADTH:
+        _bound_n_split.reset(new BoundNSplitCLBreadth(_device, _bound_n_split_queue, _patch_index));
         break;
-    case ReyesConfig::MULTIPASS:
-        _bound_n_split.reset(new BoundNSplitCLMultipass(_device, _bound_n_split_queue, _patch_index));
+    case ReyesConfig::BOUNDED:
+        _bound_n_split.reset(new BoundNSplitCLBounded(_device, _bound_n_split_queue, _patch_index));
         break;
     }
 
