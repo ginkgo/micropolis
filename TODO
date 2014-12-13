@@ -1,15 +1,10 @@
 
 TODO:
-* Fix tangent bug and cracks for triangles
-* Find clCreateUserEvent leak CodeXL is reporting
+* Investigate proper epsilon-culling for eye-splits
 * Implement task donation/stealing on top of Local B&S kernels
 * Rename reyes_patches_per_pass to grids_per_pass or something like that
-  * Consider generally cleaning up config options
-* Investigate Intel vectorization problems in bound_n_split kernel
-  * Maybe there's Intel tools that help with finding vectorization problems?
 * Clean up Projection class
   * Only update when necessary
-* Replace "CL/OpenCL.h" includes with direct includes to necessary classes.
 * Write polygon size estimation shader
 * Implement dynamic-rate dicing
 * Switch readme to markdown/textile or something like that
@@ -18,7 +13,7 @@ TODO:
 
 * Find source for driver crash when switching to OpenGL backend
   * This only happens on R9 290X -> Switched back to HD 7970
-  * Perhaps try setting up a minimal debug case for 
+  * Perhaps try setting up a minimal debug case
   
 * Make more use of
   * __attribute__((work_group_size_hint(X,Y,Z)))
@@ -35,8 +30,6 @@ TODO:
 * Find source for FPS-counter/trace time discrepancy
 * Check for potential ways to get direct access to default framebuffer
 
-* Read:
-  * 'Fast GPU-based Adaptive Tessellation with CUDA'
 
 * Shader system
   * Use Python for generation/compilation?

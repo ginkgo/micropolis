@@ -86,7 +86,7 @@ Reyes::RendererCL::RendererCL()
         program->set_constant("DISPLACEMENT", reyes_config.displacement());
     }
                 
-    _reyes_program.compile(_device, "reyes_old.cl");
+    _reyes_program.compile(_device, "reyes.cl");
 
     _shade_kernel.reset(_reyes_program.get_kernel("shade"));
 
