@@ -185,7 +185,14 @@ void Reyes::RendererCL::draw_patches(void* patches_handle,
 
 
         if (!reyes_config.dummy_render()) {
-            _last_batch = send_batch(batch, matrix, proj, color, patch_type, batch.transfer_done | _last_batch);
+            vec4 out_color = color;
+
+            if (reyes_config.pass_color_mode()) {
+                float pass_count = statistics.get_pass_count() / 100.0f * 360;
+                out_color = vec4(glm::rgbColor(vec3(pass_count,1.0f,1.0f)),1.0f);
+            }
+            
+            _last_batch = send_batch(batch, matrix, proj, out_color, patch_type, batch.transfer_done | _last_batch);
         } else {
             _last_batch = batch.transfer_done;
         }

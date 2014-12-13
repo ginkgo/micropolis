@@ -137,6 +137,10 @@
     <value name="displacement" type="bool" default="false">
       Small hack to showcase displacement.
     </value>
+
+    <value name="pass_color_mode" type="bool" default="false">
+      Assign different color to different passes.
+    </value>
     
   </values>
 

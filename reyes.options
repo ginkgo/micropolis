@@ -5,7 +5,7 @@ window_size = 1600 1200
 window_title = MICROPOLIS
 
 // Patch data input file.
-input_file = testscene/zinkia2.mscene
+input_file = testscene/columns.mscene
 
 // Clear color for framebuffer.
 clear_color = 0.1 0.1 0.7 0
@@ -41,7 +41,7 @@ max_split_depth = 23
 
 // Number of patches that get cached and are submitted as a
 // single rendering pass together.
-reyes_patches_per_pass = 20000
+reyes_patches_per_pass = 100000
 
 // Framebuffer tile size.
 framebuffer_tile_size = 8
@@ -56,7 +56,7 @@ dice_group_width = 8
 bns_pipeline_length = 8
 
 // Number of work groups for local bound n split operation.
-local_bns_work_groups = 32
+local_bns_work_groups = 128
 
 // If set to true, the patches are split but not diced and rasterized.
 dummy_render = false
@@ -66,6 +66,9 @@ debug_work_group_balance = false
 // Small hack to showcase displacement.
 displacement = false
 
+// Assign different color to different passes.
+pass_color_mode = false
 
 
-#hash:2508970275935060189
+
+#hash:5372999612648629854
