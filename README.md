@@ -1,7 +1,9 @@
+```
 --------------------------------------------------------------------------------
                                  MICROPOLIS
                A micropolygon rasterizer (c) Thomas Weber 2014
 --------------------------------------------------------------------------------
+```
 
 
 Micropolis is a micropolygon rasterizer implemented in OpenCL. 
@@ -17,33 +19,33 @@ texture in OpenGL.
 There also exists an alternative render backend that uses OpenGL hardware
 tessellation for performance comparison.
 
-Here is a video of it in action: 
-
-http://www.youtube.com/watch?v=09ozb1ttgmA
+Here is a video of it in action: [Video](www.youtube.com/watch?v=09ozb1ttgmA)
 
 
---- COMPILATION ---
+## COMPILATION
 
 
 You will need the following dependencies to build micropolis on Linux:
 
-SCons
-GLFW 3.0
-Boost
-OpenCL
-DevIL
-Python 3.x
-Wheezy template
-Cap'n Proto
+- SCons
+- GLFW 3.0
+- Boost
+- OpenCL
+- DevIL
+- Python 3.x
+- Wheezy template
+- Cap'n Proto
 
-The source uses C++11 features, so you need a version of GCC recent enough
+The source uses some C++11 features, so you need a version of GCC recent enough
 to support this.
 
 To build call:
 
-> git submodule init
-> git submodule update
-> scons
+```
+$ git submodule init
+$ git submodule update
+$ scons
+```
 
 The build-system uses code-generation for creating the config-file
 parser and the OpenGL extension loader. This is done by two python
@@ -52,13 +54,14 @@ in separate git submodules, so it is necessary to initialize and
 update them before compiling with SCons.
 
 
---- USAGE ---
+## USAGE
 
 
 Just call:
 
->./micropolis
-
+```
+$ ./micropolis
+```
 
 You will see performance statistics on the command line.
 
@@ -70,93 +73,68 @@ RMB+drag rotates the camera along the z axis
 PGUP/PGDOWN controls target patch size for Bound&Split algorithm
 F3 toggles wireframe mode
 F9 dumps a trace file which can be visualized using tools/show_trace.sh
+F12 saves the current camera position as an mscene file
+PRINT creates a screenshot
 
-You can configure the program by modifying the options.txt
-configuration file. The file is pretty well-documented.
+You can configure the program by modifying the *.options configuration files.
+The files are pretty well-documented.
 
 Interesting configuration-values are:
 
-input_file:
+- `input_file`:
     The scene to render.
     Look in the mscene/ dir for scene files.
 
-renderer_type: 
-    Switch between OpenCL rasterizer and hardware-tessellation backend
-
-platform_id & device_id:
-    The platform and device number of the OpenCL device that should be used.
+- `opencl_device_id`:
+    A pair of numbers giving platform and device id of the OpenCL device that should be used.
      
-disable_buffer_sharing:
-    If your OpenCL device is not able to share buffers with the
-    created OpenGL context (for instance because it is a CPU device),
-    you might need to set this flag true. The framebuffer is then not
-    shared and copying from OpenCL to OpenGL has to go through host
-    memory. This takes extra time.
-
-
-reyes_patches_per_pass:
+- `reyes_patches_per_pass`:
     Sets how many sub-patches are diced and rasterized at once. Larger
     batches require more OpenCL device memory and take longer. Smaller
     batches have more overhead. You should set something between 256
     and 4096. Use powers of two.
 
-bound_n_split_limit:
+- `bound_n_split_limit`:
     In the first step of REYES, all patches are split to this screen size.
 
-reyes_patch_size:
+- `reyes_patch_size`:
     The horizontal and vertical dicing rate of the split subpatches.
-    Should ideally be the same as bound_n_split_limit to get
+    Should ideally be the same as `bound_n_split_limit` to get
     pixel-sized micropolygons. More is a waste. Needs to be divisible by 8.
     
 
---- LIMITATIONS ---
+## LIMITATIONS
 
 
 Micropolis is very much a prototype. It is limited in several ways:
 
-- Surface patches are diced at a fixed rate
+- **Surface patches are diced at a fixed rate**
     This can lead to wasteful overtessellation
-- Bound&Split ignores displacement
-    This is why there can be missing surface-patches at the screen border.
-    They are culled erroneously.
-- Surface cracks are not handled
+- **Surface cracks are not handled**
     This can result in holes between surface patches.
-- Micropolygons are always flat-shaded
+- **Micropolygons are always flat-shaded**
     Gouraud shading would result in fewer artifacts and most production
     renderers use it, but I don't really know how to calculate the vertex-
     normal of displaced vertices in an elegant way. This is especially 
     problematic at the borders of a surface.
-- No Multisampling or stochastic rasterization is supported
-- Bound&Split happens on the CPU
-    This was one of the major simplifications I did to get the project off
-    the ground fast. By now, B&S and Host->Device transfer of the split 
-    surfaces has become a major bottle-neck. Doing B&S on the device would
-    have several advantages (f.i. occlusion culling using the depth-buffer 
-    z-pyramid) but may need quite a lot of host-intervention and may have
-    an unpredictable memory footprint.
-    The OpenGL backend uses GPU-based B&S implemented in OpenGL compute
-    shaders. I will port this to OpenCL soon.
-
-Solving these issues will be part of my master's thesis.
+- **No Multisampling or stochastic rasterization is supported**
 
 Further limitations are
 
-- Surface shader and displacement are hard-coded in the OpenCL kernel
-- Only a Bezier surface meshes are supported
-- Only one object can be rendered at a time and only moved along the Z axis
+- **Surface shader and displacement are hard-coded in the OpenCL kernel**
+- **Only a Bezier surface meshes are supported**
+- **Only one object can be rendered at a time and only moved along the Z axis**
 
 
---- REFERENCES ---
-
+## REFERENCES
 
 [1] "The Reyes image rendering architecture", 
     H.L. Cook, L. Carpenter, E. Catmull
     Computer Science Press, Inc. New York, NY, USA, 1988
 
 
---- COPYRIGHT & LICENSE ---
+## COPYRIGHT & LICENSE
 
-
-Copyright Thomas Weber 2011-2013
+Copyright Thomas Weber 2011-2014
 
 Micropolis is licensed under the GPLv3.
