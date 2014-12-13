@@ -13,11 +13,11 @@ def parse_args():
     parser = OptionParser(usage='Usage: %prog <benchfile> <outpdf>')
     options, args = parser.parse_args()
 
-    if len(args) != 2:
+    if len(args) < 1:
         parser.print_help()
         exit(1)
 
-    return options, args[0], args[1]
+    return options, args[0], args[1] if len(args) >=2 else None
 
 def find_ranges(measurements):
     ranges = {}
@@ -45,7 +45,7 @@ hue = 0.0
 color_map = {}
 def get_color(name):
     global hue
-    d = 0.20
+    d = 0.15
 
     if name not in color_map:
         hue += d
@@ -56,7 +56,7 @@ def get_color(name):
 def plot_bound_rate(ms, figure):
     method = {'LOCAL':'LOCAL','MULTIPASS':'BOUNDED'}[ms[0][0]]
     scene = ms[0][1]
-    name = re.compile(r'[\w/]+/(\w+)\.mscene').match(scene).group(1)+'+_'+method
+    name = re.compile(r'[\w/]+/(\w+)\.mscene').match(scene).group(1)#+'+_'+method
 
     X = []
     Y = []
@@ -75,7 +75,7 @@ def plot_bound_rate(ms, figure):
         bmin,bmax = min(bmin,b), max(bmax,b)
         mmin,mmax = min(mmin,b), max(mmax,b)
             
-    p = figure.plot(X,Y,'-' if method=='LOCAL' else '--', label=latexify_name(name), color=get_color(scene))
+    p = figure.plot(X,Y,'-' if method=='LOCAL' else '--', label=latexify_name(name) if method=='LOCAL' else None, color=get_color(scene))
 
     return bmin,bmax, mmin,mmax, p,name
             
@@ -127,9 +127,11 @@ def main():
     figure1.legend(loc='upper left', prop={'size':10})
     
     plt.tight_layout()
-    plt.show()
 
-    #plt.savefig(outpdf)
+    if outpdf:
+        plt.savefig(outpdf)
+    else:
+        plt.show()
 
 if __name__ == '__main__':
     main()    

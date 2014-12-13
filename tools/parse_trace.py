@@ -19,6 +19,9 @@ class TraceItem:
         self.index = index
         self.dependencies = dependencies
 
+    def duration(self):
+        return self.end - self.start    
+        
     def duration_ms(self):
         return milliseconds(self.end - self.start)
 
@@ -56,7 +59,10 @@ def parse(file):
                          int(match.group(6)),
                          int(match.group(7)),
                          [int(s) for s in match.group(8).split('|') if s])
-            
+
+        if item.name in ['frame', 'release framebuffer', 'acquire framebuffer']:
+            continue
+        
         items.append(item)
 
     items.reverse()
@@ -89,6 +95,9 @@ def create_queue_list(trace_items):
     inserted = {('','')}
     
     for qn,n in [(i.queue_name, i.name) for i in trace_items]:
+        if qn == 'host':
+            continue
+        
         ns = None
 
         if qn in queue_dict:

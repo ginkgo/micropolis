@@ -60,7 +60,7 @@ if __name__=='__main__':
                                                      'mscene/killeroo.mscene',
                                                      'mscene/bigguy.mscene',
                                                      ])
-    benchmark.add_alternative_options('bound_n_split_method', ['MULTIPASS'])
+    benchmark.add_alternative_options('bound_n_split_method', ['MULTIPASS','BREADTHFIRST'])
 
 
     measurements = []

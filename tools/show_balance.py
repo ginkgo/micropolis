@@ -18,14 +18,21 @@ def parse_balance(filename, propname):
             if match and match.group(1) == propname:
                 return [int(si) for si in match.group(2).strip().split(' ')]
     return []
-    
+
+def latexify(filename):
+    pattern = re.compile(r'([a-zA-Z0-9]+)\..*')
+
+    match = pattern.match(filename)
+
+    return r'\textsc{%s}' % match.group(1)
+
 if __name__=='__main__':
     filename = argv[1]
     propname = 'bound_n_split_balance'
 
     filetitle = filename
-    if len(argv) > 2:
-        filetitle = argv[2]
+    # if len(argv) > 2:
+    #     filetitle = argv[2]
     
     balance = parse_balance(filename, propname)
 
@@ -41,10 +48,14 @@ if __name__=='__main__':
     plt.plot([0, len(balance)], [avg_load]*2,'r-')
     plt.text(len(balance)/2,avg_load, text,color='red')
     plt.xlim(0, len(balance)-1)
-    plt.title(filetitle)
+    plt.title(latexify(filetitle))
     plt.xlabel('processor ID')
     plt.ylabel('processed patches')
-    plt.show()
+
+    if len(argv)>2:
+        plt.savefig(argv[2])
+    else:
+        plt.show()
 
     print (text)
 

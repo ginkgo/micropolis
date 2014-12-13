@@ -40,13 +40,14 @@ def main():
                                                      'testscene/columns.mscene',
                                                      #'testscene/tree.mscene',
                                                      #'testscene/pillars.mscene',
-                                                     'testscene/zinkia.mscene',
-                                                     'testscene/depth_complexity.mscene',
+                                                     'testscene/zinkia1.mscene',
+                                                     'testscene/zinkia2.mscene',
+                                                     'testscene/zinkia3.mscene',
                                                      'testscene/eye_split.mscene',
                                                      ])
     
     benchmark.add_alternative_options('bound_n_split_method', [ 'MULTIPASS'])
-    benchmark.add_int_log_range_options('reyes_patches_per_pass', 5000, 500000, 100, 2)
+    benchmark.add_int_log_range_options('reyes_patches_per_pass', 5000, 500000, 50, 2)
 
     measurements = []
     def datapoint_handler(config, summaries):
@@ -74,12 +75,21 @@ def main():
     benchmark.datapoint_handler = datapoint_handler
 
     benchmark.perform()
-
+    bounded_measurements = measurements
     
-    print (tabulate(measurements, headers=['method', 'scene', 'batch size', 'time[ms]', 'mem usage[MiB]', 'max patches', 'bound patches', 'bound rate[M#/s]']))
+    measurements = []
+    benchmark.clear_options(['bound_n_split_method', 'reyes_patches_per_pass'])
+    benchmark.add_alternative_options('reyes_patches_per_pass', [40000])
+    benchmark.add_alternative_options('bound_n_split_method', ['BREADTHFIRST'])
+
+    benchmark.perform()
+    breadth_measurements = measurements
+
+    print (tabulate(bounded_measurements, headers=['method', 'scene', 'batch size', 'time[ms]', 'mem usage[MiB]', 'max patches', 'bound patches', 'bound rate[M#/s]']))
+    print (tabulate(breadth_measurements, headers=['method', 'scene', 'batch size', 'time[ms]', 'mem usage[MiB]', 'max patches', 'bound patches', 'bound rate[M#/s]']))
 
     with open(benchfile, 'wb') as outfile:
-        pickle.dump(measurements, outfile)
+        pickle.dump((bounded_measurements, breadth_measurements), outfile)
         
 
 if __name__ == '__main__':

@@ -19,10 +19,35 @@ class Summary:
         self.statistics = statistics
         
         ti_times  = defaultdict(float)
-        
-        for ti in traceitems:
-            ti_times[ti.name] += ti.duration_ms()
+        occupied = 0
 
+        nmap = {'sample':'sample',
+                'dice':'dice',
+                'shade':'shade',
+                'initialize counter buffers':'subdivision',
+                'initialize range buffers':'subdivision',
+                'Clear out_range_cnt':'subdivision',
+                'read range count':'subdivision',
+                'read processed counts':'subdivision',
+                'bound & split':'subdivision',
+                'bound patches':'subdivision',
+                'reduce':'subdivision',
+                'split patches':'subdivision',
+                'accumulate':'subdivision',
+                'init patch ranges':'subdivision',
+                'clear framebuffer':'clear',
+                'clear depthbuffer':'clear',
+                'initialize projection buffer':'subdivision',
+                'buffer map':'subdivision'}
+                
+                
+        for ti in traceitems:
+            n = nmap[ti.name]
+            occupied += ti.duration()
+            ti_times[n] += ti.duration_ms()
+
+        ti_times['idle'] = self.duration - milliseconds(occupied)
+            
         for name,ti_duration in ti_times.items():
             self.times[name] = ti_duration
             self.percentages[name] = 100 * ti_duration/self.duration

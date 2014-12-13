@@ -40,48 +40,47 @@ def latexify_name(name):
 
     return r'\textsc{%s}' % r
     
-def plot_bound_rate(ms, breadth, figure):
+def plot_tradeoff(ms, figure):
     name = re.compile(r'[\w/]+/(\w+)\.mscene').match(ms[0][1]).group(1)
 
-    #ms = sorted(ms, key=lambda m: m[7]) # sort by render performace
-
-    pbreadth = breadth[7]
+    ms = sorted(ms, key=lambda m: m[7]) # sort by render performace
     
     B   = []
     M   = []
+    Ma  = []
     P   = []
 
     bmin, bmax = float('inf'), -float('inf')
     mmin, mmax = float('inf'), -float('inf')
     pmin, pmax = float('inf'), -float('inf')    
     
-    for method,_,b,t,m,mp,_,p in ms:
+    for method,_,b,t,m,mp,_,p,ip in ms:
         if method == 'BREADTHFIRST':
             continue
+
+        m_per_patch = m/(b*23+ip)
+        
+        ma = mp * m_per_patch
         
         B.append(b)
         M.append(m)
+        Ma.append(ma)
         P.append(p)
         
         bmin,bmax = min(bmin,b), max(bmax,b)
         mmin,mmax = min(mmin,m), max(mmax,m)
+        mmin,mmax = min(mmin,ma), max(mmax,ma)
         pmin,pmax = min(pmin,p), max(pmax,p)
         
     Pr = [100*p/pmax for p in P]
     
-    m0 = mmin - bmin*((mmax-mmin)/(bmax-bmin))
-    M = [m-m0 for m in M]
-
-    mmin-=m0
-    mmax-=m0
-    
-    plot1 = figure.plot(M,P,'-', label=latexify_name(name))
-    plot2 = figure.plot([mmin, mmax], [pbreadth, pbreadth], '--', label=None, color=plot1[0].get_color())
+    plot1 = figure.plot(Pr,M,'k-', label=latexify_name(name))
+    #plot2 = figure.plot(Pr,Ma,'--', label=None, color=plot1[0].get_color())
 
     prmin = 100*pmin/pmax
     prmax = 100*pmax/pmax
     
-    return pmin, pmax, bmin,bmax, mmin,mmax
+    return prmin, prmax, bmin,bmax, mmin,mmax
             
     
 
@@ -90,7 +89,7 @@ def main():
     options, benchfile, outpdf = parse_args()
 
     with open(benchfile, 'rb') as infile:
-        measurements, breadth_measurements = pickle.load(infile)
+        measurements = pickle.load(infile)
 
     # print (tabulate(measurements, headers=['method', 'scene', 'batch size', 'time[ms]', 'mem usage[MiB]',
     #                                        'max patches', 'bound patches', 'bound rate[M#/s]']))
@@ -109,8 +108,8 @@ def main():
     
     #ax1.set_yscale('log')
     #ax1.set_xscale('log')
-    ax1.set_ylabel('processing rate [Mpatches/s]')
-    ax1.set_xlabel('memory usage [MiB]')
+    ax1.set_ylabel('relative memory usage [MiB]')
+    ax1.set_xlabel('relative processing rate [\% of maximum]')
 
 
     pmin, pmax = float('inf'), -float('inf')
@@ -120,19 +119,16 @@ def main():
     ranges = find_ranges(measurements)
     c = len(ranges)
     
-    for ms, breadth in zip(ranges, breadth_measurements):
-        pi,pa, bi,ba, mi,ma = plot_bound_rate(ms, breadth, figure1)
+    for ms in ranges:
+        pi,pa, bi,ba, mi,ma = plot_tradeoff(ms, figure1)
 
         pmin,pmax = min(pmin,pi), max(pmax,pa)
         bmin,bmax = min(bmin,bi), max(bmax,ba)
         mmin,mmax = min(mmin,mi), max(mmax,ma)
 
-    ax1.set_xlim(xmin=mmin, xmax=mmax)
-    ax2=figure1.twiny()
-    ax2.set_xlim(xmin=bmin, xmax=bmax)
-    ax2.set_xlabel('batch size')
+    ax1.set_xlim(xmin=pmin, xmax=pmax)
     
-    figure1.legend(loc='upper left', prop={'size':10})
+    #figure1.legend(loc='upper left', prop={'size':10})
     
     plt.tight_layout()
 

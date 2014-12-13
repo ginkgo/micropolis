@@ -21,7 +21,7 @@ def main():
     benchmark_file = '/tmp/benchmark.trace'
     stat_file = '/tmp/benchmark.statistics'
 
-    benchmark = Benchmark(binary_name, benchmark_file, stat_file, timeout=None, repeat=15)
+    benchmark = Benchmark(binary_name, benchmark_file, stat_file, timeout=None, repeat=50)
 
     
     benchmark.add_option('dump_after', 5)
@@ -33,26 +33,23 @@ def main():
     benchmark.add_option('bound_n_split_limit', 8)
     benchmark.add_option('dummy_render', 'true')
     benchmark.add_option('max_split_depth', 23)
-    benchmark.add_option('debug_work_group_balance', 'true')
 
     
-    benchmark.add_alternative_options('input_file', ['mscene/teapot.mscene',
-                                                     'mscene/hair.mscene',
-                                                     'mscene/columns.mscene',
-                                                     'mscene/zinkia1.mscene',
-                                                     'mscene/zinkia2.mscene',
-                                                     'mscene/zinkia3.mscene',
-                                                     'mscene/eye_split.mscene',
-                                                     ])
+    benchmark.add_alternative_options('input_file', [
+        #'mscene/hair.mscene',
+        #'testscene/columns.mscene',
+        'testscene/zinkia3.mscene',
+        #'mscene/depth_complexity.mscene',
+        #'mscene/eye_split.mscene',
+        ])
     
-    benchmark.add_alternative_options('bound_n_split_method', [ 'LOCAL','MULTIPASS'])
-    benchmark.add_int_log_range_options('reyes_patches_per_pass', 5000, 500000, 15, 2)
+    benchmark.add_alternative_options('bound_n_split_method', [ 'MULTIPASS'])
+    benchmark.add_int_log_range_options('reyes_patches_per_pass', 5000, 200000, 50, 2)
 
     measurements = []
     def datapoint_handler(config, summaries):
         durations = sorted([s.duration for s in summaries])
-        durations = durations[3:][:-3] 
-        duration_ms = np.average(durations)
+        duration_ms = durations[len(durations)//2] # pick median
         
         memusage = np.average([s.statistics['opencl_mem@bound&split'] for s in summaries])
 
@@ -68,7 +65,8 @@ def main():
                              memusage/(1024**2),
                              stats['max_patches'],
                              processed_count,
-                             processing_rate/1000000))
+                             processing_rate/1000000,
+                             stats['total_input_patches']))
         
             
     benchmark.datapoint_handler = datapoint_handler

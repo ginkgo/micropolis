@@ -31,6 +31,17 @@ def latexify_filename(filename):
 
     return r'\textsc{%s}' % r
     
+def latexify_method_name(name, batch_size=None):
+    
+    method_lut = {'BREADTHFIRST':'\\textsc{Breadth}',
+                  'MULTIPASS':'\\textsc{Bounded}',
+                  'LOCAL':'\\textsc{Local}'}
+
+    if name == 'BREADTHFIRST' or not batch_size:
+        return method_lut[name]
+    else:
+        return method_lut[name]+('$_{%s}$'%batch_size)
+    
 if __name__=='__main__':
 
     options, tablefile = parse_args()
@@ -49,7 +60,6 @@ if __name__=='__main__':
     benchmark.add_option('window_size', '1280 720')
     benchmark.add_option('bound_n_split_limit', 8)
     benchmark.add_option('dummy_render', 'true')
-    benchmark.add_option('reyes_patches_per_pass', 30000)
     benchmark.add_option('max_split_depth', 23)
 
     benchmark.add_alternative_options('input_file', ['mscene/teapot.mscene',
@@ -57,16 +67,25 @@ if __name__=='__main__':
                                                      'testscene/columns.mscene',
                                                      #'testscene/tree.mscene',
                                                      #'testscene/pillars.mscene',
-                                                     'testscene/zinkia.mscene',
-                                                     'testscene/depth_complexity.mscene',
+                                                     'testscene/zinkia1.mscene',
+                                                     'testscene/zinkia2.mscene',
+                                                     'testscene/zinkia3.mscene',
                                                      'testscene/eye_split.mscene',
                                                      ])
     benchmark.add_alternative_options('bound_n_split_method', [ 'BREADTHFIRST', 'MULTIPASS'])
-
+    benchmark.add_alternative_options('reyes_patches_per_pass', [10000, 40000, 200000])
 
     measurements = []
     reduced = []
+    processed_count_dict = {}
     def datapoint_handler(config, summaries):
+
+        method = config['bound_n_split_method']
+        filename = config['input_file']
+        
+        if method=='BREADTHFIRST' and filename in processed_count_dict:
+            return
+        
         durations = sorted([s.duration for s in summaries])
         durations = durations[1:][:-1] 
         duration_ms = np.average(durations)
@@ -74,15 +93,16 @@ if __name__=='__main__':
         memusage = np.average([s.statistics['opencl_mem@bound&split'] for s in summaries])
 
         stats = summaries[0].statistics
-        
-        processed_count = stats['processed_patches_per_frame']
+
+        if filename in processed_count_dict:
+            processed_count = processed_count_dict[filename]
+        else:
+            processed_count = stats['processed_patches_per_frame']
+            processed_count_dict[filename] = processed_count
+
         processing_rate = 1000*processed_count/duration_ms
 
-        method_lut = {'BREADTHFIRST':'\\textsc{Breadth}',
-                      'MULTIPASS':'\\textsc{Bounded}',
-                      'LOCAL':'\\textsc{Local}'}
-        
-        measurements.append((config['bound_n_split_method'],
+        measurements.append((latexify_method_name(config['bound_n_split_method'],config['reyes_patches_per_pass']),
                              extract_scenename(config['input_file']),
                              duration_ms,
                              memusage/(1024**2),
@@ -92,7 +112,8 @@ if __name__=='__main__':
                              processing_rate/1000000))
         
         reduced.append((latexify_filename(config['input_file']),
-                        method_lut[config['bound_n_split_method']],
+                        latexify_method_name(config['bound_n_split_method']),
+                        config['reyes_patches_per_pass'] if method!='BREADTHFIRST' else stats['max_patches'],
                         duration_ms,
                         memusage/(1024**2),
                         stats['max_patches'],
@@ -113,9 +134,9 @@ if __name__=='__main__':
     print (tabulate(measurements, headers=headers))
 
     if tablefile:
-        reduced_headers = ['scene', 'method', 'time[ms]',
-                           'used memory[MiB]', 'max patches',
-                           'processed patches', 'processing rate[M\\#/s]']
+        reduced_headers = ['scene', 'method', 'batch size', 'time[ms]',
+                           'memory[MiB]', 'max patches',
+                           'bound patches', 'processing rate[M\\#/s]']
 
         with open(tablefile, 'w') as outfile:
             outfile.write(tabulate(reduced, headers=reduced_headers, tablefmt='latex', floatfmt='.2f'))

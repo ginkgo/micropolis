@@ -145,7 +145,7 @@ if __name__ == '__main__':
     add_bezier_mesh(meshes, 'Mesh', patchdata)
 
     if options.multi == 0:
-        add_object(objects, 'Object', Matrix.Identity(4), 'Mesh', Color((1.0,0.1, 0.03)))
+        add_object(objects, 'Object', Matrix.Identity(4), 'Mesh', Color((1,1,1)))
     else:
         for i in range(options.multi):
             rcolor = Color()

@@ -20,7 +20,7 @@ def generate_colorscheme(queue_list):
     color_scheme = {}
     queue_cnt = len(queue_list)
     command_cnt = max([len(ns) for qn,ns in queue_list])
-    offset = random.random()
+    offset = 0.7
     
     for qi,(qn,ns) in enumerate(queue_list):
         for ni,n in enumerate(ns):
@@ -98,7 +98,7 @@ def rounded_rect(ctx, x,y,w,h, r):
     
 def draw_legend(ctx, queue_list, font, height_per_entry):
     
-    queue_indent = 5
+    queue_indent = 0
 
     legend_height = 0
 
@@ -106,9 +106,9 @@ def draw_legend(ctx, queue_list, font, height_per_entry):
     
     for qn,ns in queue_list:
         ctx.move_to(0, legend_height + height_per_entry/2)
-        aligned_text(ctx, qn, 0.0, 0.5)
+        #aligned_text(ctx, qn, 0.0, 0.5)
         
-        legend_height += height_per_entry
+        #legend_height += height_per_entry
         for n in ns:
             ctx.move_to(5, legend_height + height_per_entry/2)
             aligned_text(ctx, n, 0.0, 0.5)
@@ -117,9 +117,9 @@ def draw_legend(ctx, queue_list, font, height_per_entry):
 
 
             
-def draw_grid_back(ctx, graph_width, graph_height, start, stop):
+def draw_grid_back(ctx, graph_width, graph_height, start, stop, scalefactor):
 
-    increment = graph_width/((stop-start)*10)
+    increment = scalefactor*graph_width/((stop-start)*10)
     
     for i in range(0, math.ceil(graph_width/increment)):
 
@@ -150,7 +150,7 @@ def digit_cnt(f):
         
 def draw_grid_front(ctx, graph_width, graph_height, start, stop, scalefactor):
 
-    increment = graph_width/((stop-start)*10)
+    increment = scalefactor*graph_width/((stop-start)*10)
     ctx.set_source_rgb(0.3,0.3,0.3)
 
     digits = digit_cnt(scalefactor)
@@ -182,7 +182,7 @@ def draw_grid_front(ctx, graph_width, graph_height, start, stop, scalefactor):
     
 def calc_command_placement(queue_list, command_height, height_per_entry, font):
     legend_width = 0
-    queue_indent = 5
+    queue_indent = 0
 
     legend_height = 0
     
@@ -190,7 +190,7 @@ def calc_command_placement(queue_list, command_height, height_per_entry, font):
         _,_,w,_,_,_ = font.text_extents(qn)
         legend_width = max(legend_width, w)
         command_height[qn] = legend_height
-        legend_height += height_per_entry
+        #legend_height += height_per_entry
         for n in ns:
             _,_,w,_,_,_ = font.text_extents(n)
             legend_width = max(legend_width, w + queue_indent)
@@ -205,6 +205,9 @@ def draw_items(ctx, trace_items, height_per_entry, width_per_ms, color_scheme, c
 
     ctx.set_line_width(0.25)
     for ti in trace_items:
+        if ti.handle() not in command_height_dict:
+            continue
+        
         ctx.set_source_rgb(*color_scheme[ti.handle()])
         rounded_rect(ctx,
                      ti.start_ms()*width_per_ms, command_height_dict[ti.handle()]+0.5,
@@ -243,13 +246,13 @@ def draw_trace(trace_items, outfilename, show_dependencies, scalefactor):
     color_scheme = generate_colorscheme(queue_list)
 
     padding = 10
-    height_per_entry = 7
-    width_per_ms = 50
+    height_per_entry = 8
+    width_per_ms = 300/dur_ms
 
-    ms_per_page = 8
+    ms_per_page = dur_ms
 
     command_height_dict = {}
-    font = cairo.ScaledFont(cairo.ToyFontFace('FreeSans'), cairo.Matrix(4,0, 0,4, 0,0), cairo.Matrix(), cairo.FontOptions())
+    font = cairo.ScaledFont(cairo.ToyFontFace('Ubuntu'), cairo.Matrix(4,0, 0,4, 0,0), cairo.Matrix(), cairo.FontOptions())
     legend_width, legend_height = calc_command_placement(queue_list, command_height_dict, height_per_entry, font)
     
     #graph_width = milliseconds(tmax-tmin) * width_per_ms
@@ -271,7 +274,7 @@ def draw_trace(trace_items, outfilename, show_dependencies, scalefactor):
 
         offset(0,0, draw_legend, context, queue_list, font, height_per_entry)
 
-        offset(legend_width+padding,0, draw_grid_back, context, graph_width, graph_height, tmin_p, tmax_p)
+        offset(legend_width+padding,0, draw_grid_back, context, graph_width, graph_height, tmin_p, tmax_p, scalefactor)
         context.save()
         context.rectangle(legend_width+padding,0,graph_width, graph_height)
         context.clip()
@@ -315,11 +318,11 @@ if __name__=='__main__':
     with open(infile, 'r') as tracefile:
         traceitems = parse(tracefile)
 
-    for ti in traceitems:
-        ti.queued /= options.scalefactor
-        ti.submit /= options.scalefactor
-        ti.start /= options.scalefactor
-        ti.end /= options.scalefactor
+    # for ti in traceitems:
+    #     ti.queued /= options.scalefactor
+    #     ti.submit /= options.scalefactor
+    #     ti.start /= options.scalefactor
+    #     ti.end /= options.scalefactor
 
     draw_trace(traceitems, outfile, options.show_dependencies, options.scalefactor)
     
