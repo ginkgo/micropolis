@@ -49,6 +49,7 @@ class Statistics
     uint64_t opengl_memory;
     size_t   max_patches;
     size_t   bounds_per_frame;
+    size_t   total_input_patches;
 
     map<string, uint64_t> opencl_memory_by_use;
     
@@ -71,6 +72,7 @@ class Statistics
     void add_bounds(size_t bounds);
 
     void inc_pass_count(uint64_t cnt);
+    uint64_t get_pass_count() { return _pass_count; }
 
     void alloc_opencl_memory(long mem_size, const string& use);
     void free_opencl_memory(long mem_size, const string& use);
@@ -80,6 +82,8 @@ class Statistics
 
     void update_max_patches(size_t current_patches);
     void set_bound_n_split_balance(int* processed, size_t work_group_cnt);
+
+    void set_total_input_patches(size_t tip) { total_input_patches = tip; }
     
     void update();
     void reset_timer();

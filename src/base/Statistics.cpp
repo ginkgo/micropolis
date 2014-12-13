@@ -207,6 +207,7 @@ void Statistics::dump_stats()
     fs << "patches_per_frame = " << patches_per_frame << ";" << endl;
     fs << "processed_patches_per_frame = " << bounds_per_frame << ";" << endl;
     fs << "pass_count = " << _pass_count << ";" << endl;
+    fs << "total_input_patches = " << total_input_patches << ";" << endl;
 
     fs << "bound_n_split_balance = ";
     for (auto processed : _bound_n_split_balance) {

@@ -164,8 +164,11 @@ Reyes::Scene::Scene (const string& filename) :
 
     close(fd);
 
+    size_t patch_count = total_patch_count();
+    statistics.set_total_input_patches(patch_count);
+    
     if (config.verbosity_level() > 0) {
-        cout << "Scene \"" << filename << "\" contains " << total_patch_count() << " patches." << endl;
+        cout << "Scene \"" << filename << "\" contains " << patch_count << " patches." << endl;
     }
 }
 
