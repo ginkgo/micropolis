@@ -1,19 +1,13 @@
-```
---------------------------------------------------------------------------------
-                                 MICROPOLIS
-               A micropolygon rasterizer (c) Thomas Weber 2014
---------------------------------------------------------------------------------
-```
+# MICROPOLIS
 
-
-Micropolis is a micropolygon rasterizer implemented in OpenCL. 
+Micropolis is a micropolygon render implemented in OpenCL. 
 
 It uses the REYES[1] algorithm to rasterize curved surfaces. This is
 done by splitting the surface into sub-pixel sized polygons (micropolygons) 
 and rasterizing them. Doing so allows the rendering of highly detailed, displaced 
 surfaces.
 
-The dicing, shading and rasterization of the micropolygons is implemented in
+The subdivision, dicing, shading and rasterization of the micropolygons is implemented in
 OpenCL. The rasterizer fills a framebuffer that is then rendered as
 texture in OpenGL. 
 There also exists an alternative render backend that uses OpenGL hardware
@@ -48,8 +42,8 @@ $ scons
 ```
 
 The build-system uses code-generation for creating the config-file
-parser and the OpenGL extension loader. This is done by two python
-programs(configGen and flextGLgen) in the tools directory. They reside
+parser and the OpenGL extension loader. This is done by two Python
+programs(`configGen` and `flextGLgen`) in the tools directory. They reside
 in separate git submodules, so it is necessary to initialize and
 update them before compiling with SCons.
 
@@ -65,16 +59,16 @@ $ ./micropolis
 
 You will see performance statistics on the command line.
 
-Q or ESC close the application
-Use WASD to move the camera
-LMB+drag rotates the camera
-MMB+drag moves the camera on the eye plane
-RMB+drag rotates the camera along the z axis
-PGUP/PGDOWN controls target patch size for Bound&Split algorithm
-F3 toggles wireframe mode
-F9 dumps a trace file which can be visualized using tools/show_trace.sh
-F12 saves the current camera position as an mscene file
-PRINT creates a screenshot
+- `Q` or `ESC` close the application
+- Use `WASD` to move the camera
+- `LMB`+drag rotates the camera
+- `MMB`+drag moves the camera on the eye plane
+- `RMB`+drag rotates the camera along the z axis
+- `PGUP`/`PGDOWN` controls target patch size for Bound&Split algorithm
+- `F3` toggles wireframe mode
+- `F9` dumps a trace file which can be visualized using tools/show_trace.sh
+- `F12` saves the current camera position as an mscene file
+- `PRINT` creates a screenshot
 
 You can configure the program by modifying the *.options configuration files.
 The files are pretty well-documented.
@@ -94,6 +88,9 @@ Interesting configuration-values are:
     batches have more overhead. You should set something between 256
     and 4096. Use powers of two.
 
+- `bound_n_split_method`:
+    The method used for bound and split. Can be `BOUNDED`, `LOCAL`, `BREADTH`, or `CPU`
+
 - `bound_n_split_limit`:
     In the first step of REYES, all patches are split to this screen size.
 
@@ -110,20 +107,18 @@ Micropolis is very much a prototype. It is limited in several ways:
 
 - **Surface patches are diced at a fixed rate**
     This can lead to wasteful overtessellation
+
 - **Surface cracks are not handled**
     This can result in holes between surface patches.
+
 - **Micropolygons are always flat-shaded**
-    Gouraud shading would result in fewer artifacts and most production
-    renderers use it, but I don't really know how to calculate the vertex-
-    normal of displaced vertices in an elegant way. This is especially 
-    problematic at the borders of a surface.
+    Gouraud shading would result in fewer artifacts and most production renderers use it. 
+
 - **No Multisampling or stochastic rasterization is supported**
 
-Further limitations are
-
 - **Surface shader and displacement are hard-coded in the OpenCL kernel**
-- **Only a Bezier surface meshes are supported**
-- **Only one object can be rendered at a time and only moved along the Z axis**
+
+These problems may be fixed in the future. The first three issues will probably be solved by using DiagSplit and decoupled shading.
 
 
 ## REFERENCES
