@@ -44,6 +44,11 @@
       The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
     </value>
 
+    <value name="windowless" type="bool" default="false">
+      Disable window.
+      Useful for benchmark scripts.
+    </value>
+
     <value name="dump_after" type="long long" default="10">
       Controls after which frame the application dumps a trace and exits in trace dump mode.
     </value>

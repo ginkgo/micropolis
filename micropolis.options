@@ -11,11 +11,15 @@ camera_z_offset = 0
 // The renderer will dump a trace, statistics and the currenct config after a certain number of frames and exit.
 dump_mode = false
 
+// Disable window.
+// Useful for benchmark scripts.
+windowless = false
+
 // Controls after which frame the application dumps a trace and exits in trace dump mode.
 dump_after = 10
 
 // Number of frame dumps to perform per invocation.
-dump_count = 3
+dump_count = 1
 
 // 0...(Almost) no output
 // 1...Regular performance information and warnings posted
@@ -27,4 +31,4 @@ statistics_file = statistics.dump
 
 
 
-#hash:-217745854660895378
+#hash:3905350090599934784

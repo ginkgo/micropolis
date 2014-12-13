@@ -588,7 +588,7 @@ GLFWwindow* init_opengl(ivec2 size)
 
     int version = FLEXT_MAJOR_VERSION * 10 + FLEXT_MINOR_VERSION;
 
-    if (reyes_config.dummy_render()) {
+    if (reyes_config.dummy_render() || config.windowless()) {
         glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
     }
     
