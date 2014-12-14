@@ -112,7 +112,7 @@ Micropolis is very much a prototype. It is limited in several ways:
     This can result in holes between surface patches.
 
 - **Micropolygons are always flat-shaded**
-    Gouraud shading would result in fewer artifacts and most production renderers use it. 
+    Gouraud shading would result in fewer artifacts.
 
 - **No Multisampling or stochastic rasterization is supported**
 
