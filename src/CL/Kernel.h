@@ -14,7 +14,8 @@ namespace CL
     {
         cl_kernel _kernel;
         cl_program _program;
-
+        cl_device_id _device;
+        
         public:
 
         Kernel(cl_program program, cl_device_id device, const string& kernelname);
@@ -38,15 +39,20 @@ namespace CL
 
         
         void set_args_from(cl_uint i) {}
+        
+        template <typename T> void get_work_group_info(cl_kernel_work_group_info param_name, T& result)
+        {
+            cl_int status = clGetKernelWorkGroupInfo(_kernel, _device, param_name,
+                                                     sizeof(T), &result, nullptr);
+            OPENCL_ASSERT(status);
+        }
 
     };
 
     template<typename T> 
     inline void Kernel::set_arg(cl_uint arg_index, const T& value) 
     {
-        cl_int status;
-
-        status = clSetKernelArg(_kernel, arg_index, sizeof(T), &value);
+        cl_int status = clSetKernelArg(_kernel, arg_index, sizeof(T), &value);
 
         OPENCL_ASSERT(status);
     }

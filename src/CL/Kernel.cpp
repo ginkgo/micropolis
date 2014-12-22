@@ -5,8 +5,10 @@
 
 #include "Config.h"
 
-CL::Kernel::Kernel(cl_program program, cl_device_id device, const string& kernelname) :
-    _program(0)
+CL::Kernel::Kernel(cl_program program, cl_device_id device, const string& kernelname)
+    : _program(0)
+    , _device(device)
+    
 {
     cl_int status;
 

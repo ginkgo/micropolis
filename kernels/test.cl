@@ -19,5 +19,5 @@
 // This kernel is used for querying the preferred work-group size of a device.
 __kernel void test (global int* p)
 {
-    p[get_global_id()] = get_global_id();
+    p[get_global_id(0)] = get_global_id(0);
 }

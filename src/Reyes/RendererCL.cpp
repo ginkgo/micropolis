@@ -52,7 +52,6 @@ Reyes::RendererCL::RendererCL()
     , _dice_bezier_program(_device, "dice_bezier")
     , _dice_gregory_program(_device, "dice_gregory")
 {
-    
     switch(reyes_config.bound_n_split_method()) {
     default:
         cerr << "Configured bound&split method not supported. Falling back to CPU" << endl;

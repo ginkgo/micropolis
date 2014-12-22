@@ -4,6 +4,9 @@
 #include "CLConfig.h"
 #include "Exception.h"
 
+#include "Program.h"
+#include "Kernel.h"
+
 #include <CL/cl_gl.h>
 #include <fstream>
 
@@ -324,13 +327,15 @@ size_t CL::Device::max_compute_units() const
 
 size_t CL::Device::preferred_work_group_size_multiple() const
 {
-#warning TODO: find a more elegant way to do this
+    // Create a minimal linear test-kernel to check the preferred kernel size
+    Program program(const_cast<CL::Device&>(*this), "test");
+    program.compile("test.cl");
+    shared_ptr<Kernel> kernel(program.get_kernel("test"));
     
-    if (is_GPU_device(_device)) {
-        return 64;
-    } else {
-        return 4;
-    }
+    size_t preferred_size;
+    kernel->get_work_group_info<size_t>(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, preferred_size);
+
+    return preferred_size;
 }
 
 
