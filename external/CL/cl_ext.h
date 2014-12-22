@@ -157,6 +157,10 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clTerminateContextKHR_fn)(cl_context /
  * Standard Portable Intermediate Representation (SPIR) instance
  */
 
+#define CL_DEVICE_SPIR_VERSIONS                     0x40E0
+#define CL_PROGRAM_BINARY_TYPE_INTERMEDIATE         0x40E1
+
+
 /******************************************
 * cl_nv_device_attribute_query extension *
 ******************************************/
@@ -173,6 +177,12 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *clTerminateContextKHR_fn)(cl_context /
 * cl_amd_device_attribute_query *
 *********************************/
 #define CL_DEVICE_PROFILING_TIMER_OFFSET_AMD        0x4036
+
+/*********************************
+* cl_arm_printf extension
+*********************************/
+#define CL_PRINTF_CALLBACK_ARM                      0x40B0
+#define CL_PRINTF_BUFFERSIZE_ARM                    0x40B1
 
 #ifdef CL_VERSION_1_1
    /***********************************
@@ -267,11 +277,11 @@ clGetDeviceImageInfoQCOM(cl_device_id             device,
 
 typedef struct _cl_mem_ext_host_ptr
 {
-    // Type of external memory allocation.
-    // Legal values will be defined in layered extensions.
+    /* Type of external memory allocation. */
+    /* Legal values will be defined in layered extensions. */
     cl_uint  allocation_type;
             
-    // Host cache policy for this external memory allocation.
+    /* Host cache policy for this external memory allocation. */
     cl_uint  host_cache_policy;
 
 } cl_mem_ext_host_ptr;
@@ -284,14 +294,14 @@ typedef struct _cl_mem_ext_host_ptr
 
 typedef struct _cl_mem_ion_host_ptr
 {
-    // Type of external memory allocation.
-    // Must be CL_MEM_ION_HOST_PTR_QCOM for ION allocations.
+    /* Type of external memory allocation. */
+    /* Must be CL_MEM_ION_HOST_PTR_QCOM for ION allocations. */
     cl_mem_ext_host_ptr  ext_host_ptr;
 
-    // ION file descriptor
+    /* ION file descriptor */
     int                  ion_filedesc;
             
-    // Host pointer to the ION allocated memory
+    /* Host pointer to the ION allocated memory */
     void*                ion_hostptr;
 
 } cl_mem_ion_host_ptr;
