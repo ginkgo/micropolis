@@ -32,7 +32,7 @@ namespace Reyes
     class Framebuffer
     {
         
-        protected:
+    protected:
 
         ivec2 _size;
         int   _tile_size;
@@ -40,18 +40,22 @@ namespace Reyes
         ivec2 _act_size;
 
         GL::Shader _shader;
-        CL::Program _framebuffer_program;
-        scoped_ptr<CL::Kernel> _clear_kernel;
 
 
         CL::Buffer* _cl_buffer;
        
 		GL::VBO _screen_quad;
 
+        
+        CL::Program _framebuffer_program;
+        scoped_ptr<CL::Kernel> _clear_kernel;
+
+    protected:
+        
         Framebuffer(CL::Device& device, const ivec2& size, int tile_size);
 
 
-        public:
+    public:
 
         virtual ~Framebuffer();
 
@@ -80,7 +84,7 @@ namespace Reyes
 		GLFWwindow* _glfw_window;
 		
 
-        public:
+    public:
 
         OGLSharedFramebuffer(CL::Device& device, const ivec2& size, int tile_size, GLFWwindow* window);
 

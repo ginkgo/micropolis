@@ -26,17 +26,20 @@
 namespace Reyes
 {
 
-    Framebuffer::Framebuffer(CL::Device& device, const ivec2& size, int tile_size) :
-        _size(size),
-        _tile_size(tile_size),
-        _grid_size(ceil((float)size.x/tile_size), ceil((float)size.y/tile_size)),
-        _act_size(_grid_size * tile_size), 
-        _shader("tex_draw"),
-        //_clear_kernel(device, "framebuffer.cl", "clear"),
-        _cl_buffer(0),
-		_screen_quad(6)
+    Framebuffer::Framebuffer(CL::Device& device, const ivec2& size, int tile_size)
+        : _size(size)
+        , _tile_size(tile_size)
+        , _grid_size(ceil((float)size.x/tile_size), ceil((float)size.y/tile_size))
+        , _act_size(_grid_size * tile_size)
+        , _shader("tex_draw")
+        // , _clear_kernel(device, "framebuffer.cl", "clear")
+        , _cl_buffer(0)
+		, _screen_quad(6)
+
+        , _framebuffer_program(device, "framebuffer")
+        
     {
-        _framebuffer_program.compile(device, "framebuffer.cl");
+        _framebuffer_program.compile("framebuffer.cl");
 
         _clear_kernel.reset(_framebuffer_program.get_kernel("clear"));
         

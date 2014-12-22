@@ -2,13 +2,15 @@
 
 #include "Kernel.h"
 #include "CommandQueue.h"
+#include "ProgramObject.h"
 
 CL::HistogramPyramid::HistogramPyramid(CL::Device& device, const string& use)
     : _device(device)
     , _use(use)
+    , _program(device, "histogram_pyramid")
 {
     // Compile program and load kernels
-    _program.compile(device, "histogram_pyramid.cl");
+    _program.compile("histogram_pyramid.cl");
 
     _reduce_kernel.reset(_program.get_kernel("reduce"));
 }

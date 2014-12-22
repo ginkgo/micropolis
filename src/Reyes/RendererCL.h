@@ -51,6 +51,11 @@ namespace Reyes
         CL::Buffer _block_index;
         CL::Buffer _tile_locks;
         CL::Buffer _depth_buffer;
+
+        
+        CL::Event _last_batch;
+        CL::Event _framebuffer_cleared;
+        CL::UserEvent _frame_event;
         
         CL::Program _reyes_program;
         CL::Program _dice_bezier_program;
@@ -60,11 +65,6 @@ namespace Reyes
         scoped_ptr<CL::Kernel> _dice_gregory_kernel;
         scoped_ptr<CL::Kernel> _shade_kernel;
         scoped_ptr<CL::Kernel> _sample_kernel;
-
-        CL::Event _last_batch;
-        CL::Event _framebuffer_cleared;
-        CL::UserEvent _frame_event;
-
 
     public:
 

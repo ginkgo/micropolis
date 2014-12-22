@@ -3,6 +3,8 @@
 #include "common.h"
 #include <CL/opencl.h>
 
+#include "ProgramObject.h"
+
 #include <sstream>
 
 namespace CL
@@ -12,25 +14,21 @@ namespace CL
 
     class Program : public noncopyable
     {
-        cl_device_id _device;
+        Device& _device;
         cl_program _program;
-        std::stringstream* _source_buffer;
+        string _name;
 
         public:
 
-        Program();
+        Program(Device& device, const string& program_name);
         ~Program();
 
-        void define(const string& macro, const string& statement);
+        void compile(const string& source_file);
+        void link(const ProgramObject& object);
+        void link(const vector<const ProgramObject*>& objects);
+
+        void print_program_info();
         
-        void set_constant(const string& name, int value);
-        void set_constant(const string& name, size_t value);
-        void set_constant(const string& name, float value);
-        void set_constant(const string& name, ivec2 value);
-        void set_constant(const string& name, vec4 value);
-
-        void compile(Device& device, const string& filename);
-
         Kernel* get_kernel(const string& name);
     };
     

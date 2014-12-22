@@ -46,8 +46,11 @@ Reyes::RendererCL::RendererCL()
     , _tile_locks(_device,
                   _framebuffer.size().x/8 * _framebuffer.size().y/8 * sizeof(cl_int), CL_MEM_READ_WRITE, "tile-locks")
 	, _depth_buffer(_device, _framebuffer.size().x * _framebuffer.size().y * sizeof(cl_int), CL_MEM_READ_WRITE, "framebuffer")
-    , _reyes_program()
     , _frame_event(_device, "frame")
+
+    , _reyes_program(_device, "reyes")
+    , _dice_bezier_program(_device, "dice_bezier")
+    , _dice_gregory_program(_device, "dice_gregory")
 {
     
     switch(reyes_config.bound_n_split_method()) {
@@ -70,35 +73,43 @@ Reyes::RendererCL::RendererCL()
         break;
     }
 
-    for (CL::Program* program : {&_reyes_program, &_dice_bezier_program, &_dice_gregory_program}) {
-        program->set_constant("TILE_SIZE", _framebuffer.get_tile_size());
-        program->set_constant("GRID_SIZE", _framebuffer.get_grid_size());
-        program->set_constant("PATCH_SIZE", (int)reyes_config.reyes_patch_size());
-        program->set_constant("VIEWPORT_MIN_PIXEL", ivec2(0,0));
-        program->set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
-        program->set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
-        program->set_constant("MAX_BLOCK_COUNT", _max_block_count);
-        program->set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
-        program->set_constant("BACKFACE_CULLING", reyes_config.backface_culling());
-        program->set_constant("CLEAR_COLOR", reyes_config.clear_color());
-        program->set_constant("CLEAR_DEPTH", 1.0f);
-        program->set_constant("PXLCOORD_SHIFT", reyes_config.subpixel_bits());
-        program->set_constant("DISPLACEMENT", reyes_config.displacement());
+    CL::ProgramObject po_reyes("reyes.cl");
+    CL::ProgramObject po_dice_bezier("dice.cl");
+    CL::ProgramObject po_dice_gregory("dice.cl");
+    
+    for (auto po : {&po_reyes, &po_dice_bezier, &po_dice_gregory}) {
+        po->set_constant("TILE_SIZE", _framebuffer.get_tile_size());
+        po->set_constant("GRID_SIZE", _framebuffer.get_grid_size());
+        po->set_constant("PATCH_SIZE", (int)reyes_config.reyes_patch_size());
+        po->set_constant("VIEWPORT_MIN_PIXEL", ivec2(0,0));
+        po->set_constant("VIEWPORT_MAX_PIXEL", _framebuffer.size());
+        po->set_constant("VIEWPORT_SIZE_PIXEL", _framebuffer.size());
+        po->set_constant("MAX_BLOCK_COUNT", _max_block_count);
+        po->set_constant("FRAMEBUFFER_SIZE", _framebuffer.size());
+        po->set_constant("BACKFACE_CULLING", reyes_config.backface_culling());
+        po->set_constant("CLEAR_COLOR", reyes_config.clear_color());
+        po->set_constant("CLEAR_DEPTH", 1.0f);
+        po->set_constant("PXLCOORD_SHIFT", reyes_config.subpixel_bits());
+        po->set_constant("DISPLACEMENT", reyes_config.displacement());
     }
                 
-    _reyes_program.compile(_device, "reyes.cl");
+    po_reyes.compile(_device);
+    _reyes_program.link(po_reyes);
+    
 
     _shade_kernel.reset(_reyes_program.get_kernel("shade"));
-
     _sample_kernel.reset(_reyes_program.get_kernel("sample"));
     
-    _dice_bezier_program.define("eval_patch", "eval_bezier_patch");
-    _dice_bezier_program.compile(_device, "dice.cl");
+    po_dice_bezier.define("eval_patch", "eval_bezier_patch");
+    po_dice_bezier.compile(_device);
+    _dice_bezier_program.link(po_dice_bezier);
     _dice_bezier_kernel.reset(_dice_bezier_program.get_kernel("dice"));
 
-    _dice_gregory_program.define("eval_patch", "eval_gregory_patch");
-    _dice_gregory_program.compile(_device, "dice.cl");
+    po_dice_gregory.define("eval_patch", "eval_gregory_patch");
+    po_dice_gregory.compile(_device);
+    _dice_gregory_program.link(po_dice_gregory);
     _dice_gregory_kernel.reset(_dice_gregory_program.get_kernel("dice"));
+
 
     _rasterization_queue.enq_fill_buffer<cl_int>(_tile_locks,
                                                  1, _framebuffer.size().x/8 * _framebuffer.size().y/8,

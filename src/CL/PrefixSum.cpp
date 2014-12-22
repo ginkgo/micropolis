@@ -9,11 +9,13 @@ CL::PrefixSum::PrefixSum(CL::Device& device, size_t max_input_items, const strin
     : _device(device)
     , _use(use)
     , _max_input_items(0)
+    , _program(device, "prefix_sum")
 {
     // Compile program and load kernels
 
-    _program.set_constant("N", PREFIX_N);
-    _program.compile(device, "prefix_sum.cl");
+    ProgramObject program_object("prefix_sum.cl");
+    program_object.set_constant("N", PREFIX_N);
+    _program.link(program_object);
 
     _reduce_kernel.reset(_program.get_kernel("reduce"));
     _accumulate_kernel.reset(_program.get_kernel("accumulate"));

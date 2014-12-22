@@ -47,24 +47,31 @@ Reyes::BoundNSplitCLLocal::BoundNSplitCLLocal(CL::Device& device,
     , _processed_count_buffer(device, WORK_GROUP_CNT * sizeof(int), CL_MEM_READ_WRITE, "bound&split")
 
     , _projection_buffer(device, sizeof(cl_projection), CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, "bound&split")
+      
+    , _bound_n_split_program_bezier(device, "bound_n_split_local_bezier")
+    , _bound_n_split_program_gregory(device, "bound_n_split_local_gregory")
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
 
-    for (auto program : {&_bound_n_split_program_bezier, &_bound_n_split_program_gregory}) {
-        program->set_constant("BATCH_SIZE", reyes_config.reyes_patches_per_pass());
-        program->set_constant("BOUND_N_SPLIT_WORK_GROUP_CNT", WORK_GROUP_CNT);
-        program->set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", WORK_GROUP_SIZE);
-        program->set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
-        program->set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
-        program->set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
+    CL::ProgramObject po_bezier("bound_n_split_local.cl");
+    CL::ProgramObject po_gregory("bound_n_split_local.cl");
+    
+    for (auto po : {&po_bezier, &po_gregory}) {
+        po->set_constant("BATCH_SIZE", reyes_config.reyes_patches_per_pass());
+        po->set_constant("BOUND_N_SPLIT_WORK_GROUP_CNT", WORK_GROUP_CNT);
+        po->set_constant("BOUND_N_SPLIT_WORK_GROUP_SIZE", WORK_GROUP_SIZE);
+        po->set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
+        po->set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
+        po->set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
     }
 
+    po_bezier.define("eval_patch", "eval_bezier_patch");
+    po_bezier.compile(device);
+    _bound_n_split_program_bezier.link(po_bezier);
 
-    _bound_n_split_program_bezier.define("eval_patch", "eval_bezier_patch");
-    _bound_n_split_program_bezier.compile(device, "bound_n_split_local.cl");
-    
-    _bound_n_split_program_gregory.define("eval_patch", "eval_gregory_patch");
-    _bound_n_split_program_gregory.compile(device, "bound_n_split_local.cl");
+    po_gregory.define("eval_patch", "eval_gregory_patch");
+    po_gregory.compile(device);
+    _bound_n_split_program_gregory.link(po_gregory);
     
     _bound_n_split_kernel_bezier.reset(_bound_n_split_program_bezier.get_kernel("bound_n_split"));
     _bound_n_split_kernel_gregory.reset(_bound_n_split_program_gregory.get_kernel("bound_n_split"));

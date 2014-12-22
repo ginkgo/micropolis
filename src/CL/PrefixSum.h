@@ -16,15 +16,15 @@ namespace CL
     {
         vector<Buffer> _buffer_pyramid;
 
-        Program _program;
-        
-        shared_ptr<Kernel> _reduce_kernel;
-        shared_ptr<Kernel> _accumulate_kernel;
-
         Device& _device;
         string _use;
         
         size_t _max_input_items;
+        
+        Program _program;
+        
+        shared_ptr<Kernel> _reduce_kernel;
+        shared_ptr<Kernel> _accumulate_kernel;
 
     public:
 

@@ -54,24 +54,29 @@ Reyes::BoundNSplitCLBounded::BoundNSplitCLBounded(CL::Device& device,
     , _prefix_sum(device, BATCH_SIZE, "bound&split")
 
     , _user_event(device, "bound&split")
+
+    , _bound_n_split_program_bezier(device, "bound_n_split_bounded_bezier")
+    , _bound_n_split_program_gregory(device, "bound_n_split_bounded_gregory")
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
 
+    CL::ProgramObject po_bezier("bound_n_split_bounded.cl");
+    CL::ProgramObject po_gregory("bound_n_split_bounded.cl");
+
+    for (CL::ProgramObject* po : {&po_bezier, &po_gregory}) {
+        po->set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
+        po->set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
+        po->set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
+    }
+   
+    po_bezier.define("eval_patch", "eval_bezier_patch");
+    po_bezier.compile(device);
+    _bound_n_split_program_bezier.link(po_bezier);
     
-    _bound_n_split_program_bezier.set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
-    _bound_n_split_program_bezier.set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
-    _bound_n_split_program_bezier.set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
-
-    _bound_n_split_program_bezier.define("eval_patch", "eval_bezier_patch");
-    _bound_n_split_program_bezier.compile(device, "bound_n_split_bounded.cl");
+    po_gregory.define("eval_patch", "eval_gregory_patch");
+    po_gregory.compile(device);
+    _bound_n_split_program_gregory.link(po_gregory);
     
-    _bound_n_split_program_gregory.set_constant("BOUND_SAMPLE_RATE", reyes_config.bound_sample_rate());
-    _bound_n_split_program_gregory.set_constant("CULL_RIBBON", reyes_config.cull_ribbon());
-    _bound_n_split_program_gregory.set_constant("MAX_SPLIT_DEPTH", reyes_config.max_split_depth());
-
-    _bound_n_split_program_gregory.define("eval_patch", "eval_gregory_patch");
-    _bound_n_split_program_gregory.compile(device, "bound_n_split_bounded.cl");
-
     _bound_kernel_bezier.reset(_bound_n_split_program_bezier.get_kernel("bound_kernel"));
     _bound_kernel_gregory.reset(_bound_n_split_program_gregory.get_kernel("bound_kernel"));
     _move_kernel.reset(_bound_n_split_program_bezier.get_kernel("move"));

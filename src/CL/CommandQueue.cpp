@@ -12,8 +12,7 @@ CL::CommandQueue::CommandQueue(Device& device, const string& name)
     : _parent_device(device)
     , _name(name)
 {
-    cl_queue_properties props[] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE,
-                                   0};
+    cl_queue_properties props[] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, 0};
     
     cl_int status;
     _queue = clCreateCommandQueueWithProperties(device.get_context(), device.get_device(),

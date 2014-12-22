@@ -3,6 +3,7 @@
 #include "Device.h"
 #include "Exception.h"
 #include "Kernel.h"
+#include "ProgramObject.h"
 
 #include "Config.h"
 #include "CLConfig.h"
@@ -10,17 +11,18 @@
 #include <fstream>
 #include <iomanip>
 
-namespace {
-    cl_program compile_program (CL::Device& device, const string& source, const string& filename);
-}
+#ifdef linux
+#include <glob.h>
+#else
+#error TODO
+#endif
 
 
-
-CL::Program::Program() :
-    _program(0),
-    _source_buffer(new std::stringstream())
-{        
-    *_source_buffer << std::setiosflags(std::ios::fixed) << std::setprecision(10);
+CL::Program::Program(Device& device, const string& program_name)
+    : _device(device)
+    , _program(0)
+    , _name(program_name)
+{   
 }
     
 
@@ -31,135 +33,117 @@ CL::Program::~Program()
     }
 }
 
-void CL::Program::define(const string& macro, const string& statement)
+
+void CL::Program::compile(const string& source_file)
 {
-    assert(_source_buffer);
-    *_source_buffer << "#define " << macro << " " << statement << endl;
+    ProgramObject program_object(source_file);
+    link(program_object);
 }
 
-void CL::Program::set_constant(const string& name, int value)
+
+void CL::Program::link(const ProgramObject& program_object)
 {
-    assert(_source_buffer);
-    *_source_buffer << "#define " << name << " " << value << endl;
+    vector<const ProgramObject*> objects = {&program_object};
+
+    link(objects);
 }
 
-void CL::Program::set_constant(const string& name, size_t value)
-{
-    assert(_source_buffer);
-    *_source_buffer << "#define " << name << " " << value << endl;
-}
-
-void CL::Program::set_constant(const string& name, float value)
-{
-    assert(_source_buffer);
-    *_source_buffer << "#define " << name << " " << value << "f" << endl;
-}
-
-void CL::Program::set_constant(const string& name, ivec2 value)
-{
-    assert(_source_buffer);
-    *_source_buffer << "#define " << name << " ((int2)(" 
-                    << value.x << ", " << value.y << "))" << endl;
-}
-
-void CL::Program::set_constant(const string& name, vec4 value)
-{
-    assert(_source_buffer);
-    *_source_buffer << "#define " << name << " ((float4)(" 
-                    << value.x << "f, " << value.y << "f, " 
-                    << value.z << "f, " << value.w <<  "f))" << endl;
-}
-
-void CL::Program::compile(Device& device,  const string& filename)
+void CL::Program::link(const vector<const CL::ProgramObject*>& objects)
 {
     assert(_program == 0);
 
-	_device = device.get_device();
-
-    *_source_buffer << endl
-                    << "# 1 \"" << cl_config.kernel_dir() << "/" << filename << "\"" << endl
-                    << read_file(cl_config.kernel_dir() + "/" + filename);
-    
-    string file_content = _source_buffer->str();
-
-    if (cl_config.dump_kernel_files()) {
-        std::ofstream fs(("/tmp/"+filename).c_str());
-        fs << file_content << endl;
+    if (config.verbosity_level() > 0) {
+        cout  << "Linking " << _name << "..." << endl;
     }
     
-    _program = compile_program(device, file_content, filename);
+    cl_int status;
+    cl_device_id dev = _device.get_device();
+    cl_context context = _device.get_context();
 
-    delete _source_buffer;
-    _source_buffer = 0;
+    vector<cl_program> program_objects;
+
+    for (auto o : objects) {
+        program_objects.push_back(o->compile(_device));
+    }
+
+    string link_flags = "";
+
+    _program = clLinkProgram(context, 1, &dev, link_flags.c_str(),
+                             program_objects.size(), program_objects.data(),
+                             nullptr, nullptr,
+                             &status);
+    OPENCL_ASSERT(status);
+
+    // if (status != CL_SUCCESS && status != CL_LINK_PROGRAM_FAILURE) {
+    //     OPENCL_ASSERT(status);
+    // }
+        
+    cl_build_status build_status;
+    status = clGetProgramBuildInfo(_program, dev, CL_PROGRAM_BUILD_STATUS,
+                                   sizeof(build_status), &build_status, 
+                                   NULL);
+    OPENCL_ASSERT(status);
+
+    if (config.verbosity_level() > 0 || build_status != CL_BUILD_SUCCESS) {
+        size_t size = 16 * 1024;
+        char *buffer = new char[size];
+
+        status = clGetProgramBuildInfo(_program, dev, CL_PROGRAM_BUILD_LOG, size, buffer, NULL);
+        OPENCL_ASSERT(status);
+
+        if (strlen(buffer)>0) {
+            cout << "--------------------------------------------------------------------------------" << endl;
+            cout << _name << " linker log:" << endl;
+            cout << buffer << endl;
+        }
+            
+        delete[] buffer;
+    }
+
+
+    if (build_status != CL_BUILD_SUCCESS) {
+        OPENCL_EXCEPTION("Failed to link program '" + _name + "'");
+    }
+
+    if (config.verbosity_level() > 0) {
+        print_program_info();
+    }
+    
+}
+
+
+void CL::Program::print_program_info()
+{
+    if (_program == 0) {
+        return;
+    }
+    
+    cl_int status;
+
+    size_t num_kernels;
+    
+    status = clGetProgramInfo(_program, CL_PROGRAM_NUM_KERNELS,
+                              sizeof(num_kernels), &num_kernels,
+                              nullptr);
+    OPENCL_ASSERT(status);
+
+    cout << num_kernels << " kernels built: ";
+
+    char kernel_names[1024*16];
+
+    status = clGetProgramInfo(_program, CL_PROGRAM_KERNEL_NAMES,
+                              sizeof(kernel_names), kernel_names,
+                              nullptr);
+    OPENCL_ASSERT(status);
+
+    cout << kernel_names << endl;
+    
 }
 
 
 CL::Kernel* CL::Program::get_kernel(const string& name) 
 {
-    return new Kernel(_program, _device, name);
-}
- 
-
-namespace {
+    assert(_program != 0);
     
-    cl_program compile_program (CL::Device& device, const string& source, const string& filename)
-    {
-        const char* c_content = source.c_str();
-        size_t content_size = source.size();
-
-        cl_int status;
-
-        cl_program program = clCreateProgramWithSource(device.get_context(), 1, 
-                                                       &c_content, &content_size, &status);
-        OPENCL_ASSERT(status);
-
-        cl_device_id dev = device.get_device();
-
-        string flags = "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable";
-        flags += " -I"+cl_config.kernel_dir();
-
-#ifdef DEBUG_OPENCL
-        flags += " -g";
-#endif
-
-        
-        status = clBuildProgram(program, 1, &dev, flags.c_str(), NULL, NULL);
-
-        if (status != CL_SUCCESS && status != CL_BUILD_PROGRAM_FAILURE) {
-            OPENCL_ASSERT(status);
-        }
-
-        cl_build_status build_status;
-        
-        status = clGetProgramBuildInfo(program, dev, 
-                                       CL_PROGRAM_BUILD_STATUS,
-                                       sizeof(build_status), &build_status, 
-                                       NULL);
-
-        OPENCL_ASSERT(status);
-
-        if (config.verbosity_level() > 0 || build_status != CL_BUILD_SUCCESS) {
-            size_t size = 16 * 1024;
-            char *buffer = new char[size];
-
-            status = clGetProgramBuildInfo(program, dev,
-                                           CL_PROGRAM_BUILD_LOG,
-                                           size, buffer, NULL);
-            OPENCL_ASSERT(status);
-            
-            cout << "--------------------------------------------------------------------------------" << endl;
-            cout << filename << " build log:" << endl;
-            cout << buffer << endl;
-
-            delete[] buffer;
-        }
-
-
-        if (build_status != CL_BUILD_SUCCESS) {
-            OPENCL_EXCEPTION("Failed to build program '" + filename + "'");
-        }
-
-        return program;
-    }
-    
+    return new Kernel(_program, _device.get_device(), name);
 }

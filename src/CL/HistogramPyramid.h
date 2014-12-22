@@ -14,13 +14,14 @@ namespace CL
 
     class HistogramPyramid : public noncopyable
     {
-        Program _program;
-        
-        shared_ptr<Kernel> _reduce_kernel;
 
         Device& _device;
         string _use;
      
+        Program _program;
+        
+        shared_ptr<Kernel> _reduce_kernel;
+        
     public:
 
         HistogramPyramid(Device& device, const string& use="unknown");
