@@ -1,4 +1,3 @@
-#include "utility.h"
 
 // Compile time constants
 // N - size_t

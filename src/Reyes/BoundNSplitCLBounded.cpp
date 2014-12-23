@@ -60,6 +60,7 @@ Reyes::BoundNSplitCLBounded::BoundNSplitCLBounded(CL::Device& device,
 {
     _patch_index->enable_load_opencl_buffer(device, queue);
 
+    CL::ProgramObject po_utility("utility.cl");    
     CL::ProgramObject po_bezier("bound_n_split_bounded.cl");
     CL::ProgramObject po_gregory("bound_n_split_bounded.cl");
 
@@ -70,12 +71,10 @@ Reyes::BoundNSplitCLBounded::BoundNSplitCLBounded(CL::Device& device,
     }
    
     po_bezier.define("eval_patch", "eval_bezier_patch");
-    po_bezier.compile(device);
-    _bound_n_split_program_bezier.link(po_bezier);
+    _bound_n_split_program_bezier.link({&po_bezier, &po_utility});
     
     po_gregory.define("eval_patch", "eval_gregory_patch");
-    po_gregory.compile(device);
-    _bound_n_split_program_gregory.link(po_gregory);
+    _bound_n_split_program_gregory.link({&po_gregory, &po_utility});
     
     _bound_kernel_bezier.reset(_bound_n_split_program_bezier.get_kernel("bound_kernel"));
     _bound_kernel_gregory.reset(_bound_n_split_program_gregory.get_kernel("bound_kernel"));

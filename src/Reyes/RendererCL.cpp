@@ -72,6 +72,8 @@ Reyes::RendererCL::RendererCL()
         break;
     }
 
+    CL::ProgramObject po_utility("utility.cl");
+
     CL::ProgramObject po_reyes("reyes.cl");
     CL::ProgramObject po_dice_bezier("dice.cl");
     CL::ProgramObject po_dice_gregory("dice.cl");
@@ -92,21 +94,18 @@ Reyes::RendererCL::RendererCL()
         po->set_constant("DISPLACEMENT", reyes_config.displacement());
     }
                 
-    po_reyes.compile(_device);
-    _reyes_program.link(po_reyes);
+    _reyes_program.link({&po_reyes, &po_utility});
     
 
     _shade_kernel.reset(_reyes_program.get_kernel("shade"));
     _sample_kernel.reset(_reyes_program.get_kernel("sample"));
     
     po_dice_bezier.define("eval_patch", "eval_bezier_patch");
-    po_dice_bezier.compile(_device);
-    _dice_bezier_program.link(po_dice_bezier);
+    _dice_bezier_program.link({&po_dice_bezier, &po_utility});
     _dice_bezier_kernel.reset(_dice_bezier_program.get_kernel("dice"));
 
     po_dice_gregory.define("eval_patch", "eval_gregory_patch");
-    po_dice_gregory.compile(_device);
-    _dice_gregory_program.link(po_dice_gregory);
+    _dice_gregory_program.link({&po_dice_gregory, &po_utility});
     _dice_gregory_kernel.reset(_dice_gregory_program.get_kernel("dice"));
 
 

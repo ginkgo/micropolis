@@ -110,11 +110,9 @@ Reyes::BoundNSplitCLBreadth::BoundNSplitCLBreadth(CL::Device& device,
     }
    
     po_bezier.define("eval_patch", "eval_bezier_patch");
-    po_bezier.compile(device);
     _bound_n_split_program_bezier.link(po_bezier);
     
     po_gregory.define("eval_patch", "eval_gregory_patch");
-    po_gregory.compile(device);
     _bound_n_split_program_gregory.link(po_gregory);
     
     _bound_kernel_bezier.reset(_bound_n_split_program_bezier.get_kernel("bound_kernel"));

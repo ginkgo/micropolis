@@ -10,6 +10,7 @@ CL::Exception::Exception(cl_int err_code, const string& file, int line_no):
     get_errors();
 
     switch(err_code) {
+    case -1001:                                  _msg = "Vendor ICD not correctly installed(?)"; break;
     case CL_BUILD_PROGRAM_FAILURE:               _msg = "Program build failure";                 break;
     case CL_COMPILER_NOT_AVAILABLE:              _msg = "Compiler not available";                break;
     case CL_INVALID_ARG_INDEX:                   _msg = "Invalid kernel argument index";         break;
@@ -21,8 +22,8 @@ CL::Exception::Exception(cl_int err_code, const string& file, int line_no):
     case CL_INVALID_COMMAND_QUEUE:               _msg = "Invalid command queue";                 break;
     case CL_INVALID_CONTEXT:                     _msg = "Invalid context";                       break;
     case CL_INVALID_DEVICE:                      _msg = "Invalid device";                        break;
+    case CL_INVALID_EVENT:                       _msg = "Invalid event";                         break;
     case CL_INVALID_EVENT_WAIT_LIST:             _msg = "Invalid event wait list";               break;
-    case CL_INVALID_EVENT:                       _msg = "Invalid event";
     case CL_INVALID_GLOBAL_OFFSET:               _msg = "Invalid global offset";                 break;
     case CL_INVALID_GLOBAL_WORK_SIZE:            _msg = "Invalid global work size";              break;
     case CL_INVALID_GL_OBJECT:                   _msg = "Invalid OpenGL object";                 break;
@@ -43,12 +44,12 @@ CL::Exception::Exception(cl_int err_code, const string& file, int line_no):
     case CL_INVALID_WORK_DIMENSION:              _msg = "Invalid work dimension";                break;
     case CL_INVALID_WORK_GROUP_SIZE:             _msg = "Invalid work group size";               break;
     case CL_INVALID_WORK_ITEM_SIZE:              _msg = "Invalid work item size";                break;
+    case CL_LINK_PROGRAM_FAILURE:                _msg = "Program linkage failed";                break;
     case CL_MEM_OBJECT_ALLOCATION_FAILURE:       _msg = "Mem-object allocation failure";         break;
     case CL_MISALIGNED_SUB_BUFFER_OFFSET:        _msg = "Misaligned sub-buffer offset";          break;
     case CL_OUT_OF_HOST_MEMORY:                  _msg = "Out of host memory";                    break;
     case CL_OUT_OF_RESOURCES:                    _msg = "Out of resources";                      break;
     case CL_PROFILING_INFO_NOT_AVAILABLE:        _msg = "Profiling info not available";          break;
-    case -1001:                                  _msg = "Vendor ICD not correctly installed(?)"; break;
     default:                                     _msg = "Unknown error: " + to_string(err_code);
     }
 

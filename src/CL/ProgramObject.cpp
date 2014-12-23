@@ -195,10 +195,6 @@ namespace {
         }
 
         return program;
-        
-        
-
-        return program;
     }
     
 }
