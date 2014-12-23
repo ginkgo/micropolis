@@ -19,6 +19,8 @@ namespace CL
         bool _share_gl;
 
         std::set<string> _supported_extensions;
+
+        size_t _preferred_work_group_size;
         
     public:
 
@@ -70,7 +72,7 @@ namespace CL
         void release_events();
 
         size_t max_compute_units() const;
-        size_t preferred_work_group_size_multiple() const;
+        size_t preferred_work_group_size_multiple();
 
         bool check_extension(const string& extension_name) const;
 

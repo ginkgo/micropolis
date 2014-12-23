@@ -43,7 +43,8 @@ namespace
 
 
 CL::Device::Device(int platform_index, int device_index)
-    : _id_count(0)
+    : _preferred_work_group_size(0)
+    , _id_count(0)
     , _dump_trace(false)
 {
     cl_platform_id platform;
@@ -325,17 +326,20 @@ size_t CL::Device::max_compute_units() const
 }
 
 
-size_t CL::Device::preferred_work_group_size_multiple() const
+size_t CL::Device::preferred_work_group_size_multiple()
 {
+    if (_preferred_work_group_size > 0) {
+        return _preferred_work_group_size;
+    }
+    
     // Create a minimal linear test-kernel to check the preferred kernel size
-    Program program(const_cast<CL::Device&>(*this), "test");
+    Program program(*this, "test");
     program.compile("test.cl");
     shared_ptr<Kernel> kernel(program.get_kernel("test"));
     
-    size_t preferred_size;
-    kernel->get_work_group_info<size_t>(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, preferred_size);
+    kernel->get_work_group_info<size_t>(CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, _preferred_work_group_size);
 
-    return preferred_size;
+    return _preferred_work_group_size;
 }
 
 
