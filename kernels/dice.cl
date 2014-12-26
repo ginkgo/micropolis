@@ -18,11 +18,7 @@
 #define VIEWPORT_SIZE (VIEWPORT_SIZE_PIXEL << PXLCOORD_SHIFT)
 
 
-size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
-{
-    return nu + nv * (PATCH_SIZE+1) + patch * (PATCH_SIZE+1)*(PATCH_SIZE+1);
-}
-
+size_t calc_grid_pos(size_t nu, size_t nv, size_t patch);
 
 
 __kernel void dice (const global float4* patch_buffer,

@@ -1,49 +1,41 @@
 
 TODO:
-* Investigate proper epsilon-culling for eye-splits
-* Implement task donation/stealing on top of Local B&S kernels
+* Move buffers used by kernels to program scope variable
+* For dicing/shading/rasterization call kernels as device-side enqueue
 * Rename reyes_patches_per_pass to grids_per_pass or something like that
+* Separate b&s batch size -> intermediate buffer size -> rendering batch size
+* Investigate proper epsilon-culling for eye-splits
 * Clean up Projection class
   * Only update when necessary
 * Write polygon size estimation shader
 * Implement dynamic-rate dicing
-* Switch readme to markdown/textile or something like that
-* Query ideal work group size and use that for bound_n_split kernels
-  * Also pick local stack size (vs. spill region) that way
 
 * Find source for driver crash when switching to OpenGL backend
   * This only happens on R9 290X -> Switched back to HD 7970
   * Perhaps try setting up a minimal debug case
   
-* Make more use of
-  * __attribute__((work_group_size_hint(X,Y,Z)))
-  * __attribute__((reqd_work_group_size(X,Y,Z)))
-
-* Improve on parse_trace.py output
-  * Queue name in bold
-  * (Colored) vertical lines for orientation?
-  * Method for combining commands into single one
-
-* Debug weird trace behavior where patch-range transfer seem to happen after depending dice/shade/sample
 * Investigate cause of ~2ms extra latency when creating framebuffers >800x600
-
-* Find source for FPS-counter/trace time discrepancy
-* Check for potential ways to get direct access to default framebuffer
-
 
 * Shader system
   * Use Python for generation/compilation?
   * Noise functions
 
-* Use GL sync objects once available
-
 * Consider switching to ImageBuffers for framebuffer
 * Implement multisampling
-* Implement stochastic rasterization
+
+ONCE AVAILABLE:
+* Use GL sync objects 
+* Check for potential ways to get direct access to default framebuffer
 
 
 DONE:
 
+* Join all dicing, shading and rasterization kernels in single kernel program
+* Switch readme to markdown/textile or something like that
+
+* Query ideal work group size and use that for bound_n_split kernels
+  * Also pick local stack size (vs. spill region) that way
+  
 * Implement Gregory patches (+Blender export script for catmull-clark)
 * Add SCons build dir and config-option
 * Implement PASSTHRU B&S method
@@ -56,6 +48,11 @@ DONE:
 * Dump several traces in trace dump mode
 * Plot figures in benchmark.py with matplotlib
 
+* Improve on parse_trace.py output
+  * Queue name in bold
+  * (Colored) vertical lines for orientation?
+  * Method for combining commands into single one
+  
 * Implement BoundNSplitCLMultipass
 * Use dump-mode to write a benchmark script that tries out many different setting combinations
   * use trace parsing code to calculate performance characteristics

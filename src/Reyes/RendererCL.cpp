@@ -49,8 +49,6 @@ Reyes::RendererCL::RendererCL()
     , _frame_event(_device, "frame")
 
     , _reyes_program(_device, "reyes")
-    , _dice_bezier_program(_device, "dice_bezier")
-    , _dice_gregory_program(_device, "dice_gregory")
 {
     switch(reyes_config.bound_n_split_method()) {
     default:
@@ -94,19 +92,19 @@ Reyes::RendererCL::RendererCL()
         po->set_constant("DISPLACEMENT", reyes_config.displacement());
     }
                 
-    _reyes_program.link({&po_reyes, &po_utility});
-    
 
+    po_dice_bezier.define("eval_patch", "eval_bezier_patch");
+    po_dice_bezier.define("dice", "dice_bezier");
+    
+    po_dice_gregory.define("eval_patch", "eval_gregory_patch");
+    po_dice_gregory.define("dice", "dice_gregory");
+    
+    _reyes_program.link({&po_reyes, &po_dice_bezier, &po_dice_gregory, &po_utility});
+    
     _shade_kernel.reset(_reyes_program.get_kernel("shade"));
     _sample_kernel.reset(_reyes_program.get_kernel("sample"));
-    
-    po_dice_bezier.define("eval_patch", "eval_bezier_patch");
-    _dice_bezier_program.link({&po_dice_bezier, &po_utility});
-    _dice_bezier_kernel.reset(_dice_bezier_program.get_kernel("dice"));
-
-    po_dice_gregory.define("eval_patch", "eval_gregory_patch");
-    _dice_gregory_program.link({&po_dice_gregory, &po_utility});
-    _dice_gregory_kernel.reset(_dice_gregory_program.get_kernel("dice"));
+    _dice_bezier_kernel.reset(_reyes_program.get_kernel("dice_bezier"));
+    _dice_gregory_kernel.reset(_reyes_program.get_kernel("dice_gregory"));
 
 
     _rasterization_queue.enq_fill_buffer<cl_int>(_tile_locks,

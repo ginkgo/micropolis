@@ -58,8 +58,6 @@ namespace Reyes
         CL::UserEvent _frame_event;
         
         CL::Program _reyes_program;
-        CL::Program _dice_bezier_program;
-        CL::Program _dice_gregory_program;
 
         scoped_ptr<CL::Kernel> _dice_bezier_kernel;
         scoped_ptr<CL::Kernel> _dice_gregory_kernel;
