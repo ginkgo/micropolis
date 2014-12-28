@@ -100,16 +100,21 @@ Reyes::RendererCL::RendererCL()
     po_dice_gregory.define("dice", "dice_gregory");
     
     _reyes_program.link({&po_reyes, &po_dice_bezier, &po_dice_gregory, &po_utility});
-    
+
+    _setup_intermediate_buffers_kernel.reset(_reyes_program.get_kernel("setup_intermediate_buffers"));
     _shade_kernel.reset(_reyes_program.get_kernel("shade"));
     _sample_kernel.reset(_reyes_program.get_kernel("sample"));
     _dice_bezier_kernel.reset(_reyes_program.get_kernel("dice_bezier"));
     _dice_gregory_kernel.reset(_reyes_program.get_kernel("dice_gregory"));
 
-
-    _rasterization_queue.enq_fill_buffer<cl_int>(_tile_locks,
-                                                 1, _framebuffer.size().x/8 * _framebuffer.size().y/8,
-                                                 "tile lock init", CL::Event());
+    // Initialize buffers and setup program-scope buffers
+    CL::Event evt = _rasterization_queue.enq_fill_buffer<cl_int>(_tile_locks,
+                                                                   1, _framebuffer.size().x/8 * _framebuffer.size().y/8,
+                                                                   "tile lock init", CL::Event());
+    
+    _setup_intermediate_buffers_kernel->set_args(_pos_grid, _pxlpos_grid, _depth_grid, _color_grid, _block_index);
+    evt = _rasterization_queue.enq_kernel(*_setup_intermediate_buffers_kernel, 1, 1, "setup buffers", evt);
+    _rasterization_queue.wait_for_events(evt);
 }
 
 
@@ -228,7 +233,6 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
     switch (patch_type) {
     case BEZIER:
         _dice_bezier_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
-                                      _pos_grid, _pxlpos_grid, _depth_grid,
                                       matrix, proj);
         
         e = _rasterization_queue.enq_kernel(*_dice_bezier_kernel,
@@ -238,8 +242,7 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
         break;
     case GREGORY:
         _dice_gregory_kernel->set_args(batch.patch_buffer, batch.patch_ids, batch.patch_min, batch.patch_max,
-                                      _pos_grid, _pxlpos_grid, _depth_grid,
-                                      matrix, proj);
+                                       matrix, proj);
         
         e = _rasterization_queue.enq_kernel(*_dice_gregory_kernel,
                                             ivec3(patch_size + group_width, patch_size + group_width, patch_count),
@@ -250,13 +253,12 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
     
     
     // SHADE
-    _shade_kernel->set_args(_pos_grid, _pxlpos_grid, _block_index, _color_grid, color);
+    _shade_kernel->set_args(color);
     e = _rasterization_queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8,8,1),
                                         "shade", e);
 
     // SAMPLE
-    _sample_kernel->set_args(_block_index, _pxlpos_grid, _color_grid, _depth_grid,
-                             _tile_locks, _framebuffer.get_buffer(), _depth_buffer);
+    _sample_kernel->set_args(_tile_locks, _framebuffer.get_buffer(), _depth_buffer);
     e = _rasterization_queue.enq_kernel(*_sample_kernel, ivec3(8,8,patch_count * square(patch_size/8)), ivec3(8,8,1),
                                         "sample", _framebuffer_cleared | e);
     _framebuffer_cleared = CL::Event();

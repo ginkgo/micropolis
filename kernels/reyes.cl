@@ -34,6 +34,29 @@
 #define VIEWPORT_MAX  ((VIEWPORT_MAX_PIXEL << PXLCOORD_SHIFT) - 1)
 #define VIEWPORT_SIZE (VIEWPORT_SIZE_PIXEL << PXLCOORD_SHIFT)
 
+
+global float4* global pos_grid;
+global int2* global pxlpos_grid;
+global float* global depth_grid;
+global float4* global color_grid;
+global int4* global block_index;
+
+
+// Setup program-scope variables with pointers to buffers
+__kernel void setup_intermediate_buffers (global float4* pos_grid_buffer,
+                                          global int2* pxlpos_grid_buffer,
+                                          global float* depth_grid_buffer,
+                                          global float4* color_grid_buffer,
+                                          global int4* block_index_buffer)
+{
+    pos_grid = pos_grid_buffer;
+    pxlpos_grid = pxlpos_grid_buffer;
+    depth_grid = depth_grid_buffer;
+    color_grid = color_grid_buffer;
+    block_index = block_index_buffer;
+}
+
+
 int calc_framebuffer_pos(int2 pxlpos)
 {
     int2 gridpos = pxlpos / TILE_SIZE;
@@ -81,11 +104,7 @@ int calc_color_grid_pos(int u, int v, int range_id)
 
 
 
-__kernel void shade(const global float4* pos_grid,
-                    const global int2* pxlpos_grid,
-                    global int4* block_index,
-                    global float4* color_grid,
-                    float4 diffuse_color)
+__kernel void shade(float4 diffuse_color)
 {
     volatile local int x_min;
     volatile local int y_min;
@@ -267,14 +286,9 @@ int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
 
 #define MAX_LOCAL_COORD  ((8<<PXLCOORD_SHIFT) - 1)
 
-__kernel void sample(global const int4* block_index,
-                     global const int2* pxlpos_grid,
-                     global const float4* color_grid,
-                     global const float* depth_grid,
-                     volatile global int* tile_locks,
+__kernel void sample(volatile global int* tile_locks,
                      volatile global float4* color_buffer,
-                     volatile global int* depth_buffer
-                     )
+                     volatile global int* depth_buffer)
 {
     local float4 colors[8][8];
     local int depths[8][8];

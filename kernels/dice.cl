@@ -1,4 +1,5 @@
 #include "utility.h"
+#include "reyes.h"
 
 // Compile time constants:
 // PATCH_SIZE            - int
@@ -16,18 +17,12 @@
 #define VIEWPORT_MIN  (VIEWPORT_MIN_PIXEL  << PXLCOORD_SHIFT)
 #define VIEWPORT_MAX  ((VIEWPORT_MAX_PIXEL << PXLCOORD_SHIFT) - 1)
 #define VIEWPORT_SIZE (VIEWPORT_SIZE_PIXEL << PXLCOORD_SHIFT)
-
-
-size_t calc_grid_pos(size_t nu, size_t nv, size_t patch);
-
+                                                              
 
 __kernel void dice (const global float4* patch_buffer,
                     const global int* pid_buffer,
                     const global float2* min_buffer,
                     const global float2* max_buffer,
-                    global float4* pos_grid,
-                    global int2* pxlpos_grid,
-                    global float* depth_grid,
                     float16 modelview,
                     float16 proj)
 {

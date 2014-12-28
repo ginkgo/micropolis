@@ -59,6 +59,7 @@ namespace Reyes
         
         CL::Program _reyes_program;
 
+        scoped_ptr<CL::Kernel> _setup_intermediate_buffers_kernel;
         scoped_ptr<CL::Kernel> _dice_bezier_kernel;
         scoped_ptr<CL::Kernel> _dice_gregory_kernel;
         scoped_ptr<CL::Kernel> _shade_kernel;
