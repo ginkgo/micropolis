@@ -1,6 +1,9 @@
 #ifndef REYES_H
 #define REYES_H
 
+// Patch type enums
+#define BEZIER 0
+#define GREGORY 1
 
 // Defined in reyes.cl:
 
@@ -19,6 +22,17 @@ __kernel void shade(float4 diffuse_color);
 __kernel void sample(volatile global int* tile_locks,
                      volatile global float4* color_buffer,
                      volatile global int* depth_buffer);
+
+// __kernel void draw_patches(const global float4* patch_buffer,
+//                            const global int* pid_buffer,
+//                            const global float2* min_buffer,
+//                            const global float2* max_buffer,
+//                            float16 modelview,
+//                            float16 proj,
+//                            float4 diffuse_color,
+//                            volatile global int* tile_locks,
+//                            volatile global float4* color_buffer,
+//                            volatile global int* depth_buffer);
 
 size_t calc_grid_pos(size_t nu, size_t nv, size_t patch);
 int calc_framebuffer_pos(int2 pxlpos);

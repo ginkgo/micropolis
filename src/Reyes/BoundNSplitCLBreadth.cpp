@@ -153,7 +153,7 @@ void Reyes::BoundNSplitCLBreadth::init(void* patches_handle, const mat4& matrix,
     
     _init_ranges_kernel->set_args((cl_int)_patch_count,
                                   _read_buffers->pids, _read_buffers->depths, _read_buffers->mins, _read_buffers->maxs);
-    _ready = _queue.enq_kernel(*_init_ranges_kernel, round_up_by((int)_patch_count, 64), 64, "init patch ranges", _ready);
+    _ready = _queue.enq_kernel(*_init_ranges_kernel, (int)_patch_count, 64, "init patch ranges", _ready);
 }
 
 
@@ -202,14 +202,14 @@ Reyes::Batch Reyes::BoundNSplitCLBreadth::do_bound_n_split(CL::Event& ready)
                                        _read_buffers->pids, _read_buffers->depths, _read_buffers->mins, _read_buffers->maxs,
                                        _flag_buffers.bound_flags, _flag_buffers.split_flags, _flag_buffers.draw_flags,
                                        _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
-        _ready = _queue.enq_kernel(*_bound_kernel_bezier, round_up_by(_patch_count, 64), 64, "bound patches", ready | _ready);
+        _ready = _queue.enq_kernel(*_bound_kernel_bezier, _patch_count, 64, "bound patches", ready | _ready);
         break;
     case Reyes::GREGORY:
         _bound_kernel_gregory->set_args(*_active_patch_buffer, _patch_count,
                                         _read_buffers->pids, _read_buffers->depths, _read_buffers->mins, _read_buffers->maxs,
                                         _flag_buffers.bound_flags, _flag_buffers.split_flags, _flag_buffers.draw_flags,
                                         _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
-        _ready = _queue.enq_kernel(*_bound_kernel_gregory, round_up_by(_patch_count, 64), 64, "bound patches", ready | _ready);
+        _ready = _queue.enq_kernel(*_bound_kernel_gregory, _patch_count, 64, "bound patches", ready | _ready);
         break;
     }
 
@@ -230,7 +230,7 @@ Reyes::Batch Reyes::BoundNSplitCLBreadth::do_bound_n_split(CL::Event& ready)
                            _flag_buffers.bound_flags, _flag_buffers.draw_flags, _flag_buffers.split_flags, 
                            _write_buffers->pids, _write_buffers->depths, _write_buffers->mins, _write_buffers->maxs,
                            _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer);
-    _ready = _queue.enq_kernel(*_move_kernel, round_up_by(_patch_count, 64), 64, "split patches", _ready | prefix_sum_ready);
+    _ready = _queue.enq_kernel(*_move_kernel, _patch_count, 64, "split patches", _ready | prefix_sum_ready);
               
     
     _queue.wait_for_events(mapping_ready);

@@ -59,6 +59,48 @@ __kernel void setup_intermediate_buffers (global float4* pos_grid_buffer,
 
 
 
+__kernel void draw_patches(const global float4* patch_buffer,
+                           const global int* pid_buffer,
+                           const global float2* min_buffer,
+                           const global float2* max_buffer,
+                           int patch_type,
+                           int patch_count,
+                           float16 modelview,
+                           float16 proj,
+                           float4 diffuse_color,
+                           volatile global int* tile_locks,
+                           volatile global float4* color_buffer,
+                           volatile global int* depth_buffer)
+{
+    clk_event_t dice_done;
+    clk_event_t shade_done;
+    clk_event_t sample_done;
+
+    const size_t dice_g[3] = {PATCH_SIZE+1, PATCH_SIZE+1, (size_t)patch_count};
+    const size_t dice_l[3] = {8, 8, 1};
+    ndrange_t dice_range = ndrange_3D(dice_g, dice_l);
+    
+    if (patch_type == BEZIER) {
+        enqueue_kernel(get_default_queue(),
+                       CLK_ENQUEUE_FLAGS_NO_WAIT,
+                       dice_range,
+                       0, NULL,
+                       &dice_done,
+                       ^{dice_bezier(patch_buffer, pid_buffer, min_buffer, max_buffer, modelview, proj);});
+    } else if (patch_type == GREGORY) {
+        enqueue_kernel(get_default_queue(),
+                       CLK_ENQUEUE_FLAGS_NO_WAIT,
+                       dice_range,
+                       0, NULL,
+                       &dice_done,
+                       ^{dice_gregory(patch_buffer, pid_buffer, min_buffer, max_buffer, modelview, proj);});
+    } else {
+        return; // Error
+    }
+                       
+                   
+}
+
 
 
 __kernel void shade(float4 diffuse_color)

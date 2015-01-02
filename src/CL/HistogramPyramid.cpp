@@ -37,8 +37,7 @@ CL::Event CL::HistogramPyramid::apply(size_t base_item_count, size_t base_size, 
         size = (size+1)/2;
         count = (count+1)/2;
 
-        event = queue.enq_kernel(*_reduce_kernel, round_up_by<int>(count,64), (int)64, "reduce", event);
-        //cout << " " << round_up_by<int>(count,64) <<" " << count << " " << offset << " " << endl;
+        event = queue.enq_kernel(*_reduce_kernel, count, (int)64, "reduce", event);
     } 
     
     return event;

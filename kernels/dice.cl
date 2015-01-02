@@ -29,8 +29,6 @@ __kernel void dice (const global float4* patch_buffer,
     size_t nv = get_global_id(0), nu = get_global_id(1);
     size_t range_id = get_global_id(2);
     size_t patch_id = pid_buffer[range_id];
-
-    if (nv > PATCH_SIZE || nu > PATCH_SIZE) return;
         
     float2 rmin = min_buffer[get_global_id(2)];
     float2 rmax = max_buffer[get_global_id(2)];

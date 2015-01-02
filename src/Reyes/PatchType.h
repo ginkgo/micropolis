@@ -4,8 +4,8 @@ namespace Reyes
 {
 
     enum PatchType {
-        BEZIER,
-        GREGORY
+        BEZIER=0,
+        GREGORY=1
     };
      
 }

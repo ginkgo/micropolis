@@ -227,7 +227,6 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
     CL::Event e;
     
     const int patch_size  = reyes_config.reyes_patch_size();
-    const int group_width = reyes_config.dice_group_width();
 
     // DICE
     switch (patch_type) {
@@ -236,8 +235,7 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
                                       matrix, proj);
         
         e = _rasterization_queue.enq_kernel(*_dice_bezier_kernel,
-                                            ivec3(patch_size + group_width, patch_size + group_width, patch_count),
-                                            ivec3(group_width, group_width, 1),
+                                            ivec3(patch_size+1, patch_size+1, patch_count), ivec3(8, 8, 1),
                                             "dice", ready);
         break;
     case GREGORY:
@@ -245,8 +243,7 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
                                        matrix, proj);
         
         e = _rasterization_queue.enq_kernel(*_dice_gregory_kernel,
-                                            ivec3(patch_size + group_width, patch_size + group_width, patch_count),
-                                            ivec3(group_width, group_width, 1),
+                                            ivec3(patch_size+1, patch_size+1, patch_count), ivec3(8, 8, 1),
                                             "dice", ready);
         break;
     }
@@ -254,7 +251,7 @@ CL::Event Reyes::RendererCL::send_batch(Reyes::Batch& batch,
     
     // SHADE
     _shade_kernel->set_args(color);
-    e = _rasterization_queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count),  ivec3(8,8,1),
+    e = _rasterization_queue.enq_kernel(*_shade_kernel, ivec3(patch_size, patch_size, patch_count), ivec3(8,8,1),
                                         "shade", e);
 
     // SAMPLE

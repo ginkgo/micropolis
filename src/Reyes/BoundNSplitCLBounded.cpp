@@ -126,7 +126,7 @@ void Reyes::BoundNSplitCLBounded::init(void* patches_handle, const mat4& matrix,
 
     //_queue.finish();
     _init_ranges_kernel->set_args((cl_int)patch_count, _pid_stack, _depth_stack, _min_stack, _max_stack);
-    _ready = _queue.enq_kernel(*_init_ranges_kernel, round_up_by((int)patch_count, 64), 64, "init patch ranges", _ready);
+    _ready = _queue.enq_kernel(*_init_ranges_kernel, (int)patch_count, 64, "init patch ranges", _ready);
 }
 
 
@@ -164,7 +164,7 @@ Reyes::Batch Reyes::BoundNSplitCLBounded::do_bound_n_split(CL::Event& ready)
                                        _bound_flags, _split_flags, _draw_flags,
                                        _pid_pad, _depth_pad, _min_pad, _max_pad,
                                        _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
-        _ready = _queue.enq_kernel(*_bound_kernel_bezier, round_up_by(batch_size, 64), 64, "bound patches", ready | _ready);
+        _ready = _queue.enq_kernel(*_bound_kernel_bezier, batch_size, 64, "bound patches", ready | _ready);
         break;
     case Reyes::GREGORY:
         _bound_kernel_gregory->set_args(*_active_patch_buffer, 
@@ -173,7 +173,7 @@ Reyes::Batch Reyes::BoundNSplitCLBounded::do_bound_n_split(CL::Event& ready)
                                         _bound_flags, _split_flags, _draw_flags,
                                         _pid_pad, _depth_pad, _min_pad, _max_pad,
                                         _active_matrix, _projection_buffer, reyes_config.bound_n_split_limit());
-        _ready = _queue.enq_kernel(*_bound_kernel_gregory, round_up_by(batch_size, 64), 64, "bound patches", ready | _ready);
+        _ready = _queue.enq_kernel(*_bound_kernel_gregory, batch_size, 64, "bound patches", ready | _ready);
         break;
     }
 
@@ -192,7 +192,7 @@ Reyes::Batch Reyes::BoundNSplitCLBounded::do_bound_n_split(CL::Event& ready)
                            _bound_flags, _draw_flags, _split_flags,
                            _pid_stack, _depth_stack, _min_stack, _max_stack,
                            _out_pids_buffer, _out_mins_buffer, _out_maxs_buffer);
-    _ready = _queue.enq_kernel(*_move_kernel, round_up_by(batch_size, 64), 64, "split patches", _ready | prefix_sum_ready);
+    _ready = _queue.enq_kernel(*_move_kernel, batch_size, 64, "split patches", _ready | prefix_sum_ready);
 
 
     statistics.add_bounds(batch_size);
