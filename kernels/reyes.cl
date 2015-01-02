@@ -16,6 +16,7 @@
 \******************************************************************************/
 
 #include "utility.h"
+#include "reyes.h"
 
 // Compile time constants:
 // PATCH_SIZE            - int
@@ -57,50 +58,6 @@ __kernel void setup_intermediate_buffers (global float4* pos_grid_buffer,
 }
 
 
-int calc_framebuffer_pos(int2 pxlpos)
-{
-    int2 gridpos = pxlpos / TILE_SIZE;
-    int  grid_id = gridpos.x + GRID_SIZE.x * gridpos.y;
-    int2 loclpos = pxlpos - gridpos * TILE_SIZE;
-    int  locl_id = loclpos.x + TILE_SIZE * loclpos.y;
-
-    return grid_id * TILE_SIZE * TILE_SIZE + locl_id;
-}
-
-size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
-{
-    return nu + nv * (PATCH_SIZE+1) + patch * (PATCH_SIZE+1)*(PATCH_SIZE+1);
-}
-
-
-
-int is_front_facing(const int2 *ps)
-{
-    if (BACKFACE_CULLING) {
-        int2 d1 = ps[1] - ps[0];
-        int2 d2 = ps[2] - ps[0];
-        int2 d3 = ps[3] - ps[0];
-
-        return (d1.x*d3.y-d3.x*d1.y < 0 || d3.x*d2.y-d2.x*d3.y < 0);
-    } else {
-        return 1;
-    }
-}
-
-int is_empty(int2 min, int2 max)
-{
-    return min.x >= max.x && min.y >= max.y;
-}
-
-int calc_block_pos(int u, int v, int range_id)
-{
-    return u + v * BLOCKS_PER_LINE + range_id * BLOCKS_PER_PATCH;
-}
-
-int calc_color_grid_pos(int u, int v, int range_id)
-{
-    return u + v * PATCH_SIZE + range_id * (PATCH_SIZE*PATCH_SIZE);
-}
 
 
 
@@ -218,74 +175,7 @@ __kernel void shade(float4 diffuse_color)
 }
 
 
-int calc_tile_id(int tx, int ty)
-{
-    return tx + FRAMEBUFFER_SIZE.x/8 * ty;
-}
-
-
-void recover_patch_pos(size_t block_id, size_t lx, size_t ly,
-                       private size_t* u, private size_t* v, private size_t* patch)
-{
-    *patch = block_id / BLOCKS_PER_PATCH;
-    size_t local_block_id = block_id % BLOCKS_PER_PATCH;
-    size_t bv = local_block_id / BLOCKS_PER_LINE;
-    size_t bu = local_block_id % BLOCKS_PER_LINE;
-
-    *u = bv * 8 + lx;
-    *v = bu * 8 + ly;
-}
-
-int3 idot3 (int3 Ax, int3 Ay, int3 Bx, int3 By)
-{
-    // return mad24(Ax, Bx, mul24(Ay,  By));
-    return Ax * Bx + Ay * By;
-}
-
-
-int4 idot4 (int4 Ax, int4 Ay, int4 Bx, int4 By)
-{
-    // return mad24(Ax, Bx, mul24(Ay,  By));
-    return Ax * Bx + Ay * By;
-}
-
-
-int idot (int2 a, int2 b)
-{
-    //return mad24(a.x, b.x, mul24(a.y,  b.y));
-    return a.x * b.x + a.y * b.y;
-}
-
-int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
-{
-    int3 Dx = Py.yzx - Py;
-    int3 Dy = Px - Px.yzx;
-
-    /* int CCW = (Dy.x*Dx.z-Dx.x*Dy.z) < 0; */
-
-    /* Dx = CCW ? Dx : -Dx; */
-    /* Dy = CCW ? Dy : -Dy; */
-
-    int3 O = idot3(Dx, Dy, Px, Py);
-    
-    int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3)(-1,-1,-1) : (int3)(0,0,0);
-
-    int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O;
-
-    int success = all(V > C);
-
-    float3 weights = convert_float3(V.yzx) / convert_float3(idot3(Dx.yzx, Dy.yzx, Px, Py) - O.yzx);
-
-    float d = dot(dv, weights);
-
-    *depth = success && d < *depth ? d : *depth;
-
-    return success;
-}
-
-
 #define MAX_LOCAL_COORD  ((8<<PXLCOORD_SHIFT) - 1)
-
 __kernel void sample(volatile global int* tile_locks,
                      volatile global float4* color_buffer,
                      volatile global int* depth_buffer)
@@ -410,3 +300,114 @@ __kernel void sample(volatile global int* tile_locks,
         }
     }    
 }
+
+int calc_framebuffer_pos(int2 pxlpos)
+{
+    int2 gridpos = pxlpos / TILE_SIZE;
+    int  grid_id = gridpos.x + GRID_SIZE.x * gridpos.y;
+    int2 loclpos = pxlpos - gridpos * TILE_SIZE;
+    int  locl_id = loclpos.x + TILE_SIZE * loclpos.y;
+
+    return grid_id * TILE_SIZE * TILE_SIZE + locl_id;
+}
+
+size_t calc_grid_pos(size_t nu, size_t nv, size_t patch)
+{
+    return nu + nv * (PATCH_SIZE+1) + patch * (PATCH_SIZE+1)*(PATCH_SIZE+1);
+}
+
+
+
+int is_front_facing(const int2 *ps)
+{
+    if (BACKFACE_CULLING) {
+        int2 d1 = ps[1] - ps[0];
+        int2 d2 = ps[2] - ps[0];
+        int2 d3 = ps[3] - ps[0];
+
+        return (d1.x*d3.y-d3.x*d1.y < 0 || d3.x*d2.y-d2.x*d3.y < 0);
+    } else {
+        return 1;
+    }
+}
+
+int is_empty(int2 min, int2 max)
+{
+    return min.x >= max.x && min.y >= max.y;
+}
+
+int calc_block_pos(int u, int v, int range_id)
+{
+    return u + v * BLOCKS_PER_LINE + range_id * BLOCKS_PER_PATCH;
+}
+
+int calc_color_grid_pos(int u, int v, int range_id)
+{
+    return u + v * PATCH_SIZE + range_id * (PATCH_SIZE*PATCH_SIZE);
+}
+
+
+int calc_tile_id(int tx, int ty)
+{
+    return tx + FRAMEBUFFER_SIZE.x/8 * ty;
+}
+
+
+void recover_patch_pos(size_t block_id, size_t lx, size_t ly, size_t* u, size_t* v, size_t* patch)
+{
+    *patch = block_id / BLOCKS_PER_PATCH;
+    size_t local_block_id = block_id % BLOCKS_PER_PATCH;
+    size_t bv = local_block_id / BLOCKS_PER_LINE;
+    size_t bu = local_block_id % BLOCKS_PER_LINE;
+
+    *u = bv * 8 + lx;
+    *v = bu * 8 + ly;
+}
+
+int3 idot3 (int3 Ax, int3 Ay, int3 Bx, int3 By)
+{
+    // return mad24(Ax, Bx, mul24(Ay,  By));
+    return Ax * Bx + Ay * By;
+}
+
+
+int4 idot4 (int4 Ax, int4 Ay, int4 Bx, int4 By)
+{
+    // return mad24(Ax, Bx, mul24(Ay,  By));
+    return Ax * Bx + Ay * By;
+}
+
+
+int idot (int2 a, int2 b)
+{
+    //return mad24(a.x, b.x, mul24(a.y,  b.y));
+    return a.x * b.x + a.y * b.y;
+}
+
+int inside_triangle(int3 Px, int3 Py, int2 tp, float3 dv, float* depth)
+{
+    int3 Dx = Py.yzx - Py;
+    int3 Dy = Px - Px.yzx;
+
+    /* int CCW = (Dy.x*Dx.z-Dx.x*Dy.z) < 0; */
+
+    /* Dx = CCW ? Dx : -Dx; */
+    /* Dy = CCW ? Dy : -Dy; */
+
+    int3 O = idot3(Dx, Dy, Px, Py);
+    
+    int3 C = (Dx > 0 || (Dx == 0 && Dy > 0)) ? (int3)(-1,-1,-1) : (int3)(0,0,0);
+
+    int3 V = idot3(Dx, Dy, tp.xxx, tp.yyy) - O;
+
+    int success = all(V > C);
+
+    float3 weights = convert_float3(V.yzx) / convert_float3(idot3(Dx.yzx, Dy.yzx, Px, Py) - O.yzx);
+
+    float d = dot(dv, weights);
+
+    *depth = success && d < *depth ? d : *depth;
+
+    return success;
+}
+

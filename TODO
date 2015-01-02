@@ -1,7 +1,7 @@
 
 TODO:
-* Move buffers used by kernels to program scope variable
 * For dicing/shading/rasterization call kernels as device-side enqueue
+* Remove use of round_up_by for kernel enqueues. This isn't needed in CL2.
 * Rename reyes_patches_per_pass to grids_per_pass or something like that
 * Separate b&s batch size -> intermediate buffer size -> rendering batch size
 * Investigate proper epsilon-culling for eye-splits
@@ -27,8 +27,9 @@ ONCE AVAILABLE:
 * Use GL sync objects 
 * Check for potential ways to get direct access to default framebuffer
 
-
 DONE:
+
+* Move buffers used by kernels to program scope variable
 
 * Join all dicing, shading and rasterization kernels in single kernel program
 * Switch readme to markdown/textile or something like that

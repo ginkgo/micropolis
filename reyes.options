@@ -1,11 +1,11 @@
 // Size of the window in pixels.
-window_size = 1600 1200
+window_size = 800 600
 
 // Application window title.
 window_title = MICROPOLIS
 
 // Patch data input file.
-input_file = testscene/columns.mscene
+input_file = testscene/teapot.mscene
 
 // Clear color for framebuffer.
 clear_color = 0.1 0.1 0.7 0
@@ -71,4 +71,4 @@ pass_color_mode = false
 
 
 
-#hash:-9222007153775011282
+#hash:3783966958658321635
