@@ -72,23 +72,25 @@ __kernel void draw_patches(const global float4* patch_buffer,
                            volatile global float4* color_buffer,
                            volatile global int* depth_buffer)
 {
+    queue_t queue  = get_default_queue();
+    
     clk_event_t dice_done;
     clk_event_t shade_done;
     clk_event_t sample_done;
 
     const size_t dice_g[3] = {PATCH_SIZE+1, PATCH_SIZE+1, (size_t)patch_count};
-    const size_t dice_l[3] = {8, 8, 1};
-    ndrange_t dice_range = ndrange_3D(dice_g, dice_l);
+    const size_t l_range[3] = {8, 8, 1};
+    ndrange_t dice_range = ndrange_3D(dice_g, l_range);
     
     if (patch_type == BEZIER) {
-        enqueue_kernel(get_default_queue(),
+        enqueue_kernel(queue,
                        CLK_ENQUEUE_FLAGS_NO_WAIT,
                        dice_range,
                        0, NULL,
                        &dice_done,
                        ^{dice_bezier(patch_buffer, pid_buffer, min_buffer, max_buffer, modelview, proj);});
     } else if (patch_type == GREGORY) {
-        enqueue_kernel(get_default_queue(),
+        enqueue_kernel(queue,
                        CLK_ENQUEUE_FLAGS_NO_WAIT,
                        dice_range,
                        0, NULL,
@@ -97,7 +99,39 @@ __kernel void draw_patches(const global float4* patch_buffer,
     } else {
         return; // Error
     }
-                       
+
+    const size_t shade_g[3] = {PATCH_SIZE, PATCH_SIZE, (size_t)patch_count};
+    ndrange_t shade_range = ndrange_3D(shade_g, l_range);
+
+
+    void (^shade_block)(void) =
+        ^{
+            local int x_min;
+            local int y_min;
+            local int x_max;
+            local int y_max;
+            local int allnormal;
+            
+            shade_fn(diffuse_color, &x_min, &y_min, &x_max, &y_max, &allnormal);
+    };
+    
+    enqueue_kernel(queue,
+                   CLK_ENQUEUE_FLAGS_NO_WAIT,
+                   shade_range,
+                   1, &dice_done,
+                   &shade_done,
+                   shade_block);
+
+    
+    // const size_t sample_g[3] = {8, 8, patch_count * BLOCKS_PER_PATCH};
+    // ndrange_t sample_range = ndrange_3D(sample_g, l_range);
+    
+    // enqueue_kernel(queue,
+    //                CLK_ENQUEUE_FLAGS_NO_WAIT,
+    //                sample_range,
+    //                1, &shade_done,
+    //                &sample_done,
+    //                ^{sample(tile_locks, color_buffer, depth_buffer);});
                    
 }
 
@@ -105,20 +139,29 @@ __kernel void draw_patches(const global float4* patch_buffer,
 
 __kernel void shade(float4 diffuse_color)
 {
-    volatile local int x_min;
-    volatile local int y_min;
-    volatile local int x_max;
-    volatile local int y_max;
-
+    local int x_min;
+    local int y_min;
+    local int x_max;
+    local int y_max;
     local int allnormal;
     
-    if (get_local_id(0) == 0 && get_local_id(1) == 0) {
-        x_min = VIEWPORT_MAX.x;
-        y_min = VIEWPORT_MAX.y;
-        x_max = VIEWPORT_MIN.x;
-        y_max = VIEWPORT_MIN.y;
+    shade_fn(diffuse_color, &x_min, &y_min, &x_max, &y_max, &allnormal);
+}
 
-        allnormal = 1;
+void shade_fn(float4 diffuse_color,
+              local int* x_min,
+              local int* y_min,
+              local int* x_max,
+              local int* y_max,
+              local int* allnormal)
+{    
+    if (get_local_id(0) == 0 && get_local_id(1) == 0) {
+        *x_min = VIEWPORT_MAX.x;
+        *y_min = VIEWPORT_MAX.y;
+        *x_max = VIEWPORT_MIN.x;
+        *y_max = VIEWPORT_MIN.y;
+
+        *allnormal = 1;
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -146,7 +189,7 @@ __kernel void shade(float4 diffuse_color)
             int2 p  = pxlpos_grid[calc_grid_pos(nu+ui, nv+vi, range_id)];
 
             if (pos[i].z == 0) {
-                allnormal = 0;
+                *allnormal = 0;
             }
             
             pmin = min(pmin, p);
@@ -157,33 +200,33 @@ __kernel void shade(float4 diffuse_color)
     }
 
     if (is_front_facing(pxlpos)) {
-        atomic_min(&x_min, pmin.x);
-        atomic_min(&y_min, pmin.y);
-        atomic_max(&x_max, pmax.x);
-        atomic_max(&y_max, pmax.y);
+        atomic_min(x_min, pmin.x);
+        atomic_min(y_min, pmin.y);
+        atomic_max(x_max, pmax.x);
+        atomic_max(y_max, pmax.y);
     }
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
     if (get_local_id(0) == 0 &&  get_local_id(1) == 0) {
-        x_min = max(VIEWPORT_MIN.x, x_min);
-        y_min = max(VIEWPORT_MIN.y, y_min);
-        x_max = min(VIEWPORT_MAX.x, x_max);
-        y_max = min(VIEWPORT_MAX.y, y_max);
+        *x_min = max(VIEWPORT_MIN.x, *x_min);
+        *y_min = max(VIEWPORT_MIN.y, *y_min);
+        *x_max = min(VIEWPORT_MAX.x, *x_max);
+        *y_max = min(VIEWPORT_MAX.y, *y_max);
 
-        if (!allnormal) {
+        if (!*allnormal) {
             // Set empty s.t. the block will be culled.
-            x_min = 1;
-            y_min = 1;
-            x_max = -1;
-            y_max = -1;
+            *x_min = 1;
+            *y_min = 1;
+            *x_max = -1;
+            *y_max = -1;
         }
         
         int i = calc_block_pos(get_group_id(0), get_group_id(1), get_group_id(2));
-        block_index[i] = (int4)(x_min, y_min, x_max, y_max);
+        block_index[i] = (int4)(*x_min, *y_min, *x_max, *y_max);
     }
 
-    if (is_empty((int2)(x_min, y_min), (int2)(x_max, y_max))) {
+    if (is_empty((int2)(*x_min, *y_min), (int2)(*x_max, *y_max))) {
         return;
     }
 

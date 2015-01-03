@@ -21,3 +21,4 @@ __kernel void test (global int* p)
 {
     p[get_global_id(0)] = get_global_id(0);
 }
+

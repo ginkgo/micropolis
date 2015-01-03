@@ -177,7 +177,6 @@ namespace {
                                        CL_PROGRAM_BUILD_STATUS,
                                        sizeof(build_status), &build_status, 
                                        NULL);
-
         OPENCL_ASSERT(status);
 
         if (build_status != CL_BUILD_SUCCESS) {

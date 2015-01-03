@@ -66,7 +66,7 @@ void CL::Program::link(const vector<const CL::ProgramObject*>& objects)
         program_objects.push_back(o->compile(_device));
     }
 
-    string link_flags = "";
+    string link_flags = "-cl-fast-relaxed-math -cl-unsafe-math-optimizations";
 
     _program = clLinkProgram(context, 1, &dev, link_flags.c_str(),
                              program_objects.size(), program_objects.data(),

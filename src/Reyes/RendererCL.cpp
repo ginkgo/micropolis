@@ -50,6 +50,8 @@ Reyes::RendererCL::RendererCL()
 
     , _reyes_program(_device, "reyes")
 {
+    _device.preferred_work_group_size_multiple();
+    
     switch(reyes_config.bound_n_split_method()) {
     default:
         cerr << "Configured bound&split method not supported. Falling back to CPU" << endl;
