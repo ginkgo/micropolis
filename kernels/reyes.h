@@ -23,7 +23,7 @@ __kernel void sample(volatile global int* tile_locks,
                      volatile global float4* color_buffer,
                      volatile global int* depth_buffer);
 
-// Actual implemenations of the kernels (w. local var passthru)
+// Actual implemenations of the kernels (w. local variable passthru)
 void shade_fn(float4 diffuse_color,
               local int* x_min,
               local int* y_min,
@@ -32,7 +32,10 @@ void shade_fn(float4 diffuse_color,
               local int* allnormal);
 void sample_fn(volatile global int* tile_locks,
                volatile global float4* color_buffer,
-               volatile global int* depth_buffer);
+               volatile global int* depth_buffer,
+               local float4 colors[8][8],
+               local int depths[8][8],
+               volatile local int locks[8][8]);
                
 
 // __kernel void draw_patches(const global float4* patch_buffer,

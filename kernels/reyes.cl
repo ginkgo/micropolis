@@ -105,14 +105,14 @@ __kernel void draw_patches(const global float4* patch_buffer,
 
 
     void (^shade_block)(void) =
-        ^{
-            local int x_min;
-            local int y_min;
-            local int x_max;
-            local int y_max;
-            local int allnormal;
-            
-            shade_fn(diffuse_color, &x_min, &y_min, &x_max, &y_max, &allnormal);
+    ^{
+        local int x_min;
+        local int y_min;
+        local int x_max;
+        local int y_max;
+        local int allnormal;
+        
+        shade_fn(diffuse_color, &x_min, &y_min, &x_max, &y_max, &allnormal);
     };
     
     enqueue_kernel(queue,
@@ -123,15 +123,24 @@ __kernel void draw_patches(const global float4* patch_buffer,
                    shade_block);
 
     
-    // const size_t sample_g[3] = {8, 8, patch_count * BLOCKS_PER_PATCH};
-    // ndrange_t sample_range = ndrange_3D(sample_g, l_range);
+    const size_t sample_g[3] = {8, 8, patch_count * BLOCKS_PER_PATCH};
+    ndrange_t sample_range = ndrange_3D(sample_g, l_range);
     
-    // enqueue_kernel(queue,
-    //                CLK_ENQUEUE_FLAGS_NO_WAIT,
-    //                sample_range,
-    //                1, &shade_done,
-    //                &sample_done,
-    //                ^{sample(tile_locks, color_buffer, depth_buffer);});
+    void (^sample_block)(void) =
+    ^{
+        local float4 colors[8][8];
+        local int depths[8][8];
+        volatile local int locks[8][8];
+        
+        sample_fn(tile_locks, color_buffer, depth_buffer, colors, depths, locks);
+    };
+    
+    enqueue_kernel(queue,
+                   CLK_ENQUEUE_FLAGS_NO_WAIT,
+                   sample_range,
+                   1, &shade_done,
+                   &sample_done,
+                   sample_block);
                    
 }
 
@@ -268,6 +277,17 @@ __kernel void sample(volatile global int* tile_locks,
     local float4 colors[8][8];
     local int depths[8][8];
     volatile local int locks[8][8];
+
+    sample_fn(tile_locks, color_buffer, depth_buffer, colors, depths, locks);
+}
+
+void sample_fn(volatile global int* tile_locks,
+               volatile global float4* color_buffer,
+               volatile global int* depth_buffer,
+               local float4 colors[8][8],
+               local int depths[8][8],
+               volatile local int locks[8][8])
+{
 
     int2 l = (int2)(get_local_id(0), get_local_id(1));
     int block_id = get_global_id(2);
