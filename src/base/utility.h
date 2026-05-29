@@ -116,7 +116,7 @@ class BBox
         max.x = maximum(p.x, max.x);
         max.y = maximum(p.y, max.y);
         max.z = maximum(p.z, max.z);
-    }     
+    }
 
     vec3 size() const {
         return vec3(max.x-min.x, max.y-min.y, max.z-min.z);
@@ -140,7 +140,7 @@ class Bound
 {
 public:
 
-    
+
     vec2 min;
     vec2 max;
 
@@ -161,7 +161,7 @@ public:
 
         max.x = maximum(p.x, max.x);
         max.y = maximum(p.y, max.y);
-    }     
+    }
 
     vec2 size() {
         return vec2(max.x-min.x, max.y-min.y);
@@ -174,57 +174,57 @@ class Keyboard
 
     int last_state[GLFW_KEY_LAST+1];
     GLFWwindow* window;
-    
+
 public:
 
     Keyboard(GLFWwindow* window);
-    
+
     void update();
 
     bool pressed(int key) const;
     bool released(int key) const;
     bool is_down(int key) const;
     bool is_up(int key) const;
-    
+
 };
 
 
 template <typename T>
-inline std::ostream& operator<< (std::ostream& os, 
-                                 const glm::detail::tvec2<T>& v) {
+inline std::ostream& operator<< (std::ostream& os,
+                                 const glm::vec<2, T>& v) {
     return os << v.x << " " << v.y;
 }
 
 template <typename T>
-inline std::ostream& operator<< (std::ostream& os, 
-                                 const glm::detail::tvec3<T>& v) {
+inline std::ostream& operator<< (std::ostream& os,
+                                 const glm::vec<3, T>& v) {
     return os << v.x << " " << v.y << " " << v.z;
 }
 
 template <typename T>
-inline std::ostream& operator<< (std::ostream& os, 
-                                 const glm::detail::tvec4<T>& v) {
+inline std::ostream& operator<< (std::ostream& os,
+                                 const glm::vec<4, T>& v) {
     return os << v.x << " " << v.y << " " << v.z << " " << v.w;
 }
 
 
 template <typename T>
-inline std::istream& operator>> (std::istream& is, 
-                                 glm::detail::tvec2<T>& v) {
+inline std::istream& operator>> (std::istream& is,
+                                 glm::vec<2, T>& v) {
     return is >> v.x >> v.y;
 }
 
 
 template <typename T>
-inline std::istream& operator>> (std::istream& is, 
-                                 glm::detail::tvec3<T>& v) {
+inline std::istream& operator>> (std::istream& is,
+                                 glm::vec<3, T>& v) {
     return is >> v.x >> v.y >> v.z;
 }
 
 
 template <typename T>
-inline std::istream& operator>> (std::istream& is, 
-                                 glm::detail::tvec4<T>& v) {
+inline std::istream& operator>> (std::istream& is,
+                                 glm::vec<4, T>& v) {
     return is >> v.x >> v.y >> v.z >> v.w;
 }
 
@@ -232,7 +232,7 @@ inline std::istream& operator>> (std::istream& is,
 
 /**
  * Parse a string variable and store inside a statically typed variable.
- * This is the default implementation which should work with types that 
+ * This is the default implementation which should work with types that
  * implement C++ stream operators.
  * @param s Parsed input string.
  * @param t Output parameter for parsed variable.
@@ -241,13 +241,13 @@ inline std::istream& operator>> (std::istream& is,
 template<typename T> inline bool from_string(const string& s, T& t)
 {
     std::stringstream ss(s);
-    
+
     T tmp;
 
     if ((ss >> tmp).fail()) {
         return false;
     }
-    
+
     t = tmp;
     return true;
 }
@@ -258,27 +258,27 @@ template<> inline bool from_string(const string& s, bool& t)
     if (s == "true") {
         t = true;
         return true;
-    } 
+    }
     if (s == "false") {
         t = false;
         return true;
     }
 
     std::stringstream ss(s);
-    
+
     bool tmp;
 
     if ((ss >> tmp).fail()) {
         return false;
     }
-    
+
     t = tmp;
     return true;
 }
 
 /**
  * Convert an arbitrary type variable to a string.
- * This is the default implementation which should work with types that 
+ * This is the default implementation which should work with types that
  * implement C++ stream operators.
  * @param t Input value.
  * @return The string representing the value.
@@ -286,11 +286,11 @@ template<> inline bool from_string(const string& s, bool& t)
 template<typename T> inline string to_string(const T& t)
 {
     std::stringstream ss;
-    
+
     ss << std::boolalpha;
     ss << t;
 
-    return ss.str();    
+    return ss.str();
 }
 
 /**
@@ -300,7 +300,7 @@ template<typename T> inline string to_string(const T& t)
 template<> inline bool from_string(const string& s, string& t)
 {
     t = s;
-    
+
     return true;
 }
 
@@ -314,7 +314,7 @@ template<> inline string to_string(const string& t)
 }
 
 template <typename T>
-inline T square (T a) 
+inline T square (T a)
 {
     return a*a;
 }
