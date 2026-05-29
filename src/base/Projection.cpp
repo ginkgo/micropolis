@@ -21,9 +21,9 @@
 
 
 Reyes::Projection::Projection(float fovy, float hither, ivec2 viewport):
-    _fovy(fovy), _near(hither), 
+    _fovy(fovy), _near(hither),
     _aspect(float(viewport.x)/viewport.y),
-    _viewport(viewport) 
+    _viewport(viewport)
 {
     fy = 1.0f/(float)tan(_fovy * M_PI / 360);
     fx = fy / _aspect;
@@ -46,7 +46,7 @@ void Reyes::Projection::calc_projection_with_aspect_correction(mat4& proj) const
 
 void Reyes::Projection::calc_screen_matrix(mat2& screen_matrix) const
 {
-    screen_matrix = mat2(glm::scale(vec3(vp.x, vp.y, 1)));
+    screen_matrix = mat2(glm::scale(glm::mat4(1.0f), vec3(vp.x, vp.y, 1)));
 }
 
 ivec4 Reyes::Projection::get_viewport() const
@@ -93,9 +93,9 @@ void Reyes::Projection::bound(const BBox& bbox, vec2& size, bool& cull) const
     }
 
 
-    if (min.x > _viewport.x-1 + reyes_config.cull_ribbon() || 
+    if (min.x > _viewport.x-1 + reyes_config.cull_ribbon() ||
 	max.x < -reyes_config.cull_ribbon() ||
-	min.y > _viewport.y-1 + reyes_config.cull_ribbon()|| 
+	min.y > _viewport.y-1 + reyes_config.cull_ribbon()||
 	max.y < -reyes_config.cull_ribbon() ){
         cull = true;
         return;

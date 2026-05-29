@@ -49,7 +49,7 @@ namespace {
         vec.setZ(v.z);
     }
 
-    
+
     quat to_quat(const ::Quaternion::Reader& q)
     {
         return quat(q.getR(), q.getI(), q.getJ(), q.getK());
@@ -62,14 +62,14 @@ namespace {
         quat.setJ(q.y);
         quat.setK(q.z);
     }
-    
+
 
     mat4 to_matrix(const ::Transform::Reader& transform)
     {
         vec3 translation = to_vec3(transform.getTranslation());
-        quat rotation = to_quat(transform.getRotation());                      
-                         
-        return glm::translate(translation) * glm::mat4_cast(rotation);
+        quat rotation = to_quat(transform.getRotation());
+
+        return glm::translate(glm::mat4(1.0f), translation) * glm::mat4_cast(rotation);
     }
 
     void from_matrix(const mat4& matrix, ::Transform::Builder& transform)
@@ -94,7 +94,7 @@ Reyes::Scene::Scene (const string& filename) :
     capnp::ReaderOptions reader_options;
     reader_options.traversalLimitInWords = 256LL*1024LL*1024LL;
     reader_options.nestingLimit =  64;
-    
+
     capnp::PackedFdMessageReader message(fd, reader_options);
 
     ::Scene::Reader scene = message.getRoot<::Scene>();
@@ -111,7 +111,7 @@ Reyes::Scene::Scene (const string& filename) :
 
     for (auto l : scene.getLights()) {
         //assert(l.getType() == ::LightSource::Type::DIRECTIONAL);
-            
+
         DirectionalLight* light =
             new DirectionalLight{l.getName(),
                                  vec3(vec4(0,0,1,1) * to_matrix(l.getTransform())),
@@ -122,7 +122,7 @@ Reyes::Scene::Scene (const string& filename) :
 
     map<string, shared_ptr<Mesh> > meshmap;
     for (auto m : scene.getMeshes()) {
-        
+
         Reyes::PatchType mesh_type = Reyes::BEZIER;
         switch (m.getType()) {
         case ::Mesh::Type::BEZIER:
@@ -132,7 +132,7 @@ Reyes::Scene::Scene (const string& filename) :
             mesh_type = Reyes::GREGORY;
             break;
         }
-        
+
         Mesh* mesh = new Mesh{m.getName(), {}, mesh_type};
 
         int i = 0;
@@ -143,7 +143,7 @@ Reyes::Scene::Scene (const string& filename) :
             if (i%3 == 2) {
                 mesh->patch_data.push_back(v);
             }
-                
+
             ++i;
         }
 
@@ -158,7 +158,7 @@ Reyes::Scene::Scene (const string& filename) :
                                     to_matrix(o.getTransform()),
                                     vec4(to_vec3(o.getColor()),1),
                                     mesh};
-            
+
         objects.push_back(shared_ptr<Object>(object));
     }
 
@@ -166,7 +166,7 @@ Reyes::Scene::Scene (const string& filename) :
 
     size_t patch_count = total_patch_count();
     statistics.set_total_input_patches(patch_count);
-    
+
     if (config.verbosity_level() > 0) {
         cout << "Scene \"" << filename << "\" contains " << patch_count << " patches." << endl;
     }
@@ -175,7 +175,7 @@ Reyes::Scene::Scene (const string& filename) :
 Reyes::Scene::~Scene()
 {
 }
-     
+
 void Reyes::Scene::draw(Renderer& renderer) const
 {
     renderer.prepare();
@@ -190,9 +190,9 @@ void Reyes::Scene::draw(Renderer& renderer) const
         mat4 matrix(glm::inverse(active_cam().transform) * object->transform);
 
         renderer.draw_patches(object->mesh.get(), matrix, active_cam().projection.get(), object->color);
-            
+
     }
-        
+
     renderer.finish();
 }
 
@@ -214,7 +214,7 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
     cout << "Saving to file '" << filename << "'" << endl;
 
     ::capnp::MallocMessageBuilder message;
-    
+
     ::Scene::Builder scene = message.initRoot<::Scene>();
 
     ::capnp::List<::Camera>::Builder _cameras = scene.initCameras(cameras.size());
@@ -224,10 +224,10 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
 
         ::Transform::Builder transform = _cameras[i].initTransform();
         from_matrix(cam->transform, transform);
-        
+
         _cameras[i].setNear(cam->projection->near());
         _cameras[i].setFar(cam->projection->far());
-        _cameras[i].setFovy(cam->projection->fovy());        
+        _cameras[i].setFovy(cam->projection->fovy());
     }
 
     ::capnp::List<::LightSource>::Builder _lights = scene.initLights(lights.size());
@@ -256,7 +256,7 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
 
         ::Vec3::Builder color = _objects[i].initColor();
         from_vec3(vec3(object->color), color);
-        
+
         _objects[i].setMeshname(object->mesh->name);
     }
 
@@ -265,7 +265,7 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
         auto mesh = meshes[i];
 
         _meshes[i].setName(mesh->name);
-        
+
         switch(mesh->type) {
         case Reyes::BEZIER:
             _meshes[i].setType(::Mesh::Type::BEZIER);
@@ -273,11 +273,11 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
         case Reyes::GREGORY:
             _meshes[i].setType(::Mesh::Type::GREGORY);
             break;
-        }            
+        }
 
         size_t fcount = mesh->patch_data.size() * 3;
         float* meshdata = (float*)mesh->patch_data.data();
-        
+
         ::capnp::List<float>::Builder _data = _meshes[i].initPositions(fcount);
 
         for (size_t i = 0; i < fcount; ++i) {
@@ -286,7 +286,7 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
     }
 
     int fd = creat(filename.c_str(), 0664);
-    
+
     writePackedMessageToFd(fd, message);
 
     close(fd);
@@ -297,7 +297,7 @@ void Reyes::Scene::save(const string& base_filename, bool overwrite) const
 size_t Reyes::Scene::total_patch_count() const
 {
     size_t count = 0;
-    
+
     for (auto object : objects) {
         auto mesh = object->mesh;
 
@@ -308,8 +308,8 @@ size_t Reyes::Scene::total_patch_count() const
         case GREGORY:
             count += mesh->patch_data.size() / 20;
             break;
-        }   
+        }
     }
-    
+
     return count;
 }

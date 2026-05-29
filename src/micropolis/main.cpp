@@ -55,20 +55,20 @@ int main(int argc, char** argv)
         cerr << "Input file \"" << reyes_config.input_file() << "\" does not exist." << endl;
         return 1;
     }
-    
+
     ivec2 size = reyes_config.window_size();
 
-    
+
 	GLFWwindow* window = nullptr;
 
     window = init_opengl(size);
-    
+
     if (window == nullptr) {
         return 1;
     }
-        
+
     glfwSetWindowTitle(window, reyes_config.window_title().c_str());
-    
+
     cout << endl;
     cout << "MICROPOLIS - A micropolygon rasterizer" << " (c) Thomas Weber 2012" << endl;
     cout << endl;
@@ -90,9 +90,9 @@ void mainloop(GLFWwindow* window)
 {
 
     Reyes::Scene scene(reyes_config.input_file());
-    
+
     shared_ptr<Reyes::Renderer> renderer;
-    
+
     switch (reyes_config.renderer_type()) {
     case ReyesConfig::OPENCL:
         renderer.reset(new Reyes::RendererCL());
@@ -112,15 +112,15 @@ void mainloop(GLFWwindow* window)
 
     glm::dvec2 last_cursor_pos;
     glfwGetCursorPos(window, &(last_cursor_pos.x), &(last_cursor_pos.y));
-    
+
     bool in_wire_mode = false;
 
     Keyboard keys(window);
 
     // Apply configured camera offset
     scene.active_cam().transform = scene.active_cam().transform
-        * glm::translate<float>(config.camera_x_offset(), config.camera_y_offset(), config.camera_z_offset());
-    
+        * glm::translate<float>(glm::mat4(1.0f), glm::vec3(config.camera_x_offset(), config.camera_y_offset(), config.camera_z_offset()));
+
     // for (auto N : {1,2, 20, 100,
     //             128, 200, 512, 800, 1000,
     //             1024, 2048, 4096, 5000,
@@ -130,9 +130,9 @@ void mainloop(GLFWwindow* window)
     //     } else {
     //         cout << format("Prefix sum on %1% items failed") % N << endl;
     //     }
-    // }    
+    // }
     // return;
-    
+
     // for (auto N : {1,2, 20, 50,
     //             100, 128, 200, 512, 800, 1000,
     //             1024, 2048, 4096, 5000,
@@ -143,18 +143,18 @@ void mainloop(GLFWwindow* window)
     //     } else {
     //         cout << format("Prefix sum on %1% items failed") % N << endl;
     //     }
-    // }    
+    // }
     // return;
 
     long long frame_no = 0;
 
     string trace_file = cl_config.trace_file();
     string statistics_file = config.statistics_file();
-    
+
     while (running) {
 
         glfwPollEvents();
-        
+
         double now = glfwGetTime();
         double time_diff = now - last;
         last = now;
@@ -171,7 +171,7 @@ void mainloop(GLFWwindow* window)
         if (abs(mouse_movement.x) > 100 || abs(mouse_movement.y) > 100) {
             mouse_movement = vec2(0,0);
         }
-        
+
         vec2 rotation(0,0);
         float zrotation = 0.0f;
 
@@ -189,7 +189,7 @@ void mainloop(GLFWwindow* window)
             translation *= 2.0f;
             zrotation   *= 2.0f;
         }
-        
+
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL)) {
             translation *= 0.25f;
             rotation    *= 0.50f;
@@ -203,19 +203,19 @@ void mainloop(GLFWwindow* window)
         if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN)) {
             reyes_config.set_bound_n_split_limit(reyes_config.bound_n_split_limit() * pow(0.75,-time_diff));
         }
-        
+
         scene.active_cam().transform = scene.active_cam().transform
-            * glm::translate<float>(translation.x, translation.y, translation.z)
-            * glm::rotate<float>(rotation.x, 0,1,0)
-            * glm::rotate<float>(rotation.y, 1,0,0)
-            * glm::rotate<float>( zrotation, 0,0,1);
+            * glm::translate<float>(glm::mat4(1.0), glm::vec3(translation.x, translation.y, translation.z))
+            * glm::rotate<float>(glm::mat4(1.0), rotation.x, glm::vec3(0,1,0))
+            * glm::rotate<float>(glm::mat4(1.0), rotation.y, glm::vec3(1,0,0))
+            * glm::rotate<float>(glm::mat4(1.0),  zrotation, glm::vec3(0,0,1));
 
         // Wireframe toggle
         if (keys.pressed(GLFW_KEY_F3)) {
             in_wire_mode = !in_wire_mode;
             statistics.reset_timer();
         }
-        
+
         // Dump trace
         if (keys.pressed(GLFW_KEY_F9)) {
             renderer->dump_trace();
@@ -231,18 +231,18 @@ void mainloop(GLFWwindow* window)
         if (keys.pressed(GLFW_KEY_PRINT_SCREEN)) {
             make_screenshot();
         }
-        
+
 
         if (config.dump_mode() && frame_no >= config.dump_after()) {
             int dump_id = frame_no - config.dump_after();
-            
+
             cl_config.set_trace_file(trace_file + lexical_cast<string>(dump_id));
             config.set_statistics_file(statistics_file + lexical_cast<string>(dump_id));
-                
+
             renderer->dump_trace();
             statistics.dump_stats();
         }
-        
+
         // Render scene
         statistics.start_render();
         if (in_wire_mode) {
@@ -250,7 +250,7 @@ void mainloop(GLFWwindow* window)
         } else {
             scene.draw(*renderer);
         }
-        
+
         glfwSwapBuffers(window);
         statistics.end_render();
 
@@ -261,7 +261,7 @@ void mainloop(GLFWwindow* window)
         running = running && keys.is_up('Q');
 		running = running && !glfwWindowShouldClose( window );
 
-        		
+
         if (config.dump_mode() && frame_no + 1 >= config.dump_after() + config.dump_count()) {
             running = false;
         }
@@ -278,7 +278,7 @@ void mainloop(GLFWwindow* window)
 bool test_GL_prefix_sum(const int N, bool print)
 {
     bool retval = true;
-    
+
     GL::PrefixSum prefix_sum(N);
 
     GL::Buffer i_buffer(N * sizeof(ivec2));
@@ -289,7 +289,7 @@ bool test_GL_prefix_sum(const int N, bool print)
     vector<ivec2> o_vec(N);
 
     srand(43);
-    if (print) cout << "INPUT: "; 
+    if (print) cout << "INPUT: ";
     for (size_t i = 0; i < (size_t)N; ++i) {
         i_vec[i] = ivec2(1, rand()%8+1);
         o_vec[i] = ivec2(0, 0);
@@ -313,20 +313,20 @@ bool test_GL_prefix_sum(const int N, bool print)
     o_buffer.bind(GL_ARRAY_BUFFER);
     o_buffer.read_data(o_vec.data(), N * sizeof(ivec2));
     o_buffer.unbind();
-    
+
     t_buffer.bind(GL_ARRAY_BUFFER);
     t_buffer.read_data(&total, sizeof(ivec2));
     t_buffer.unbind();
-    
+
     ivec2 sum(0);
-    if (print) cout << "OUTPUT: "; 
+    if (print) cout << "OUTPUT: ";
     for (size_t i = 0; i < (size_t)N; ++i) {
         sum += i_vec[i];
 
         if (sum != o_vec[i]) {
             retval = false;
         }
-        
+
         if (print) cout << boost::format("(%1%, %2%) ") % o_vec[i].x % o_vec[i].y;
     }
     if (print) cout << endl;
@@ -336,7 +336,7 @@ bool test_GL_prefix_sum(const int N, bool print)
     }
 
     if (print) cout << boost::format("TOTAL: (%1%, %2%)") % total.x % total.y << endl;
-    
+
     return retval;
 }
 
@@ -346,7 +346,7 @@ bool test_CL_prefix_sum(const int N, bool print)
 
     CL::Device device(cl_config.opencl_device_id().x, cl_config.opencl_device_id().y);
     CL::CommandQueue queue(device, "prefix sum test");
-    
+
     CL::PrefixSum prefix_sum(device, N);
 
     CL::Buffer i_buffer(device, N * sizeof(int), CL_MEM_READ_WRITE);
@@ -357,7 +357,7 @@ bool test_CL_prefix_sum(const int N, bool print)
     vector<int> o_vec(N);
 
     srand(43);
-    if (print) cout << "INPUT: "; 
+    if (print) cout << "INPUT: ";
     for (size_t i = 0; i < (size_t)N; ++i) {
         i_vec[i] = rand()%8+1;
         o_vec[i] = 0;
@@ -378,14 +378,14 @@ bool test_CL_prefix_sum(const int N, bool print)
     queue.wait_for_events(event);
 
     int sum = 0;
-    if (print) cout << "OUTPUT: "; 
+    if (print) cout << "OUTPUT: ";
     for (size_t i = 0; i < (size_t)N; ++i) {
         sum += i_vec[i];
 
         if (sum != o_vec[i]) {
             retval = false;
         }
-        
+
         if (print) cout << o_vec[i] << " ";
     }
     if (print) cout << endl;
@@ -393,9 +393,9 @@ bool test_CL_prefix_sum(const int N, bool print)
     if (sum != total) {
         retval = false;
     }
-    
+
     if (print) cout << boost::format("TOTAL: %1%") % total << endl;
-    
+
     return retval;
 }
 
@@ -405,18 +405,18 @@ bool test_CL_histogram_pyramid(const int N, bool print)
     std::random_device rd;
     std::default_random_engine reng(rd());
     std::uniform_int_distribution<int> dist(0, 50000);
-    
+
     bool retval = true;
 
     CL::Device device(cl_config.opencl_device_id().x, cl_config.opencl_device_id().y);
     CL::CommandQueue queue(device, "prefix sum test");
-    
+
     CL::HistogramPyramid histogram_pyramid(device);
 
     const int P = histogram_pyramid.pyramid_size(N);
-    
+
     CL::Buffer buffer(device, P * sizeof(int), CL_MEM_READ_WRITE);
-    
+
     vector<int> i_vec(N);
     vector<int> pyramid(P);
 
@@ -425,13 +425,13 @@ bool test_CL_histogram_pyramid(const int N, bool print)
     vector<size_t> offsets, sizes;
     histogram_pyramid.get_offsets(N, offsets);
     histogram_pyramid.get_sizes(N, sizes);
-    
+
     histogram_pyramid.get_offsets(N, offsets);
-    
-    if (print) cout << "INPUT: "; 
+
+    if (print) cout << "INPUT: ";
     for (size_t i = 0; i < (size_t)N; ++i) {
         i_vec[i] = dist(reng);
-        
+
         if (print) cout << i_vec[i] << " ";
     }
     if (print) cout << endl;
@@ -443,7 +443,7 @@ bool test_CL_histogram_pyramid(const int N, bool print)
     event = queue.enq_write_buffer(buffer, i_vec.data(), i_vec.size() * sizeof(int), "fill input buffer", CL::Event());
     event = histogram_pyramid.apply(N, N, queue, buffer, event);
     event = queue.enq_read_buffer(buffer, pyramid.data(), pyramid.size() * sizeof(int), "read pyramid", event);
-    
+
     queue.wait_for_events(event);
 
     if (print) {
@@ -458,13 +458,13 @@ bool test_CL_histogram_pyramid(const int N, bool print)
         cout << endl << endl;
     }
 
-    
+
     for (size_t i = 0; i < i_vec.size(); ++i) {
         if (i_vec[i] != pyramid[i]) {
             retval = false;
         }
     }
-    
+
     for (size_t level = 0; level < top_level; ++level) {
         size_t offset = offsets[level];
         size_t offset2 = offsets[level+1];
@@ -481,7 +481,7 @@ bool test_CL_histogram_pyramid(const int N, bool print)
             retval = false;
         }
     }
-    
+
     return retval;
 }
 
@@ -491,7 +491,7 @@ bool handle_arguments(int& argc, char** argv)
     bool needs_resave;
 
     // Config
-    
+
     if (!Config::load_file("micropolis.options", config, needs_resave)) {
         cout << "Failed to load micropolis.options" << endl;
         return false;
@@ -510,7 +510,7 @@ bool handle_arguments(int& argc, char** argv)
     }
 
     // CLConfig
-    
+
     if (!CLConfig::load_file("cl.options", cl_config, needs_resave)) {
         cout << "Failed to load cl.options" << endl;
         return false;
@@ -527,9 +527,9 @@ bool handle_arguments(int& argc, char** argv)
             return false;
         }
     }
-    
+
     // GLConfig
-    
+
     if (!GLConfig::load_file("gl.options", gl_config, needs_resave)) {
         cout << "Failed to load gl.options" << endl;
         return false;
@@ -546,7 +546,7 @@ bool handle_arguments(int& argc, char** argv)
             return false;
         }
     }
-    
+
     // ReyesConfig
 
     if (!ReyesConfig::load_file("reyes.options", reyes_config, needs_resave)) {
@@ -567,16 +567,16 @@ bool handle_arguments(int& argc, char** argv)
     }
 
 
-    config.parse_args(argc, argv); 
-    cl_config.parse_args(argc, argv); 
-    gl_config.parse_args(argc, argv); 
+    config.parse_args(argc, argv);
+    cl_config.parse_args(argc, argv);
+    gl_config.parse_args(argc, argv);
     reyes_config.parse_args(argc, argv);
 
     return true;
 }
 
 
-/* 
+/*
  * Helper function that properly initializes the GLFW window before opening.
  */
 GLFWwindow* init_opengl(ivec2 size)
@@ -591,7 +591,7 @@ GLFWwindow* init_opengl(ivec2 size)
     if (reyes_config.dummy_render() || config.windowless()) {
         glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
     }
-    
+
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, gl_config.fsaa_samples());
     glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
@@ -606,10 +606,10 @@ GLFWwindow* init_opengl(ivec2 size)
 	}
 
     glfwSetWindowPos(window, 500, 500);
-	
+
 	glfwMakeContextCurrent(window);
     glfwSwapInterval(0);
-    
+
     // Call flext's init function.
     int success = flextInit(window);
 
@@ -618,7 +618,7 @@ GLFWwindow* init_opengl(ivec2 size)
     }
 
     set_GL_error_callbacks();
-    
+
     return window;
 }
 
@@ -634,7 +634,7 @@ void get_framebuffer_info()
     cout << "--------------------------------------------------------------------------------" << endl;
     cout << endl;
     GLint params[10];
-    
+
     glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_BACK_LEFT, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, params);
     switch(params[0]) {
     case GL_NONE:
@@ -654,10 +654,10 @@ void get_framebuffer_info()
     cout << "Attachment object name: " << params[0] << endl;
 
     GLint object_name = params[0];
-    
+
     if (glIsRenderbuffer(object_name)) {
         cout << "Object name is a renderbuffer" << endl;
-        
+
         std::fill(params, params+10, -1);
         glBindRenderbuffer(GL_RENDERBUFFER, object_name);
         glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, params+0);

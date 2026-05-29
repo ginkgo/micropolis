@@ -69,7 +69,7 @@ for (format, type_), iformat in int_format_map.items():
     reverse_map[iformat] = (format, type_)
 
 header_content = \
-    """ 
+    """
 #ifndef FORMAT_MAP_H
 #define FORMAT_MAP_H
 
@@ -78,7 +78,7 @@ header_content = \
 GLenum get_internal_format(GLenum format, GLenum type);
 GLenum get_linear_format(GLenum format, GLenum type);
 GLenum get_internal_format_int(GLenum format, GLenum type);
-void get_format_and_type(GLenum internal_format, 
+void get_format_and_type(GLenum internal_format,
                          GLenum *format, GLenum *type);
 
 #endif
@@ -107,15 +107,13 @@ namespace = {'type_dic' : type_dic,
              'reverse_map' : reverse_map}
 
 generated_warning = '/* WARNING: This file was automatically generated */\n/* Do not edit. */\n'
-    
+
 with open('%s/format_map.%s' % (options.output_dir, options.source_ext), 'w') as source_file:
     source_file.write(generated_warning)
     engine = Engine(loader=FileLoader([script_dir]), extensions=[CoreExtension()])
-    template = engine.get_template(os.path.basename('%s/format_map_template.cc' % script_dir))
+    template = engine.get_template(os.path.basename('%s/format_map.cc.templ' % script_dir))
     source_file.write(template.render(namespace))
-    
+
 with open('%s/format_map.%s' % (options.output_dir, options.header_ext), 'w') as header_file:
     header_file.write(generated_warning)
     header_file.write(header_content)
-
-
