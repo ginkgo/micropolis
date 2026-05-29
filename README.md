@@ -13,7 +13,7 @@ texture in OpenGL.
 There also exists an alternative render backend that uses OpenGL hardware
 tessellation for performance comparison.
 
-Here is a video of it in action: [Video](www.youtube.com/watch?v=09ozb1ttgmA)
+Here is a video of it in action: [Video](https://www.youtube.com/watch?v=09ozb1ttgmA)
 
 
 ## COMPILATION
