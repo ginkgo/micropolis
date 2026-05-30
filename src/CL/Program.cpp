@@ -19,10 +19,10 @@ namespace {
 CL::Program::Program() :
     _program(0),
     _source_buffer(new std::stringstream())
-{        
+{
     *_source_buffer << std::setiosflags(std::ios::fixed) << std::setprecision(10);
 }
-    
+
 
 CL::Program::~Program()
 {
@@ -58,15 +58,15 @@ void CL::Program::set_constant(const string& name, float value)
 void CL::Program::set_constant(const string& name, ivec2 value)
 {
     assert(_source_buffer);
-    *_source_buffer << "#define " << name << " ((int2)(" 
+    *_source_buffer << "#define " << name << " ((int2)("
                     << value.x << ", " << value.y << "))" << endl;
 }
 
 void CL::Program::set_constant(const string& name, vec4 value)
 {
     assert(_source_buffer);
-    *_source_buffer << "#define " << name << " ((float4)(" 
-                    << value.x << "f, " << value.y << "f, " 
+    *_source_buffer << "#define " << name << " ((float4)("
+                    << value.x << "f, " << value.y << "f, "
                     << value.z << "f, " << value.w <<  "f))" << endl;
 }
 
@@ -79,14 +79,14 @@ void CL::Program::compile(Device& device,  const string& filename)
     *_source_buffer << endl
                     << "# 1 \"" << cl_config.kernel_dir() << "/" << filename << "\"" << endl
                     << read_file(cl_config.kernel_dir() + "/" + filename);
-    
+
     string file_content = _source_buffer->str();
 
     if (cl_config.dump_kernel_files()) {
         std::ofstream fs(("/tmp/"+filename).c_str());
         fs << file_content << endl;
     }
-    
+
     _program = compile_program(device, file_content, filename);
 
     delete _source_buffer;
@@ -94,14 +94,14 @@ void CL::Program::compile(Device& device,  const string& filename)
 }
 
 
-CL::Kernel* CL::Program::get_kernel(const string& name) 
+CL::Kernel* CL::Program::get_kernel(const string& name)
 {
     return new Kernel(_program, _device, name);
 }
- 
+
 
 namespace {
-    
+
     cl_program compile_program (CL::Device& device, const string& source, const string& filename)
     {
         const char* c_content = source.c_str();
@@ -109,7 +109,7 @@ namespace {
 
         cl_int status;
 
-        cl_program program = clCreateProgramWithSource(device.get_context(), 1, 
+        cl_program program = clCreateProgramWithSource(device.get_context(), 1,
                                                        &c_content, &content_size, &status);
         OPENCL_ASSERT(status);
 
@@ -118,11 +118,6 @@ namespace {
         string flags = "-I. -cl-fast-relaxed-math -cl-std=CL1.2 -cl-mad-enable";
         flags += " -I"+cl_config.kernel_dir();
 
-#ifdef DEBUG_OPENCL
-        flags += " -g";
-#endif
-
-        
         status = clBuildProgram(program, 1, &dev, flags.c_str(), NULL, NULL);
 
         if (status != CL_SUCCESS && status != CL_BUILD_PROGRAM_FAILURE) {
@@ -130,10 +125,10 @@ namespace {
         }
 
         cl_build_status build_status;
-        
-        status = clGetProgramBuildInfo(program, dev, 
+
+        status = clGetProgramBuildInfo(program, dev,
                                        CL_PROGRAM_BUILD_STATUS,
-                                       sizeof(build_status), &build_status, 
+                                       sizeof(build_status), &build_status,
                                        NULL);
 
         OPENCL_ASSERT(status);
@@ -146,7 +141,7 @@ namespace {
                                            CL_PROGRAM_BUILD_LOG,
                                            size, buffer, NULL);
             OPENCL_ASSERT(status);
-            
+
             cout << "--------------------------------------------------------------------------------" << endl;
             cout << filename << " build log:" << endl;
             cout << buffer << endl;
@@ -161,5 +156,5 @@ namespace {
 
         return program;
     }
-    
+
 }
